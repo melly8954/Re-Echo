@@ -1,20 +1,21 @@
-# Re-Echo 1차 MVP ERD
+﻿# Re-Echo 1차 MVP ERD
 
 ## 1. ERD Overview
 
-Re-Echo 1차 MVP의 ERD는 다음 흐름을 안정적으로 지원하는 것을 목표로 한다.
+Re-Echo 1차 MVP ERD는 다음 흐름을 안정적으로 지원하는 것을 목표로 한다.
 
 - 소셜 로그인
 - 워크스페이스 생성 및 참여
-- 역할 기반 멤버십 관리
+- 역할 기반 멤버 관리
+- 워크스페이스별 프로필 관리
 - 공개 채널 및 비공개 채널 운영
 - 실시간 메시지 송수신
 - 파일 첨부
 - 채널 단위 읽음 상태 추적
 - 보관, 복원, 자동 삭제
 
-이번 ERD는 `docs/PRD.md`와 `docs/Architecture.md`를 기준으로 작성하며,
-MVP 범위 밖의 검색, 멘션, DM, AI 기능은 포함하지 않는다.
+이 ERD는 `docs/prd.md`와 `docs/Architecture.md`를 기준으로 작성한다.
+MVP 범위 밖인 DM, 메시지 검색, 멘션, AI 기능은 포함하지 않는다.
 
 ## 2. Confirmed Data Requirements
 
@@ -22,13 +23,14 @@ MVP 범위 밖의 검색, 멘션, DM, AI 기능은 포함하지 않는다.
 
 - 사용자 계정은 Google, Kakao, GitHub 소셜 로그인으로 생성된다.
 - 사용자는 여러 워크스페이스를 생성하거나 참여할 수 있다.
-- 워크스페이스에는 `OWNER`, `ADMIN`, `MEMBER` 역할이 있다.
+- 워크스페이스마다 `OWNER`, `ADMIN`, `MEMBER` 역할이 있다.
+- 워크스페이스별 닉네임과 프로필 이미지를 관리한다.
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - 채널은 공개 채널과 비공개 채널로 구분된다.
-- 메시지는 실시간으로 송수신되며, 본인 메시지는 수정할 수 있다.
-- 관리자는 모든 멤버의 메시지를 삭제할 수 있다.
-- 파일 첨부 메타데이터는 애플리케이션 DB에 저장한다.
-- 읽음 상태와 안 읽은 메시지 수는 채널 단위로 계산한다.
+- 메시지는 실시간으로 송수신되며 본인 메시지는 수정할 수 있다.
+- 관리자는 모든 멤버 메시지를 삭제할 수 있다.
+- 파일 첨부 메타데이터는 애플리케이션 DB에서 관리한다.
+- 읽음 상태는 마지막 읽은 메시지 기준으로 채널 단위 계산을 사용한다.
 - 워크스페이스와 채널은 보관 후 15일 뒤 자동 삭제된다.
 
 ### 2.2 확정된 제외 범위
@@ -44,7 +46,7 @@ MVP 범위 밖의 검색, 멘션, DM, AI 기능은 포함하지 않는다.
 - 최종 진실 소스는 PostgreSQL이다.
 - Redis는 실시간 상태와 보조 운영 데이터 저장소이며 ERD 범위에 포함하지 않는다.
 - 파일 바이너리는 Cloudflare R2에 저장하고 DB에는 메타데이터만 저장한다.
-- 강제 삭제된 멤버는 재초대할 수 없다.
+- 강제 신고, 멤버 신고 같은 제재 도메인은 없다.
 - 워크스페이스와 채널은 즉시 삭제하지 않고 보관 상태를 거친다.
 
 ## 3. Data Storage Context
@@ -71,57 +73,58 @@ MVP 범위 밖의 검색, 멘션, DM, AI 기능은 포함하지 않는다.
 
 ### 4.1 사용자 및 인증 도메인
 
-- 사용자 계정의 식별과 기본 프로필 관리
+- 사용자 계정 식별
 - 소셜 로그인 공급자 계정 연결 관리
 
 ### 4.2 워크스페이스 및 멤버십 도메인
 
 - 워크스페이스 생성, 보관, 복원, 삭제
 - 워크스페이스별 멤버 역할과 상태 관리
+- 워크스페이스별 닉네임과 프로필 이미지 관리
 - 초대 링크 기반 참여 관리
 
 ### 4.3 채널 도메인
 
-- 공개 및 비공개 채널 관리
+- 공개 채널 및 비공개 채널 관리
 - 채널 참여와 접근 제어
 - `#general` 기본 채널 보장
 
 ### 4.4 메시지 및 읽음 도메인
 
-- 메시지 작성, 수정, 삭제
+- 메시지 생성, 수정, 삭제
 - 채널 단위 읽음 위치 관리
-- 안 읽은 메시지 수 계산 기반 제공
+- 안읽은 메시지 수 계산용 기준 제공
 
 ### 4.5 파일 도메인
 
 - 파일 메타데이터 저장
 - 메시지 첨부 연결
-- 고아 파일 정리와 보관 만료 정리 지원
+- 고아 파일 정리 및 보관 만료 정리 지원
 
 ## 5. Domain Objects
 
 - User
   - Re-Echo 사용자 계정
 - UserIdentity
-  - 소셜 로그인 공급자와 사용자 계정의 연결
+  - 소셜 로그인 공급자와 사용자 계정 연결
 - Workspace
-  - 협업의 최상위 공간
+  - 최상위 협업 공간
 - WorkspaceMembership
-  - 사용자와 워크스페이스의 소속 및 역할
+  - 사용자 워크스페이스 소속, 역할, 상태, 워크스페이스별 프로필
 - WorkspaceInviteLink
-  - 워크스페이스 참여용 초대 링크
+  - 워크스페이스 초대 링크
 - Channel
   - 워크스페이스 내부 대화 공간
 - ChannelMembership
-  - 사용자와 채널의 참여 관계
+  - 사용자 채널 참여 상태
 - Message
-  - 채널에 기록되는 텍스트 메시지
+  - 채널 메시지
 - ChannelReadState
-  - 사용자별 채널 읽음 위치
+  - 사용자별 채널 읽음 기준점
 - FileObject
-  - 외부 저장소 파일의 메타데이터
+  - 외부 스토리지 파일 메타데이터
 - MessageAttachment
-  - 메시지와 파일의 연결
+  - 메시지와 파일 연결
 
 ## 6. Entity List
 
@@ -147,8 +150,6 @@ Re-Echo 사용자 기본 계정이다.
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
 | id | uuid | Y |  | N |  | 기본 키 |
-| display_name | varchar(80) |  |  | N |  | 사용자 표시 이름 |
-| profile_image_url | text |  |  | Y |  | 프로필 이미지 URL |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `DEACTIVATED` |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 | updated_at | timestamptz |  |  | N | `now()` | 수정 시각 |
@@ -163,19 +164,19 @@ Re-Echo 사용자 기본 계정이다.
 | id | uuid | Y |  | N |  | 기본 키 |
 | user_id | uuid |  | users.id | N |  | 사용자 참조 |
 | provider | varchar(20) |  |  | N |  | `GOOGLE`, `KAKAO`, `GITHUB` |
-| provider_user_id | varchar(191) |  |  | N |  | 공급자 내부 사용자 식별자 |
-| provider_email | varchar(320) |  |  | Y |  | 공급자 제공 이메일 |
+| provider_user_id | varchar(191) |  |  | N |  | 공급자 사용자 식별자 |
+| provider_email | varchar(320) |  |  | Y |  | 공급자 이메일 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 
 제약:
 
 - `(provider, provider_user_id)` 유니크
-- 한 identity는 반드시 하나의 user에 속한다
+- 하나의 identity는 반드시 하나의 user에 속한다.
 
 ### 7.3 `workspaces`
 
 설명:
-협업이 이루어지는 최상위 공간이다.
+최상위 협업 공간이다.
 
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -200,7 +201,7 @@ Re-Echo 사용자 기본 계정이다.
 ### 7.4 `workspace_memberships`
 
 설명:
-사용자의 워크스페이스 소속, 역할, 참여 상태를 나타낸다.
+사용자의 워크스페이스 소속, 역할, 상태와 워크스페이스별 프로필을 저장한다.
 
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -208,17 +209,20 @@ Re-Echo 사용자 기본 계정이다.
 | workspace_id | uuid |  | workspaces.id | N |  | 워크스페이스 참조 |
 | user_id | uuid |  | users.id | N |  | 사용자 참조 |
 | role | varchar(20) |  |  | N |  | `OWNER`, `ADMIN`, `MEMBER` |
+| display_name | varchar(80) |  |  | N |  | 워크스페이스별 표시 이름 |
+| profile_image_url | text |  |  | Y |  | 워크스페이스별 프로필 이미지 URL |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED`, `BANNED` |
 | joined_at | timestamptz |  |  | N | `now()` | 참여 시각 |
 | left_at | timestamptz |  |  | Y |  | 자진 탈퇴 시각 |
 | removed_at | timestamptz |  |  | Y |  | 관리자 강제 제거 시각 |
-| banned_at | timestamptz |  |  | Y |  | 재초대 금지 처리 시각 |
+| banned_at | timestamptz |  |  | Y |  | 차단 시각 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 | updated_at | timestamptz |  |  | N | `now()` | 수정 시각 |
 
 제약:
 
 - `(workspace_id, user_id)` 유니크
+- 같은 워크스페이스 내 `display_name` 중복 허용
 - `BANNED` 상태면 재가입 불가
 - `OWNER`는 워크스페이스당 정확히 1명이어야 하므로 애플리케이션 제약 추가 필요
 
@@ -241,7 +245,7 @@ Re-Echo 사용자 기본 계정이다.
 제약:
 
 - `token` 유니크
-- 워크스페이스당 활성 링크는 하나만 유지
+- 워크스페이스당 활성 링크는 하나만 허용
 - 기본 만료는 생성 후 24시간
 
 ### 7.6 `channels`
@@ -273,7 +277,7 @@ Re-Echo 사용자 기본 계정이다.
 ### 7.7 `channel_memberships`
 
 설명:
-사용자의 채널 참여 상태를 나타낸다.
+사용자의 채널 참여 상태를 저장한다.
 
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -294,7 +298,7 @@ Re-Echo 사용자 기본 계정이다.
 ### 7.8 `messages`
 
 설명:
-채널에 저장되는 텍스트 메시지다.
+채널에 기록되는 텍스트 메시지다.
 
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -312,7 +316,7 @@ Re-Echo 사용자 기본 계정이다.
 제약:
 
 - 빈 문자열 메시지 금지
-- 첨부만 있는 메시지를 허용할지 여부는 Open Issues로 남긴다
+- 첨부만 있는 메시지 허용
 
 ### 7.9 `channel_read_states`
 
@@ -331,19 +335,18 @@ Re-Echo 사용자 기본 계정이다.
 제약:
 
 - `channel_membership_id` 유니크
-- 안 읽은 메시지 수는 저장값이 아니라 조회 시 계산하는 것을 기본 원칙으로 둔다
 
 ### 7.10 `file_objects`
 
 설명:
-외부 오브젝트 스토리지에 저장된 파일의 메타데이터다.
+외부 오브젝트 스토리지에 저장된 파일 메타데이터다.
 
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
 | id | uuid | Y |  | N |  | 기본 키 |
 | workspace_id | uuid |  | workspaces.id | N |  | 워크스페이스 참조 |
 | uploaded_by_membership_id | uuid |  | workspace_memberships.id | N |  | 업로더 |
-| storage_provider | varchar(30) |  |  | N |  | 기본값은 `R2` |
+| storage_provider | varchar(30) |  |  | N |  | 기본값 `R2` |
 | storage_key | varchar(255) |  |  | N |  | 저장소 내부 키 |
 | original_filename | varchar(255) |  |  | N |  | 원본 파일명 |
 | content_type | varchar(120) |  |  | N |  | MIME 타입 |
@@ -404,8 +407,9 @@ Re-Echo 사용자 기본 계정이다.
 관계 원칙:
 
 - N:M 관계는 모두 중간 엔티티로 분리한다.
-- 채널 참여는 사용자 직접 참조가 아니라 `workspace_membership`을 기준으로 연결한다.
-- 메시지 작성자, 초대 링크 발급자, 파일 업로더는 모두 워크스페이스 맥락을 가지는 멤버십 기준으로 추적한다.
+- 채널 참여는 사용자 계정이 아니라 `workspace_membership`을 기준으로 연결한다.
+- 메시지 작성, 초대 링크 발급, 파일 업로드는 모두 워크스페이스 문맥을 가진 멤버십 FK로 추적한다.
+- 워크스페이스별 닉네임과 프로필 이미지는 사용자 전역 계정이 아니라 `workspace_memberships`에 저장한다.
 
 ## 9. Status & Enum Definitions
 
@@ -468,7 +472,7 @@ Re-Echo 사용자 기본 계정이다.
 - 삭제 방식
   - 즉시 물리 삭제가 아니라 `ARCHIVED` 상태로 전환
 - 복원 정책
-  - 보관 후 15일 안에는 복원 가능
+  - 보관 후 15일 이내 복원 가능
 - 만료 정책
   - `archive_expires_at` 도달 시 최종 삭제 처리
 
@@ -477,7 +481,7 @@ Re-Echo 사용자 기본 계정이다.
 - 삭제 방식
   - 즉시 물리 삭제가 아니라 `ARCHIVED` 상태로 전환
 - 복원 정책
-  - 보관 후 15일 안에는 복원 가능
+  - 보관 후 15일 이내 복원 가능
 - 만료 정책
   - `archive_expires_at` 도달 시 최종 삭제 처리
 
@@ -485,8 +489,7 @@ Re-Echo 사용자 기본 계정이다.
 
 - 자진 탈퇴는 `LEFT`
 - 관리자 강제 제거는 `REMOVED`
-- 재초대 금지 대상은 `BANNED`
-- 강제 제거 후 재초대 금지 정책은 멤버십 상태로 표현
+- 차단은 `BANNED`
 
 ### 10.4 메시지
 
@@ -496,9 +499,8 @@ Re-Echo 사용자 기본 계정이다.
 
 ### 10.5 파일
 
-- 파일 메타데이터 등록 실패 시 `ORPHANED` 상태로 마킹 가능
+- 파일 메타데이터 등록 실패 시 `ORPHANED` 상태가 될 수 있다
 - 정기 스케줄러가 고아 파일과 만료 대상 파일을 정리한다
-- 메시지 또는 채널 삭제와 파일 물리 삭제의 동기화 방식은 배치 정리를 전제로 둔다
 
 ## 11. Index Strategy
 
@@ -517,12 +519,14 @@ Re-Echo 사용자 기본 계정이다.
 
 - `workspace_memberships(user_id, status)`
   - 사용자가 속한 워크스페이스 목록 조회
+- `workspace_memberships(workspace_id, display_name)`
+  - 워크스페이스 멤버 목록 및 닉네임 조회
 - `channels(workspace_id, status, visibility)`
   - 워크스페이스별 채널 목록 조회
 - `channel_memberships(workspace_membership_id, status)`
   - 사용자의 채널 참여 목록 조회
 - `messages(channel_id, created_at desc)`
-  - 채널 메시지 최신순 조회와 과거 스크롤 조회
+  - 채널 메시지 최신 조회 및 과거 스크롤 조회
 - `file_objects(workspace_id, status, uploaded_at desc)`
   - 워크스페이스 파일 정리 및 조회
 
@@ -535,10 +539,11 @@ Re-Echo 사용자 기본 계정이다.
 
 ## 12. Design Decisions
 
-- 사용자 인증 공급자 정보는 `users`와 분리된 `user_identities`로 관리한다.
+- 사용자 인증 공급자 정보는 `users`와 분리해 `user_identities`로 관리한다.
 - 채널 참여는 사용자 계정이 아니라 워크스페이스 멤버십을 기준으로 연결한다.
-- 메시지 작성자, 파일 업로더, 초대 발급자 같은 행위 주체는 워크스페이스 문맥을 보존하기 위해 멤버십 FK를 우선 사용한다.
+- 메시지 작성, 파일 업로드, 초대 발급은 같은 행위 주체를 워크스페이스 문맥으로 보존하기 위해 멤버십 FK를 우선 사용한다.
+- 워크스페이스별 닉네임과 프로필 이미지는 사용자 전역 계정이 아니라 워크스페이스 멤버십에 저장한다.
 - 읽음 상태는 메시지별 영수증 테이블이 아니라 채널별 마지막 읽은 메시지 기준으로 단순화한다.
-- 파일은 R2에 저장하고 DB에는 메타데이터만 남긴다.
+- 파일은 R2에 저장하고 DB에는 메타데이터만 유지한다.
 - 워크스페이스와 채널은 모두 보관 후 만료 삭제 모델을 사용한다.
 - 상태값은 별도 코드 테이블보다 enum 수준의 문자열 컬럼으로 시작한다.
