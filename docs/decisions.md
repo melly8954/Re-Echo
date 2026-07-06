@@ -371,6 +371,8 @@ Accepted
 메시지 목록은 cursor pagination을 사용한다.
 cursor 기준값은 `createdAt + messageId` 조합으로 두고, cursor는 opaque
 string이 아니라 객체 형태로 노출한다.
+응답 page 메타데이터는 더 과거 메시지를 조회하기 위한 `nextCursor`를
+제공한다.
 
 ### Reason
 

@@ -336,8 +336,13 @@ src
 - 공통 응답 envelope은 `status`, `errorCode`, `message`, `result`
   구조를 유지한다.
 - 목록 응답 필드명은 `items`가 아니라 `contents`를 사용한다.
+- cursor 기반 목록 응답은 `result.contents`와 `result.page`를 가진
+  공통 wrapper DTO를 사용한다.
 - 메시지 목록 cursor 구조는 `docs/API.md`의 `createdAt + messageId`
   기준을 그대로 따른다.
+- 메시지 목록의 `page.nextCursor`는 `createdAt`, `messageId`를 가진
+  별도 cursor DTO로 표현한다.
+- 메시지 목록에서 `nextCursor`는 더 과거 메시지 조회 기준으로 사용한다.
 - 읽음 처리 API는 REST로만 구현하고 별도 read broadcast를 추가하지
   않는다.
 - 파일 API는 서버 중계 업로드가 아니라 Presigned URL 기반으로 구현한다.

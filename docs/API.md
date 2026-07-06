@@ -916,6 +916,7 @@
 - 최대 크기: `100`
 - Cursor 기준: `createdAt`, `messageId`
 - 정렬: `createdAt desc`, `messageId desc`
+- `nextCursor`: 더 과거 메시지를 조회하기 위한 cursor
 
 ### 12.2 워크스페이스 목록
 
