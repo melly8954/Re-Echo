@@ -238,31 +238,20 @@ src
 ### 8.2 Entity Mapping
 
 - DB 스키마의 최종 기준은 Flyway 마이그레이션이다.
-- JPA Entity는 DDL 생성용이 아니라 기존 테이블과 객체를 연결하는
-  매핑 코드로 작성한다.
-- Entity 클래스에는 기본적으로 `@Entity`, `@Table(name = "...")`를
-  명시한다.
-- Entity는 Lombok의 `@Getter`,
-  `@NoArgsConstructor(access = AccessLevel.PROTECTED)`,
-  `@AllArgsConstructor(access = AccessLevel.PRIVATE)`,
-  `@Builder(access = AccessLevel.PRIVATE)`를 기본으로 사용한다.
+- JPA Entity는 DDL 생성용이 아니라 기존 테이블과 객체를 연결하는 매핑 코드로 작성한다.
+- Entity 클래스에는 기본적으로 `@Entity`, `@Table(name = "...")`를 명시한다.
+- Entity는 Lombok의 `@Getter`, `@NoArgsConstructor(access = AccessLevel.PROTECTED)`, `@AllArgsConstructor(access = AccessLevel.PRIVATE)`, `@Builder(access = AccessLevel.PRIVATE)`를 기본으로 사용한다.
 - Entity 생성은 공개 builder 대신 정적 팩터리 메서드로 노출한다.
 - `@Column`과 `@JoinColumn`에는 기본적으로 `name`만 명시한다.
-- `nullable`, `length`, `uniqueConstraints`처럼 DDL과 중복되는 제약은
-  Entity에 반복하지 않는다.
-- `created_at`, `updated_at` 같은 시간 컬럼은 공통 BaseEntity 없이
-  각 Entity에 직접 선언한다.
+- `nullable`, `length`, `uniqueConstraints`처럼 Flyway DDL과 중복되는 제약은 Entity에 반복하지 않는다.
+- 단, `updatable = false`, `insertable = false`처럼 JPA 동작 제어가 필요한 매핑 옵션은 필요한 경우 명시할 수 있다.
+- `created_at`, `updated_at` 같은 시간 컬럼은 공통 BaseEntity 없이 각 Entity에 직접 선언한다.
 - Entity 시간 타입은 구현 편의성을 우선해 `LocalDateTime`을 사용한다.
-- `created_at`처럼 생성 후 변경되지 않아야 하는 필드는
-  `updatable = false`를 사용할 수 있다. 단, 이는 DB 제약이 아니라
-  JPA가 update SQL에서 해당 컬럼을 제외하도록 하는 매핑 설정이다.
-- Java 필드 초기값은 새 Entity 객체 생성 시 기본값이다. DB default는
-  INSERT에서 해당 컬럼이 생략될 때 적용되므로, 두 기본값이 충돌하지
-  않도록 같은 의미로 유지한다.
-- `@Builder`를 사용하는 Entity 필드에 Java 기본값을 둘 경우
-  `@Builder.Default`를 함께 사용한다.
-- UUID PK는 `@GeneratedValue(strategy = GenerationType.UUID)`를
-  사용한다.
+- `created_at`처럼 생성 후 변경되지 않아야 하는 필드는 `updatable = false`를 사용할 수 있다. 이는 DB 제약이 아니라 JPA가 update SQL에서 해당 컬럼을 제외하도록 하는 매핑 설정이다.
+- Java 필드 초기값은 새 Entity 객체 생성 시 기본값이다. DB default는 INSERT에서 해당 컬럼이 생략될 때 적용되므로, 두 기본값이 충돌하지 않도록 같은 의미로 유지한다.
+- `@Builder`를 사용하는 Entity 필드에 Java 기본값을 둘 경우 `@Builder.Default`를 함께 사용한다.
+- UUID PK는 `@GeneratedValue(strategy = GenerationType.UUID)`를 사용한다.
+
 
 ### 8.3 Transaction Rules
 
