@@ -1,0 +1,47 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  data:
+    redis:
+      host: localhost
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      database: 0
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+
+  output:
+    ansi:
+      enabled: always
+
+logging:
+  level:
+    root: info
+    com.reecho: debug
+    org.springframework.web: info
+    org.springframework.security: info
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: info
+
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} : %m%n"
+
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
