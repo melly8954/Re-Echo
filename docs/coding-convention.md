@@ -79,6 +79,7 @@
 
 - Service는 `CommandService`, `QueryService` suffix를 명확히 쓴다.
 - DTO는 `Request`, `Response`로 구분한다.
+- Java DTO는 특별한 이유가 없으면 `record`로 작성한다.
 - 범용 `Dto`, `Vo`, `Util` 같은 이름은 피한다.
 - API 문서의 리소스 이름과 코드의 DTO 이름이 크게 어긋나지 않게
   유지한다.
@@ -228,6 +229,9 @@ src
 
 - Controller 경계에서는 DTO만 사용한다.
 - Entity를 API 응답으로 직접 노출하지 않는다.
+- Request DTO와 Response DTO는 불변 값 전달 객체로 다루며,
+  Java에서는 기본적으로 `record`를 사용한다.
+- DTO에 비즈니스 로직, 권한 판단, 영속성 의존 코드를 넣지 않는다.
 - Request DTO 검증은 Controller 입력 경계에서 수행한다.
 - Response DTO 구조는 `docs/API.md`의 응답 예시를 기준으로 맞춘다.
 
@@ -247,6 +251,10 @@ src
 ### 8.4 Exception Handling
 
 - 도메인별 비즈니스 예외 클래스를 둔다.
+- 도메인별 예외와 에러 코드는 각 도메인 패키지의 `exception`
+  패키지가 소유한다.
+- 모든 도메인 에러 코드를 하나의 전역 `ErrorCode` enum에
+  집중시키지 않는다.
 - 전역 예외 핸들러가 비즈니스 예외를 공통 응답 형식으로 변환한다.
 - Validation, 인증, 인가 예외도 전역 핸들러에서 처리한다.
 - 예외 메시지와 로그 메시지는 구분한다.
@@ -322,6 +330,8 @@ src
 
 - Controller는 Request DTO를 검증한 뒤 Service로 전달한다.
 - Response는 항상 명시적 Response DTO를 사용한다.
+- Java Request/Response DTO는 특별한 상태 변경이 필요하지 않으므로
+  기본적으로 `record`로 작성한다.
 - Entity 직렬화로 응답을 구성하지 않는다.
 - 공통 응답 envelope은 `status`, `errorCode`, `message`, `result`
   구조를 유지한다.
@@ -336,6 +346,13 @@ src
 ## 12. Exception Handling Convention
 
 - 비즈니스 예외는 도메인 패키지 내부 `exception` 패키지에 둔다.
+- 각 도메인은 자신의 예외 클래스와 에러 코드 타입을 가진다.
+  예: `workspace.exception.WorkspaceException`,
+  `workspace.exception.WorkspaceErrorCode`
+- 공통 예외 코드는 공통 영역에 두되, 도메인 예외 코드를 공통
+  `ErrorCode` 하나로 합치지 않는다.
+- 전역 예외 핸들러는 도메인 예외를 공통 응답 envelope으로 변환하는
+  역할만 담당한다.
 - 공통 예외 응답 형식은 전역 핸들러에서 정의한다.
 - 예상 가능한 실패는 비즈니스 예외로 표현한다.
 - 예상하지 못한 예외는 시스템 예외로 분리하고 상세 원인은 로그에만
@@ -420,6 +437,8 @@ type: 변경 내용
 - 토큰, 쿠키, 개인정보를 로그에 남기는 것
 - 배포된 Flyway 마이그레이션 파일을 수정하는 것
 - API 문서에 없는 응답 형식과 에러 코드를 임의로 추가하는 것
+- 모든 도메인의 에러 코드를 하나의 전역 `ErrorCode` enum에
+  집중시키는 것
 - 메시지 read broadcast 같은 문서 밖 실시간 이벤트를 임의로 추가하는 것
 
 ## 17. Change Policy
