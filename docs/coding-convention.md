@@ -250,7 +250,7 @@ src
 
 ### 8.4 Exception Handling
 
-- 도메인별 비즈니스 예외 클래스를 둔다.
+- 예상 가능한 도메인 실패는 공통 `BusinessException`으로 표현한다.
 - 도메인별 예외와 에러 코드는 각 도메인 패키지의 `exception`
   패키지가 소유한다.
 - 모든 도메인 에러 코드를 하나의 전역 `ErrorCode` enum에
@@ -345,10 +345,12 @@ src
 
 ## 12. Exception Handling Convention
 
-- 비즈니스 예외는 도메인 패키지 내부 `exception` 패키지에 둔다.
-- 각 도메인은 자신의 예외 클래스와 에러 코드 타입을 가진다.
-  예: `workspace.exception.WorkspaceException`,
-  `workspace.exception.WorkspaceErrorCode`
+- 비즈니스 예외 클래스는 공통 `BusinessException`을 기본으로 사용한다.
+- 각 도메인은 자신의 에러 코드 타입을 도메인 패키지 내부
+  `exception` 패키지에 둔다.
+  예: `workspace.exception.WorkspaceErrorCode`
+- 도메인별로 별도 예외 클래스를 만들지는 않는다.
+  단, 별도 catch 분기나 도메인 전용 속성이 필요해지면 그때 추가한다.
 - 공통 예외 코드는 공통 영역에 두되, 도메인 예외 코드를 공통
   `ErrorCode` 하나로 합치지 않는다.
 - 전역 예외 핸들러는 도메인 예외를 공통 응답 envelope으로 변환하는

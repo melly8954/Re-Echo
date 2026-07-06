@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         ApiResponse<Void> response = ApiResponse.error(
                 errorCode.getHttpStatus(),
-                errorCode.name(),
+                errorCode.getCode(),
                 exception.getMessage(),
                 null
         );
@@ -55,10 +55,10 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleInvalidRequestException(Exception exception) {
-        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+        ErrorCode errorCode = CommonErrorCode.INVALID_REQUEST;
         ApiResponse<Void> response = ApiResponse.error(
                 errorCode.getHttpStatus(),
-                errorCode.name(),
+                errorCode.getCode(),
                 errorCode.getDefaultMessage(),
                 null
         );
@@ -72,10 +72,10 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Unhandled exception. method={}, uri={}", request.getMethod(), request.getRequestURI(), exception);
 
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
         ApiResponse<Void> response = ApiResponse.error(
                 errorCode.getHttpStatus(),
-                errorCode.name(),
+                errorCode.getCode(),
                 errorCode.getDefaultMessage(),
                 null
         );
@@ -85,11 +85,11 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ApiResponse<ValidationErrorResponse>> validationErrorResponse(
             List<FieldErrorResponse> fieldErrors
     ) {
-        ErrorCode errorCode = ErrorCode.VALIDATION_ERROR;
+        ErrorCode errorCode = CommonErrorCode.VALIDATION_ERROR;
         ValidationErrorResponse validationError = new ValidationErrorResponse(fieldErrors);
         ApiResponse<ValidationErrorResponse> response = ApiResponse.error(
                 errorCode.getHttpStatus(),
-                errorCode.name(),
+                errorCode.getCode(),
                 errorCode.getDefaultMessage(),
                 validationError
         );
