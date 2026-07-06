@@ -10,14 +10,6 @@ public record ApiResponse<T>(
         T result
 ) {
 
-    public static <T> ApiResponse<T> ok(T result) {
-        return success(HttpStatus.OK, "OK", result);
-    }
-
-    public static <T> ApiResponse<T> created(T result) {
-        return success(HttpStatus.CREATED, "Created", result);
-    }
-
     public static <T> ApiResponse<T> success(HttpStatus status, String message, T result) {
         return new ApiResponse<>(status.value(), null, message, result);
     }
