@@ -69,6 +69,17 @@
   - Google
   - Kakao
   - GitHub
+- 로그인 성공 시 access token은 응답 body로 반환
+- 로그인/refresh 응답 헤더로 access token을 전달하지 않음
+- refresh token은 HttpOnly cookie로만 전달
+- refresh token cookie 정책
+  - HttpOnly
+  - Secure
+  - SameSite=Lax
+- refresh 시 access token을 반환
+- refresh 시 refresh token도 재발급하여 기존 token을 교체
+- refresh token 만료 또는 무효는 401과 `AUTH_*` 비즈니스 예외로 처리
+- logout 응답은 빈 `result`와 성공 메시지를 반환
 
 ### 8.2 워크스페이스
 
@@ -79,11 +90,13 @@
   - 관리자
   - 일반 멤버
 - 워크스페이스에는 항상 1명의 소유자가 있어야 함
+- 마지막 소유자는 스스로 관리자 또는 일반 멤버로 변경할 수 없음
 - 관리자 임명/해제는 소유자만 가능
 - 워크스페이스는 소유자만 보관 가능
 - 관리자는 워크스페이스를 보관하거나 복원할 수 없음
 - 활성 워크스페이스 재진입 시 마지막으로 보던 채널로 복귀
 - 보관된 워크스페이스는 15일 내 복원 가능
+- 보관된 워크스페이스 상세에는 복원 가능 여부 `canRestore`를 포함
 - 보관된 워크스페이스는 멤버가 읽기 전용으로 진입 가능
 - 보관된 워크스페이스 진입 시 항상 `#general`로 시작
 - 15일 경과 후 자동 삭제
@@ -117,6 +130,7 @@
 - 채널 생성은 소유자/관리자 가능
 - 채널 목록은 `#general` 우선, 나머지는 최근 활동 순으로 노출
 - 공개 채널은 참여/나가기/재참여 지원
+- 공개 채널은 워크스페이스 멤버에게 채널 존재가 공개됨
 - 공개 채널은 워크스페이스 멤버라면 언제든 자유롭게 참여 가능
 - 공개 채널은 참여 전 메시지 미리보기는 제공하지 않음
 - 공개 채널 참여 후에는 과거 메시지 전체 조회 가능
@@ -129,6 +143,7 @@
 - 채널은 즉시 삭제하지 않고 보관만 지원
 - 보관된 채널은 15일 내 복원 가능
 - 보관된 채널은 읽기 전용으로 유지
+- 보관된 채널의 삭제 예정일은 일반 멤버에게도 노출
 - 15일 경과 후 자동 삭제
 
 ### 8.6 메시지
@@ -136,6 +151,8 @@
 - 실시간 텍스트 메시지 송수신
 - 최신 메시지 기준 진입
 - 과거 메시지는 위로 스크롤하며 로드
+- 메시지 목록은 cursor pagination을 사용
+- 메시지 cursor 기준값은 `createdAt + messageId` 조합
 - 메시지 전송 성공/실패 상태 표시
 - 실패 시 재전송 지원
 - 입력 중 표시 지원
@@ -146,6 +163,8 @@
 - 소유자의 메시지도 관리자 삭제 가능
 - 메시지 삭제 시 타임라인에는 삭제된 메시지 흔적을 남김
 - 보관된 채널에서는 메시지 작성, 수정, 삭제를 허용하지 않음
+- 읽음 갱신은 REST API로만 처리
+- 읽음 상태에 대한 별도 broadcast는 제공하지 않음
 
 ### 8.7 파일
 
@@ -156,15 +175,56 @@
 - 파일 저장소는 외부 오브젝트 스토리지 사용
   - 우선 후보: Cloudflare R2
 - Presigned URL 방식으로 직접 업로드/다운로드
+- Presigned URL 발급 API는 파일 1개씩만 처리
+- Presigned URL 발급 요청값은 `fileName`, `contentType`, `size`를 사용
+- 업로드만 완료된 파일은 임시 파일 상태로 관리
+- 메시지 생성/수정 시 `fileId`가 연결되어야 최종 첨부로 확정
 - 파일 메타데이터는 애플리케이션 DB에서 관리
 
-### 8.8 프로필
+### 8.8 공통 API/실시간 계약
+
+- REST API는 공통 응답 envelope를 사용
+  - `status`는 int 형식 사용
+  - 기본 형태는 `status`, `errorCode`, `message`, `result`를 포함
+- validation 실패 응답은 `fieldErrors`를 포함
+- 목록 응답 필드명은 `items`가 아니라 `contents`를 사용
+- pagination은 요청/응답 모두 공통 구조를 사용
+- pagination 방식별 세부 값은 `page.type` 하위 구조에 둠
+- cursor는 opaque string 대신 객체 형태로 노출
+- 전역 공통 에러 코드는 prefix 없이 사용
+  - `INTERNAL_SERVER_ERROR`
+  - `INVALID_REQUEST`
+  - `VALIDATION_ERROR`
+- 도메인 에러 코드는 아래 prefix 체계를 사용
+  - `AUTH_*`
+  - `WORKSPACE_*`
+  - `CHANNEL_*`
+  - `MESSAGE_*`
+  - `FILE_*`
+  - `INVITE_*`
+  - `MEMBER_*`
+- `COMMON_*`, `VALIDATION_*` 같은 별도 공통 prefix는 두지 않음
+- 초대 링크 관련 에러는 저장 테이블명과 무관하게 `INVITE_*`를 사용
+- WebSocket은 공통 event envelope를 사용
+- 실시간 이벤트 타입은 아래 네 가지만 사용
+  - `MESSAGE_CREATED`
+  - `MESSAGE_UPDATED`
+  - `MESSAGE_DELETED`
+  - `TYPING_UPDATED`
+- message 이벤트 payload는 부분 변경이 아니라 full snapshot을 전달
+- typing 이벤트 payload는 `typingUserIds` 같은 snapshot을 전달
+- 이벤트 중복 제거용 `eventId`를 포함
+- 클라이언트 중복 제거 기준은 `eventId`
+- 메시지 최신성 판단 기준은 `occurredAt`이 아니라
+  `payload.message.updatedAt`
+
+### 8.9 프로필
 
 - 워크스페이스별 닉네임 지원
 - 워크스페이스별 프로필 이미지 지원
 - 워크스페이스별 닉네임 중복 허용
 
-### 8.9 안읽음/알림
+### 8.10 안읽음/알림
 
 - 채널 단위 안읽음 배지 지원
 - 채널별 읽지 않은 메시지 개수 표시
@@ -205,6 +265,7 @@
 - 복원은 보관 기간 내에서만 허용한다.
 - 워크스페이스 보관 시 내부 채널도 함께 보관 처리한다.
 - 파일은 애플리케이션 서버가 아닌 외부 스토리지에 저장한다.
+- 메시지 첨부로 최종 연결되지 않은 orphan 파일은 하루 단위 배치로 정리한다.
 - 강제 제거된 멤버는 재초대할 수 없다.
 
 ## 12. 완료 기준
