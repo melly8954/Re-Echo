@@ -235,20 +235,49 @@ src
 - Request DTO 검증은 Controller 입력 경계에서 수행한다.
 - Response DTO 구조는 `docs/API.md`의 응답 예시를 기준으로 맞춘다.
 
-### 8.2 Transaction Rules
+### 8.2 Entity Mapping
+
+- DB 스키마의 최종 기준은 Flyway 마이그레이션이다.
+- JPA Entity는 DDL 생성용이 아니라 기존 테이블과 객체를 연결하는
+  매핑 코드로 작성한다.
+- Entity 클래스에는 기본적으로 `@Entity`, `@Table(name = "...")`를
+  명시한다.
+- Entity는 Lombok의 `@Getter`,
+  `@NoArgsConstructor(access = AccessLevel.PROTECTED)`,
+  `@AllArgsConstructor(access = AccessLevel.PRIVATE)`,
+  `@Builder(access = AccessLevel.PRIVATE)`를 기본으로 사용한다.
+- Entity 생성은 공개 builder 대신 정적 팩터리 메서드로 노출한다.
+- `@Column`과 `@JoinColumn`에는 기본적으로 `name`만 명시한다.
+- `nullable`, `length`, `uniqueConstraints`처럼 DDL과 중복되는 제약은
+  Entity에 반복하지 않는다.
+- `created_at`, `updated_at` 같은 시간 컬럼은 공통 BaseEntity 없이
+  각 Entity에 직접 선언한다.
+- Entity 시간 타입은 구현 편의성을 우선해 `LocalDateTime`을 사용한다.
+- `created_at`처럼 생성 후 변경되지 않아야 하는 필드는
+  `updatable = false`를 사용할 수 있다. 단, 이는 DB 제약이 아니라
+  JPA가 update SQL에서 해당 컬럼을 제외하도록 하는 매핑 설정이다.
+- Java 필드 초기값은 새 Entity 객체 생성 시 기본값이다. DB default는
+  INSERT에서 해당 컬럼이 생략될 때 적용되므로, 두 기본값이 충돌하지
+  않도록 같은 의미로 유지한다.
+- `@Builder`를 사용하는 Entity 필드에 Java 기본값을 둘 경우
+  `@Builder.Default`를 함께 사용한다.
+- UUID PK는 `@GeneratedValue(strategy = GenerationType.UUID)`를
+  사용한다.
+
+### 8.3 Transaction Rules
 
 - 쓰기 유스케이스는 Command Service에서 `@Transactional`을 선언한다.
 - 읽기 유스케이스는 Query Service에서
   `@Transactional(readOnly = true)`를 사용한다.
 - Controller와 Repository에 트랜잭션을 선언하지 않는다.
 
-### 8.3 CQRS Scope
+### 8.4 CQRS Scope
 
 - Command와 Query는 코드 구조와 책임 분리 수준에서 적용한다.
 - 별도 읽기 DB, 이벤트 소싱, 메시지 브로커 기반 CQRS는 기본 전제가
   아니다.
 
-### 8.4 Exception Handling
+### 8.5 Exception Handling
 
 - 예상 가능한 도메인 실패는 공통 `BusinessException`으로 표현한다.
 - 도메인별 예외와 에러 코드는 각 도메인 패키지의 `exception`
@@ -260,7 +289,7 @@ src
 - 예외 메시지와 로그 메시지는 구분한다.
 - 에러 코드는 `docs/API.md`에 정의된 prefix와 이름을 그대로 사용한다.
 
-### 8.5 Security
+### 8.6 Security
 
 - 토큰, 쿠키, OAuth 민감정보를 로그에 남기지 않는다.
 - 인증 사용자 정보는 Security Context 기반으로 주입한다.
