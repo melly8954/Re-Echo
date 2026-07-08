@@ -51,12 +51,25 @@ public class UserIdentity {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public static UserIdentity link(
+    // OAuth 공급자 계정과 내부 사용자 계정의 연결 정보를 생성한다.
+    public static UserIdentity createOAuthLink(
             User user,
             OAuthProvider provider,
             String providerUserId,
             String providerEmail
     ) {
+        if (user == null) {
+            throw new IllegalArgumentException("사용자는 필수입니다.");
+        }
+
+        if (provider == null) {
+            throw new IllegalArgumentException("OAuth 공급자는 필수입니다.");
+        }
+
+        if (providerUserId == null || providerUserId.isBlank()) {
+            throw new IllegalArgumentException("OAuth 사용자 식별자는 필수입니다.");
+        }
+
         return UserIdentity.builder()
                 .user(user)
                 .provider(provider)
