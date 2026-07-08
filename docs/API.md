@@ -204,7 +204,8 @@
 
 | Resource | Method | URL | Description |
 | --- | --- | --- | --- |
-| Auth | POST | `/auth/oauth/{provider}` | OAuth 로그인 완료 처리 |
+| Auth | GET | `/oauth2/authorization/{provider}` | OAuth 로그인 시작 |
+| Auth | GET | `/login/oauth2/code/{provider}` | OAuth 로그인 콜백 |
 | Auth | POST | `/auth/refresh` | Access/Refresh Token 재발급 |
 | Auth | POST | `/auth/logout` | 로그아웃 |
 | Users | GET | `/users/me` | 내 계정 조회 |
@@ -244,50 +245,39 @@
 
 ## 11. Endpoint Details
 
-### 11.1 OAuth 로그인 완료
+### 11.1 OAuth 로그인 시작
 
-- Description: OAuth 인가 결과를 받아 로그인 또는 회원가입을 완료한다.
-- Method: `POST`
-- URL: `/api/v1/auth/oauth/{provider}`
+- Description: 백엔드가 OAuth Provider 인증 화면으로 리다이렉트한다.
+- Method: `GET`
+- URL: `/oauth2/authorization/{provider}`
 - Authentication: 불필요
 - Authorization: 공개
 - Path Parameters
   - `provider`: `google`, `kakao`, `github`
-- Request Body
+- Response: OAuth Provider 로그인 화면으로 `302 Found` 리다이렉트
 
-```json
-{
-  "authorizationCode": "string",
-  "redirectUri": "https://example.com/oauth/callback"
-}
-```
+### 11.2 OAuth 로그인 콜백
 
-- Response Body
-
-```json
-{
-  "status": 200,
-  "errorCode": null,
-  "message": "로그인에 성공했습니다.",
-  "result": {
-    "accessToken": "jwt",
-    "accessTokenExpiresAt": "2026-07-06T13:00:00Z",
-    "user": {
-      "id": "uuid",
-      "displayName": "홍길동",
-      "profileImageUrl": "https://..."
-    }
-  }
-}
-```
-
-- Success Response: `200 OK`
+- Description: OAuth Provider가 전달한 인가 결과를 Spring Security가
+  처리하고, 로그인 또는 회원가입을 완료한다.
+- Method: `GET`
+- URL: `/login/oauth2/code/{provider}`
+- Authentication: 불필요
+- Authorization: 공개
+- Path Parameters
+  - `provider`: `google`, `kakao`, `github`
+- 처리 방식
+  - 백엔드가 인가 코드를 Access Token으로 교환한다.
+  - 백엔드가 OAuth Provider 사용자 정보를 조회한다.
+  - 백엔드가 내부 사용자 계정과 OAuth 식별자를 연결한다.
+  - 백엔드가 Re-Echo Access Token과 Refresh Token을 발급한다.
+  - Refresh Token은 `HttpOnly`, `Secure`, `SameSite=Lax` 쿠키로 설정한다.
+  - 로그인 성공 후 프론트엔드 OAuth 완료 URL로 리다이렉트한다.
 - Error Responses
-  - `400 INVALID_REQUEST`
   - `401 AUTH_INVALID_OAUTH_STATE`
   - `401 AUTH_OAUTH_AUTHENTICATION_FAILED`
 
-### 11.2 Token Refresh
+### 11.3 Token Refresh
 
 - Description: Access Token과 Refresh Token을 모두 재발급한다.
 - Method: `POST`
@@ -314,7 +304,7 @@
   - `401 AUTH_REFRESH_TOKEN_EXPIRED`
   - `401 AUTH_REFRESH_TOKEN_INVALID`
 
-### 11.3 Logout
+### 11.4 Logout
 
 - Description: Refresh Token을 무효화하고 세션을 종료한다.
 - Method: `POST`
@@ -333,7 +323,7 @@
 }
 ```
 
-### 11.4 내 계정 조회
+### 11.5 내 계정 조회
 
 - Description: 현재 로그인한 사용자의 기본 계정 정보를 조회한다.
 - Method: `GET`
@@ -341,7 +331,7 @@
 - Authentication: 필요
 - Authorization: 본인
 
-### 11.5 워크스페이스 목록 조회
+### 11.6 워크스페이스 목록 조회
 
 - Description: 사용자가 속한 워크스페이스 목록을 최근 방문/활동 순으로 조회한다.
 - Method: `GET`
@@ -372,7 +362,7 @@
 }
 ```
 
-### 11.6 워크스페이스 생성
+### 11.7 워크스페이스 생성
 
 - Description: 새 워크스페이스를 생성하고 생성자를 `OWNER`로 등록한다. 기본 채널 `#general`을 함께 생성한다.
 - Method: `POST`
@@ -394,7 +384,7 @@
   - `400 VALIDATION_ERROR`
   - `409 WORKSPACE_NAME_CONFLICT`
 
-### 11.7 워크스페이스 상세 조회
+### 11.8 워크스페이스 상세 조회
 
 - Description: 워크스페이스 기본 정보와 현재 사용자의 멤버십 정보를 조회한다.
 - Method: `GET`
@@ -425,7 +415,7 @@
 }
 ```
 
-### 11.8 워크스페이스 정보 수정
+### 11.9 워크스페이스 정보 수정
 
 - Description: 워크스페이스 이름, 설명, 이미지를 수정한다.
 - Method: `PATCH`
@@ -442,7 +432,7 @@
 }
 ```
 
-### 11.9 워크스페이스 보관
+### 11.10 워크스페이스 보관
 
 - Description: 워크스페이스를 보관 상태로 전환한다. 하위 채널도 함께 보관된다.
 - Method: `PATCH`
@@ -450,7 +440,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`
 
-### 11.10 워크스페이스 복원
+### 11.11 워크스페이스 복원
 
 - Description: 보관 후 15일 이내인 워크스페이스를 복원한다.
 - Method: `PATCH`
@@ -461,7 +451,7 @@
   - `404 WORKSPACE_NOT_FOUND`
   - `409 WORKSPACE_RESTORE_NOT_ALLOWED`
 
-### 11.11 활성 초대 링크 조회
+### 11.12 활성 초대 링크 조회
 
 - Description: 현재 활성화된 초대 링크를 조회한다.
 - Method: `GET`
@@ -469,7 +459,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.12 초대 링크 발급/재발급
+### 11.13 초대 링크 발급/재발급
 
 - Description: 24시간 만료 초대 링크를 발급한다. 기존 활성 링크가 있으면 무효화하고 새 링크로 교체한다.
 - Method: `POST`
@@ -478,7 +468,7 @@
 - Authorization: `OWNER`, `ADMIN`
 - Success Response: `201 Created`
 
-### 11.13 초대 링크 미리보기
+### 11.14 초대 링크 미리보기
 
 - Description: 로그인 여부와 상관없이 초대 링크의 최소 워크스페이스 정보를 조회한다.
 - Method: `GET`
@@ -500,7 +490,7 @@
 }
 ```
 
-### 11.14 초대 링크 참여
+### 11.15 초대 링크 참여
 
 - Description: 초대 링크로 워크스페이스에 참여한다. 참여 후 `#general`에 자동 가입된다.
 - Method: `POST`
@@ -513,7 +503,7 @@
   - `409 INVITE_EXPIRED`
   - `409 MEMBER_BANNED`
 
-### 11.15 워크스페이스 멤버 목록 조회
+### 11.16 워크스페이스 멤버 목록 조회
 
 - Description: 워크스페이스 전체 멤버 목록을 조회한다.
 - Method: `GET`
@@ -543,7 +533,7 @@
 
 - Note: 이메일은 노출하지 않는다.
 
-### 11.16 멤버 역할 변경
+### 11.17 멤버 역할 변경
 
 - Description: 워크스페이스 멤버의 역할을 변경한다.
 - Method: `PATCH`
@@ -561,7 +551,7 @@
 - Error Responses
   - `409 MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 
-### 11.17 멤버 강제 제거
+### 11.18 멤버 강제 제거
 
 - Description: 멤버를 워크스페이스에서 강제 제거한다.
 - Method: `POST`
@@ -569,7 +559,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.18 워크스페이스 자진 탈퇴
+### 11.19 워크스페이스 자진 탈퇴
 
 - Description: 본인이 워크스페이스를 탈퇴한다.
 - Method: `POST`
@@ -579,7 +569,7 @@
 - Error Responses
   - `409 MEMBER_LAST_OWNER_LEAVE_FORBIDDEN`
 
-### 11.19 채널 목록 조회
+### 11.20 채널 목록 조회
 
 - Description: 사용자가 접근 가능한 채널 목록을 조회한다.
 - Method: `GET`
@@ -608,7 +598,7 @@
 }
 ```
 
-### 11.20 채널 생성
+### 11.21 채널 생성
 
 - Description: 공개 또는 비공개 채널을 생성한다.
 - Method: `POST`
@@ -630,7 +620,7 @@
 
 - Note: 비공개 채널 생성자는 자동 포함되고, 초기 멤버를 추가로 지정할 수 있다.
 
-### 11.21 채널 상세 조회
+### 11.22 채널 상세 조회
 
 - Description: 채널 기본 정보와 현재 사용자의 참여 상태를 조회한다.
 - Method: `GET`
@@ -640,7 +630,7 @@
   - 공개 채널: 워크스페이스 멤버
   - 비공개 채널: 채널 멤버만 가능
 
-### 11.22 채널 정보 수정
+### 11.23 채널 정보 수정
 
 - Description: 채널 이름, 설명을 수정한다.
 - Method: `PATCH`
@@ -648,7 +638,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.23 채널 보관
+### 11.24 채널 보관
 
 - Description: 채널을 보관 상태로 전환한다.
 - Method: `PATCH`
@@ -656,7 +646,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.24 채널 복원
+### 11.25 채널 복원
 
 - Description: 보관 후 15일 이내인 채널을 복원한다.
 - Method: `PATCH`
@@ -664,7 +654,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.25 공개 채널 참여
+### 11.26 공개 채널 참여
 
 - Description: 공개 채널에 참여한다.
 - Method: `POST`
@@ -675,7 +665,7 @@
   - `409 CHANNEL_ALREADY_JOINED`
   - `403 CHANNEL_JOIN_FORBIDDEN`
 
-### 11.26 공개 채널 나가기
+### 11.27 공개 채널 나가기
 
 - Description: 공개 채널에서 나간다.
 - Method: `POST`
@@ -685,7 +675,7 @@
 - Error Responses
   - `409 CHANNEL_GENERAL_LEAVE_FORBIDDEN`
 
-### 11.27 채널 멤버 목록 조회
+### 11.28 채널 멤버 목록 조회
 
 - Description: 채널 멤버 목록을 조회한다.
 - Method: `GET`
@@ -695,7 +685,7 @@
   - 공개 채널: 채널 접근 가능한 워크스페이스 멤버
   - 비공개 채널: 채널 멤버만 가능
 
-### 11.28 비공개 채널 멤버 추가
+### 11.29 비공개 채널 멤버 추가
 
 - Description: 비공개 채널에 멤버를 추가한다. 추가된 멤버는 과거 메시지 전체를 조회할 수 있다.
 - Method: `POST`
@@ -712,7 +702,7 @@
 }
 ```
 
-### 11.29 비공개 채널 멤버 제거
+### 11.30 비공개 채널 멤버 제거
 
 - Description: 비공개 채널에서 멤버를 제거한다.
 - Method: `DELETE`
@@ -720,7 +710,7 @@
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.30 메시지 목록 조회
+### 11.31 메시지 목록 조회
 
 - Description: 채널 메시지 목록을 cursor pagination으로 조회한다.
 - Method: `GET`
@@ -777,7 +767,7 @@
 }
 ```
 
-### 11.31 메시지 생성
+### 11.32 메시지 생성
 
 - Description: 텍스트와 첨부를 포함한 메시지를 생성한다.
 - Method: `POST`
@@ -799,7 +789,7 @@
   - `content`와 `fileIds`가 모두 비어 있으면 안 된다.
   - 보관된 채널에서는 생성할 수 없다.
 
-### 11.32 메시지 수정
+### 11.33 메시지 수정
 
 - Description: 본인 메시지를 수정한다.
 - Method: `PATCH`
@@ -819,7 +809,7 @@
 
 - Note: 시간 제한 없이 수정 가능하다.
 
-### 11.33 메시지 삭제
+### 11.34 메시지 삭제
 
 - Description: 메시지를 소프트 삭제한다.
 - Method: `DELETE`
@@ -830,7 +820,7 @@
   - 또는 `OWNER`, `ADMIN`
 - Success Response: `200 OK`
 
-### 11.34 채널 읽음 갱신
+### 11.35 채널 읽음 갱신
 
 - Description: 채널의 마지막 읽은 메시지 기준점을 갱신한다.
 - Method: `PUT`
@@ -847,7 +837,7 @@
 
 - Note: 별도 read broadcast는 제공하지 않는다.
 
-### 11.35 업로드 Presigned URL 발급
+### 11.36 업로드 Presigned URL 발급
 
 - Description: 파일 1건에 대한 업로드 URL을 발급하고 임시 파일 메타데이터를 생성한다.
 - Method: `POST`
@@ -883,7 +873,7 @@
   - `400 FILE_SIZE_EXCEEDED`
   - `400 FILE_CONTENT_TYPE_NOT_ALLOWED`
 
-### 11.36 다운로드 Presigned URL 발급
+### 11.37 다운로드 Presigned URL 발급
 
 - Description: 파일 접근 권한을 검증한 뒤 다운로드 URL을 발급한다.
 - Method: `GET`
@@ -891,7 +881,7 @@
 - Authentication: 필요
 - Authorization: 파일이 연결된 워크스페이스/채널 접근 가능 사용자
 
-### 11.37 내 프로필 수정
+### 11.38 내 프로필 수정
 
 - Description: 사용자 표시 이름과 프로필 이미지를 수정한다.
 - Method: `PATCH`
@@ -1089,7 +1079,9 @@
 ## 17. Design Decisions
 
 - API Base Path는 `/api/v1`로 둔다.
-- 로그인 완료 API는 provider별 분기보다 `/auth/oauth/{provider}` 단일 패턴으로 통일한다.
+- OAuth 로그인 시작과 콜백 처리는 Spring Security의 기본
+  `/oauth2/authorization/{provider}`, `/login/oauth2/code/{provider}`
+  패턴을 사용한다.
 - 초대 링크는 워크스페이스당 활성 링크 1개 정책을 반영해 조회와 발급 리소스를 분리한다.
 - 멤버 강제 제거와 자진 탈퇴는 단순 필드 수정이 아니라 권한/상태 검증이 큰 도메인 동작이므로 명령형 endpoint를 허용한다.
 - 읽음 상태는 메시지별 영수증이 아니라 채널별 마지막 읽은 메시지 기준점으로 단순화한다.

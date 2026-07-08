@@ -230,6 +230,9 @@ Re-Echo 1차 MVP는 여러 조직이 함께 사용하는 SaaS형 협업 채팅 �
 ### 9.2 인증 구조
 
 - Access Token + Refresh Token 기반
+- OAuth 로그인
+  - Spring Security `oauth2Login` 기반 리다이렉트 흐름
+  - 백엔드가 OAuth 시작, 콜백, 인가 코드 교환, 사용자 정보 조회를 담당
 - Access Token
   - 브라우저 메모리 보관
 - Refresh Token
@@ -247,7 +250,9 @@ Re-Echo 1차 MVP는 여러 조직이 함께 사용하는 SaaS형 협업 채팅 �
 
 ### 10.1 OAuth Providers
 
-- 소셜 로그인 처리
+- Spring Security OAuth2 Client 기반 소셜 로그인 처리
+- 백엔드가 OAuth Provider와 직접 연동해 인가 코드 교환과 사용자 정보
+  조회를 수행
 - 멀티 인스턴스 환경에서 로그인 중간 상태 공유 필요
 
 ### 10.2 Redis
@@ -333,6 +338,7 @@ Re-Echo 1차 MVP는 여러 조직이 함께 사용하는 SaaS형 협업 채팅 �
 - 프론트엔드와 백엔드는 분리 배포
 - 프론트는 CSR SPA
 - Access/Refresh Token 기반 인증
+- OAuth 로그인은 백엔드 주도 Spring Security `oauth2Login` 흐름을 사용
 - OAuth 임시 상태는 Redis에 저장
 - WebSocket은 Access Token handshake 사용
 - Redis Pub/Sub로 멀티 인스턴스 실시간 이벤트 전파
