@@ -82,7 +82,8 @@
 
 ### 5.1 인증 방식
 
-- OAuth 로그인 완료 후 Access Token을 응답 body로 반환한다.
+- OAuth 로그인 완료 후 프론트엔드는 Token Refresh API를 호출해
+  Access Token을 응답 body로 받는다.
 - Refresh Token은 쿠키로만 전달한다.
 - 보호된 REST API는 `Authorization: Bearer {accessToken}`을 사용한다.
 - WebSocket handshake도 Access Token 기반 인증을 사용한다.
@@ -272,7 +273,10 @@
   - 백엔드가 내부 사용자 계정과 OAuth 식별자를 연결한다.
   - 백엔드가 Re-Echo Access Token과 Refresh Token을 발급한다.
   - Refresh Token은 `HttpOnly`, `Secure`, `SameSite=Lax` 쿠키로 설정한다.
+  - Access Token은 리다이렉트 URL에 포함하지 않는다.
   - 로그인 성공 후 프론트엔드 OAuth 완료 URL로 리다이렉트한다.
+  - 프론트엔드는 `/api/v1/auth/refresh`를 호출해 Access Token을
+    응답 body로 받는다.
 - Error Responses
   - `401 AUTH_INVALID_OAUTH_STATE`
   - `401 AUTH_OAUTH_AUTHENTICATION_FAILED`
