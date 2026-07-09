@@ -79,3 +79,11 @@ reecho:
       refresh-token-secure: false
       success-redirect-uri: http://localhost:5173/oauth/callback
       failure-redirect-uri: http://localhost:5173/login
+  storage:
+    r2:
+      endpoint: ${R2_ENDPOINT:}
+      bucket: ${R2_BUCKET:}
+      access-key: ${R2_ACCESS_KEY:}
+      secret-key: ${R2_SECRET_KEY:}
+      public-base-url: ${R2_PUBLIC_BASE_URL:}
+      presign-ttl: 10m

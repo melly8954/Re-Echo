@@ -26,7 +26,8 @@ class UserTest {
     void 계정_기본_프로필을_수정한다() {
         User user = User.createActive("기존 이름", null);
 
-        user.updateProfile("새 이름", "https://example.com/new-profile.png");
+        user.updateDisplayName("새 이름");
+        user.updateProfileImage("https://example.com/new-profile.png", null);
 
         assertThat(user.getDisplayName()).isEqualTo("새 이름");
         assertThat(user.getProfileImageUrl())

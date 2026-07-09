@@ -1,13 +1,39 @@
 package com.reecho.reechobe.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
-// 계정 기본 프로필 수정 값을 전달한다.
-public record UpdateUserProfileRequest(
-        @NotBlank
-        @Size(max = 80)
-        String displayName,
-        String profileImageUrl
-) {
+// 프로필 이미지 필드의 생략과 null을 구분해 PATCH 의미를 보존한다.
+public class UpdateUserProfileRequest {
+
+    @NotBlank
+    @Size(max = 80)
+    private String displayName;
+
+    private UUID profileImageFileId;
+    private boolean profileImageFileIdPresent;
+
+    public String displayName() {
+        return displayName;
+    }
+
+    public UUID profileImageFileId() {
+        return profileImageFileId;
+    }
+
+    public boolean profileImageFileIdPresent() {
+        return profileImageFileIdPresent;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    @JsonSetter("profileImageFileId")
+    public void setProfileImageFileId(UUID profileImageFileId) {
+        this.profileImageFileId = profileImageFileId;
+        this.profileImageFileIdPresent = true;
+    }
 }

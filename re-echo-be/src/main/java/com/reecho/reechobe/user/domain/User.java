@@ -38,6 +38,9 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "profile_image_file_id")
+    private UUID profileImageFileId;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -58,9 +61,18 @@ public class User {
                 .build();
     }
 
-    public void updateProfile(String displayName, String profileImageUrl) {
+    public void updateDisplayName(String displayName) {
         this.displayName = normalizeDisplayName(displayName);
+    }
+
+    public void updateProfileImage(String profileImageUrl, UUID profileImageFileId) {
         this.profileImageUrl = profileImageUrl;
+        this.profileImageFileId = profileImageFileId;
+    }
+
+    public void removeProfileImage() {
+        this.profileImageUrl = null;
+        this.profileImageFileId = null;
     }
 
     public void deactivate() {

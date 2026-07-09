@@ -1,6 +1,9 @@
 package com.reecho.reechobe.user.controller;
 
 import com.reecho.reechobe.common.response.ApiResponse;
+import com.reecho.reechobe.file.dto.PresignedUploadResponse;
+import com.reecho.reechobe.file.dto.ProfileImagePresignRequest;
+import com.reecho.reechobe.file.service.ProfileImageFileService;
 import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import com.reecho.reechobe.user.dto.UpdateUserProfileRequest;
 import com.reecho.reechobe.user.dto.UserResponse;
@@ -12,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +28,7 @@ public class UserController {
 
     private final UserQueryService userQueryService;
     private final UserProfileCommandService userProfileCommandService;
+    private final ProfileImageFileService profileImageFileService;
 
     @GetMapping
     public ApiResponse<UserResponse> getCurrentUser(
@@ -43,5 +48,17 @@ public class UserController {
                 request
         );
         return ApiResponse.success(HttpStatus.OK, "프로필이 수정되었습니다.", result);
+    }
+
+    @PostMapping("/profile-image/presign-upload")
+    public ApiResponse<PresignedUploadResponse> createProfileImageUploadUrl(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @Valid @RequestBody ProfileImagePresignRequest request
+    ) {
+        PresignedUploadResponse result = profileImageFileService.createAccountProfileImageUpload(
+                principal.userId(),
+                request
+        );
+        return ApiResponse.success(HttpStatus.OK, "프로필 이미지 업로드 URL이 발급되었습니다.", result);
     }
 }
