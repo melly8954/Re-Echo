@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import styles from './AppShell.module.css'
 
@@ -8,10 +9,10 @@ export function AppShell({ children }: PropsWithChildren) {
   return (
     <div className={styles.shell}>
       <header className={styles.topBar}>
-        <a className={styles.brand} href="/" aria-label="Re-Echo 홈">
+        <Link className={styles.brand} to="/" aria-label="Re-Echo 홈">
           <span aria-hidden="true">R</span>
           Re-Echo
-        </a>
+        </Link>
         <p className={styles.workspaceName}>워크스페이스를 선택하세요</p>
         <div className={styles.account}>
           {user?.profileImageUrl ? (
@@ -22,7 +23,14 @@ export function AppShell({ children }: PropsWithChildren) {
             </span>
           )}
           <span className={styles.userName}>{user?.displayName}</span>
-          <button type="button" onClick={() => void logout()}>
+          <Link className={styles.accountLink} to="/settings/profile">
+            프로필
+          </Link>
+          <button
+            className={styles.accountButton}
+            type="button"
+            onClick={() => void logout()}
+          >
             로그아웃
           </button>
         </div>

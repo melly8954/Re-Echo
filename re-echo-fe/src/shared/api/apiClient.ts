@@ -42,7 +42,12 @@ async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, payload.errorCode, payload.message)
+    throw new ApiError(
+      response.status,
+      payload.errorCode,
+      payload.message,
+      payload.result,
+    )
   }
 
   return payload

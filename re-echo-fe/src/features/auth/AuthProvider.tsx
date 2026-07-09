@@ -5,9 +5,8 @@ import { ApiError } from '../../shared/api/apiTypes'
 import { clearAccessToken, setAccessToken } from '../../stores/authStore'
 import { getCurrentUser, logout, refreshToken } from './authApi'
 import { AuthContext } from './authContext'
+import { authSessionQueryKey } from './authQuery'
 import type { AuthStatus } from './authTypes'
-
-const authSessionQueryKey = ['auth', 'session'] as const
 
 async function restoreSession() {
   try {

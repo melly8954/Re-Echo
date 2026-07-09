@@ -70,7 +70,8 @@
   font-weight: 700;
 }
 
-.account button {
+.accountLink,
+.accountButton {
   padding: 7px 9px;
   color: var(--color-muted);
   background: transparent;
@@ -78,9 +79,11 @@
   border-radius: 5px;
   cursor: pointer;
   font-size: 12px;
+  text-decoration: none;
 }
 
-.account button:hover {
+.accountLink:hover,
+.accountButton:hover {
   color: var(--color-text);
   background: var(--color-surface-subtle);
   border-color: var(--color-border);
@@ -129,6 +132,10 @@
   .sidebar,
   .userName {
     display: none;
+  }
+
+  .account {
+    gap: 2px;
   }
 
   .body {
