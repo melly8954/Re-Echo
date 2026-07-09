@@ -26,6 +26,33 @@ reviews:
   in_progress_fortune: false
   review_status: true
   review_details: false
+  path_filters:
+    - "AGENTS.md"
+    - ".coderabbit.yaml"
+    - "docs/**/*.md"
+
+    - "re-echo-be/build.gradle"
+    - "re-echo-be/settings.gradle"
+    - "re-echo-be/gradlew"
+    - "re-echo-be/gradlew.bat"
+    - "re-echo-be/gradle/wrapper/gradle-wrapper.properties"
+    - "re-echo-be/src/main/**"
+    - "re-echo-be/src/test/**"
+
+    - "re-echo-fe/package.json"
+    - "re-echo-fe/package-lock.json"
+    - "re-echo-fe/vite.config.*"
+    - "re-echo-fe/tsconfig*.json"
+    - "re-echo-fe/src/**"
+
+    - "!**/.gradle/**"
+    - "!**/.idea/**"
+    - "!**/build/**"
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!**/coverage/**"
+    - "!**/*.log"
+    - "!re-echo-be/gradle/wrapper/gradle-wrapper.jar"
 
   path_instructions:
     - path: "re-echo-be/**"
@@ -71,9 +98,12 @@ reviews:
     enabled: true
     auto_incremental_review: true
     drafts: false
+    base_branches:
+      - "dev"
     ignore_title_keywords:
       - "WIP"
       - "Draft"
+      - "[skip review]"
 
 chat:
   auto_reply: true
