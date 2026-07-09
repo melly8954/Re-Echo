@@ -3,8 +3,7 @@ package com.reecho.reechobe.auth.controller;
 import com.reecho.reechobe.auth.dto.RefreshTokenResponse;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.auth.handler.RefreshTokenCookieWriter;
-import com.reecho.reechobe.auth.service.command.LogoutCommandService;
-import com.reecho.reechobe.auth.service.command.RefreshTokenCommandService;
+import com.reecho.reechobe.auth.service.command.AuthTokenCommandService;
 import com.reecho.reechobe.auth.jwt.AuthToken;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.response.ApiResponse;
@@ -24,8 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private final RefreshTokenCommandService refreshTokenCommandService;
-    private final LogoutCommandService logoutCommandService;
+    private final AuthTokenCommandService authTokenCommandService;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
     // Refresh Token 쿠키를 검증하고 Access Token은 응답 body로 반환한다.
@@ -38,7 +36,7 @@ public class AuthController {
             throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
         }
 
-        AuthToken token = refreshTokenCommandService.refresh(refreshToken);
+        AuthToken token = authTokenCommandService.refresh(refreshToken);
         refreshTokenCookieWriter.add(response, token);
         RefreshTokenResponse result = new RefreshTokenResponse(
                 token.accessToken(),
@@ -54,7 +52,7 @@ public class AuthController {
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
-        logoutCommandService.logout(
+        authTokenCommandService.logout(
                 principal == null ? null : principal.userId(),
                 refreshToken
         );
