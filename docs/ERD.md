@@ -155,6 +155,7 @@ Re-Echo 사용자 기본 계정이다.
 | id | uuid | Y |  | N |  | 기본 키 |
 | display_name | varchar(80) |  |  | N |  | 계정 기본 표시 이름 |
 | profile_image_url | text |  |  | Y |  | 계정 기본 프로필 이미지 URL |
+| profile_image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 프로필 이미지 참조 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `DEACTIVATED` |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 | updated_at | timestamptz |  |  | N | `now()` | 수정 시각 |
@@ -216,6 +217,7 @@ Re-Echo 사용자 기본 계정이다.
 | role | varchar(20) |  |  | N |  | `OWNER`, `ADMIN`, `MEMBER` |
 | display_name | varchar(80) |  |  | N |  | 워크스페이스별 표시 이름 |
 | profile_image_url | text |  |  | Y |  | 워크스페이스별 프로필 이미지 URL |
+| profile_image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 프로필 이미지 참조 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED`, `BANNED` |
 | joined_at | timestamptz |  |  | N | `now()` | 참여 시각 |
 | left_at | timestamptz |  |  | Y |  | 자진 탈퇴 시각 |
@@ -349,13 +351,15 @@ Re-Echo 사용자 기본 계정이다.
 | Column | Type | PK | FK | Nullable | Default | Constraints |
 | --- | --- | --- | --- | --- | --- | --- |
 | id | uuid | Y |  | N |  | 기본 키 |
-| workspace_id | uuid |  | workspaces.id | N |  | 워크스페이스 참조 |
-| uploaded_by_membership_id | uuid |  | workspace_memberships.id | N |  | 업로더 |
+| workspace_id | uuid |  | workspaces.id | Y |  | 워크스페이스 참조 |
+| uploaded_by_user_id | uuid |  | users.id | N |  | 업로더 사용자 |
+| uploaded_by_membership_id | uuid |  | workspace_memberships.id | Y |  | 워크스페이스 문맥 업로더 |
+| purpose | varchar(30) |  |  | N |  | `MESSAGE_ATTACHMENT`, `PROFILE_IMAGE` |
 | storage_provider | varchar(30) |  |  | N |  | 기본값 `R2` |
 | storage_key | varchar(255) |  |  | N |  | 저장소 내부 키 |
 | original_filename | varchar(255) |  |  | N |  | 원본 파일명 |
 | content_type | varchar(120) |  |  | N |  | MIME 타입 |
-| file_size_bytes | bigint |  |  | N |  | 최대 20MB |
+| file_size_bytes | bigint |  |  | N |  | 메시지 첨부 최대 20MB, 프로필 이미지 최대 10MB |
 | image_width | integer |  |  | Y |  | 이미지 가로 크기 |
 | image_height | integer |  |  | Y |  | 이미지 세로 크기 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ORPHANED`, `DELETED` |
@@ -366,7 +370,11 @@ Re-Echo 사용자 기본 계정이다.
 제약:
 
 - `storage_key` 유니크
-- `file_size_bytes <= 20971520`
+- `purpose = 'MESSAGE_ATTACHMENT'`이면 `workspace_id`와
+  `uploaded_by_membership_id`가 필요하다.
+- `purpose = 'PROFILE_IMAGE'`이면 이미지 MIME 타입만 허용하고
+  `file_size_bytes <= 10485760`이어야 한다.
+- `purpose = 'MESSAGE_ATTACHMENT'`이면 `file_size_bytes <= 20971520`
 
 ### 7.11 `message_attachments`
 
@@ -392,6 +400,10 @@ Re-Echo 사용자 기본 계정이다.
 - `users` 1:N `workspaces`
   - 생성자 기준 관계
 - `users` 1:N `workspace_memberships`
+- `users` 1:N `file_objects`
+  - 업로더 사용자 기준 관계
+- `file_objects` 1:N `users`
+  - 계정 기본 프로필 이미지 참조 기준 관계
 - `workspaces` 1:N `workspace_memberships`
 - `workspaces` 1:N `workspace_invite_links`
 - `workspaces` 1:N `channels`
@@ -408,12 +420,17 @@ Re-Echo 사용자 기본 계정이다.
 - `workspaces` 1:N `file_objects`
 - `workspace_memberships` 1:N `file_objects`
   - 업로더 기준 관계
+- `file_objects` 1:N `workspace_memberships`
+  - 워크스페이스별 프로필 이미지 참조 기준 관계
 
 관계 원칙:
 
 - N:M 관계는 모두 중간 엔티티로 분리한다.
 - 채널 참여는 사용자 계정이 아니라 `workspace_membership`을 기준으로 연결한다.
-- 메시지 작성, 초대 링크 발급, 파일 업로드는 모두 워크스페이스 문맥을 가진 멤버십 FK로 추적한다.
+- 메시지 작성, 초대 링크 발급, 메시지 첨부 파일 업로드는 모두
+  워크스페이스 문맥을 가진 멤버십 FK로 추적한다.
+- 계정 기본 프로필 이미지 업로드는 워크스페이스가 없을 수 있으므로
+  사용자 FK로 추적한다.
 - 계정 기본 표시 이름과 프로필 이미지는 `users`에 저장한다.
 - 워크스페이스 생성·참여 시 계정 기본 프로필을 멤버십 프로필로 복사한다.
 - 복사된 워크스페이스별 닉네임과 프로필 이미지는
@@ -472,6 +489,11 @@ Re-Echo 사용자 기본 계정이다.
 - `ACTIVE`
 - `ORPHANED`
 - `DELETED`
+
+### 9.10 File Purpose
+
+- `MESSAGE_ATTACHMENT`
+- `PROFILE_IMAGE`
 
 ## 10. Deletion / Archive / Expiration / History Policy
 

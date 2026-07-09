@@ -387,6 +387,9 @@ src
 - 읽음 처리 API는 REST로만 구현하고 별도 read broadcast를 추가하지
   않는다.
 - 파일 API는 서버 중계 업로드가 아니라 Presigned URL 기반으로 구현한다.
+- 프로필 이미지 업로드도 서버 중계 없이 Presigned URL 기반으로
+  구현하고, 프로필 수정 시 파일 소유자, 용도, 업로드 완료 여부를
+  서버에서 검증한다.
 - WebSocket 이벤트는 partial patch가 아니라 snapshot payload를 보낸다.
 
 ## 12. Exception Handling Convention

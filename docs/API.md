@@ -38,7 +38,8 @@
 - 메시지 목록은 cursor pagination을 사용하며 cursor 기준은 `createdAt + messageId` 조합이다.
 - 읽음 갱신은 REST API로만 처리하고 읽음 상태 전용 실시간 브로드캐스트는 제공하지 않는다.
 - 파일 Presigned URL 발급 API는 파일 1건씩 처리한다.
-- 파일 최대 크기는 20MB다.
+- 메시지 첨부 파일 최대 크기는 20MB다.
+- 프로필 이미지는 이미지 파일만 허용하며 최대 크기는 10MB다.
 - 공통 에러 코드는 prefix 없이 `INTERNAL_SERVER_ERROR`, `INVALID_REQUEST`, `VALIDATION_ERROR`를 사용한다.
 - 도메인 에러 코드는 `AUTH_*`, `WORKSPACE_*`, `CHANNEL_*`, `MESSAGE_*`, `FILE_*`, `INVITE_*`, `MEMBER_*` prefix를 사용한다.
 - WebSocket 이벤트 타입은 `MESSAGE_CREATED`, `MESSAGE_UPDATED`, `MESSAGE_DELETED`, `TYPING_UPDATED`만 사용한다.
@@ -132,6 +133,8 @@
 - 빈 문자열 메시지는 허용하지 않는다.
 - 첨부만 있는 메시지는 허용한다.
 - 파일 업로드 Presign 요청은 `fileName`, `contentType`, `size`를 필수로 받는다.
+- 프로필 이미지 Presign 요청은 `image/jpeg`, `image/png`, `image/webp`
+  MIME 타입만 허용한다.
 
 ## 7. Common Response Format
 
@@ -243,6 +246,8 @@
 | Read States | PUT | `/workspaces/{workspaceId}/channels/{channelId}/read-state` | 채널 읽음 갱신 |
 | Files | POST | `/workspaces/{workspaceId}/files/presign-upload` | 업로드 Presigned URL 발급 |
 | Files | GET | `/workspaces/{workspaceId}/files/{fileId}/download-url` | 다운로드 Presigned URL 발급 |
+| Profiles | POST | `/users/me/profile-image/presign-upload` | 계정 프로필 이미지 업로드 Presigned URL 발급 |
+| Profiles | POST | `/workspaces/{workspaceId}/members/me/profile-image/presign-upload` | 워크스페이스 프로필 이미지 업로드 Presigned URL 발급 |
 | Profiles | PATCH | `/users/me/profile` | 계정 기본 프로필 수정 |
 | Profiles | PATCH | `/workspaces/{workspaceId}/members/me/profile` | 워크스페이스 내 프로필 수정 |
 
@@ -917,7 +922,64 @@
 - Authentication: 필요
 - Authorization: 파일이 연결된 워크스페이스/채널 접근 가능 사용자
 
-### 11.38 계정 기본 프로필 수정
+### 11.38 계정 프로필 이미지 업로드 Presigned URL 발급
+
+- Description: 계정 기본 프로필 이미지 1건에 대한 업로드 URL을 발급하고
+  프로필 이미지 용도의 임시 파일 메타데이터를 생성한다.
+- Method: `POST`
+- URL: `/api/v1/users/me/profile-image/presign-upload`
+- Authentication: 필요
+- Authorization: 본인
+- Request Body
+
+```json
+{
+  "fileName": "profile.png",
+  "contentType": "image/png",
+  "size": 1200
+}
+```
+
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "fileId": "uuid",
+    "uploadUrl": "https://r2-presigned-url",
+    "expiresAt": "2026-07-06T12:10:00Z"
+  }
+}
+```
+
+- Constraints
+  - 허용 MIME 타입: `image/jpeg`, `image/png`, `image/webp`
+  - 최대 크기: 10MB
+- Error Responses
+  - `400 FILE_SIZE_EXCEEDED`
+  - `400 FILE_CONTENT_TYPE_NOT_ALLOWED`
+
+### 11.39 워크스페이스 프로필 이미지 업로드 Presigned URL 발급
+
+- Description: 워크스페이스 내 프로필 이미지 1건에 대한 업로드 URL을
+  발급하고 프로필 이미지 용도의 임시 파일 메타데이터를 생성한다.
+- Method: `POST`
+- URL: `/api/v1/workspaces/{workspaceId}/members/me/profile-image/presign-upload`
+- Authentication: 필요
+- Authorization: 해당 워크스페이스 멤버
+- Request Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Response Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Constraints
+  - 허용 MIME 타입: `image/jpeg`, `image/png`, `image/webp`
+  - 최대 크기: 10MB
+- Error Responses
+  - `400 FILE_SIZE_EXCEEDED`
+  - `400 FILE_CONTENT_TYPE_NOT_ALLOWED`
+
+### 11.40 계정 기본 프로필 수정
 
 - Description: 워크스페이스가 없는 상태와 새 멤버십의 초기값으로 사용하는
   계정 기본 표시 이름과 프로필 이미지를 수정한다. 기존 멤버십 프로필은
@@ -931,13 +993,22 @@
 ```json
 {
   "displayName": "홍길동",
-  "profileImageUrl": "https://..."
+  "profileImageFileId": "uuid"
 }
 ```
 
+- Rules
+  - `profileImageFileId`를 생략하면 기존 프로필 이미지를 유지한다.
+  - `profileImageFileId`에 `null`을 전달하면 현재 프로필 이미지를 제거한다.
+  - `profileImageFileId`에 UUID를 전달하면 서버가 본인 소유, 프로필 이미지
+    용도, 업로드 완료 여부를 검증한 뒤 프로필 이미지로 연결한다.
+- Error Responses
+  - `400 FILE_UPLOAD_NOT_COMPLETED`
+  - `403 FILE_ACCESS_DENIED`
+  - `404 FILE_NOT_FOUND`
 - Response Body: `11.5 내 계정 조회`의 `result`와 동일
 
-### 11.39 워크스페이스 내 프로필 수정
+### 11.41 워크스페이스 내 프로필 수정
 
 - Description: 현재 워크스페이스에서 사용하는 표시 이름과 프로필
   이미지를 수정한다. 계정 기본 프로필과 다른 워크스페이스의 프로필은
@@ -951,9 +1022,21 @@
 ```json
 {
   "displayName": "홍길동",
-  "profileImageUrl": "https://..."
+  "profileImageFileId": "uuid"
 }
 ```
+
+- Rules
+  - `profileImageFileId`를 생략하면 기존 프로필 이미지를 유지한다.
+  - `profileImageFileId`에 `null`을 전달하면 현재 워크스페이스 프로필
+    이미지를 제거한다.
+  - `profileImageFileId`에 UUID를 전달하면 서버가 본인 소유, 해당
+    워크스페이스 문맥, 프로필 이미지 용도, 업로드 완료 여부를 검증한
+    뒤 워크스페이스 프로필 이미지로 연결한다.
+- Error Responses
+  - `400 FILE_UPLOAD_NOT_COMPLETED`
+  - `403 FILE_ACCESS_DENIED`
+  - `404 FILE_NOT_FOUND`
 
 ## 12. Pagination / Sorting / Filtering
 
@@ -982,17 +1065,29 @@
 
 ### 13.1 업로드 흐름
 
+메시지 첨부 파일 업로드 흐름은 다음과 같다.
+
 1. 클라이언트가 `/files/presign-upload`를 호출한다.
 2. 서버가 `fileId`와 `uploadUrl`을 반환한다.
 3. 클라이언트가 R2에 직접 업로드한다.
 4. 클라이언트가 메시지 생성/수정 시 `fileIds`를 전달한다.
 5. 서버가 파일을 최종 첨부 상태로 확정한다.
 
+프로필 이미지 업로드 흐름은 다음과 같다.
+
+1. 클라이언트가 프로필 이미지 Presign API를 호출한다.
+2. 서버가 `fileId`와 `uploadUrl`을 반환한다.
+3. 클라이언트가 R2에 직접 업로드한다.
+4. 클라이언트가 프로필 수정 API에 `profileImageFileId`를 전달한다.
+5. 서버가 파일을 검증한 뒤 프로필 이미지로 연결한다.
+
 ### 13.2 파일 정책
 
 - 파일 메타데이터는 PostgreSQL에서 관리한다.
 - 이미지 파일만 기본 미리보기를 지원한다.
 - 메시지에 연결되지 않은 업로드 완료 파일은 임시 파일 상태로 남을 수 있다.
+- 프로필에 연결되지 않은 프로필 이미지 업로드 파일도 임시 파일 상태로
+  남을 수 있다.
 - orphan 파일은 배치로 정리한다.
 
 ## 14. Real-time / Async API
@@ -1072,6 +1167,7 @@
 
 - 애플리케이션은 Presigned URL만 발급한다.
 - 파일 바이너리 업로드/다운로드는 클라이언트와 R2가 직접 수행한다.
+- 프로필 이미지 역시 애플리케이션 서버를 경유하지 않고 R2에 직접 업로드한다.
 
 ## 16. Error Code Definitions
 
@@ -1132,6 +1228,7 @@
 - `FILE_ACCESS_DENIED`
 - `FILE_SIZE_EXCEEDED`
 - `FILE_CONTENT_TYPE_NOT_ALLOWED`
+- `FILE_UPLOAD_NOT_COMPLETED`
 
 ## 17. Design Decisions
 
