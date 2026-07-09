@@ -1,0 +1,137 @@
+.shell {
+  min-height: 100svh;
+  background: var(--color-surface);
+}
+
+.topBar {
+  height: 64px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.brand span,
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-weight: 800;
+}
+
+.brand span {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+}
+
+.workspaceName {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.account {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.account img,
+.avatarFallback {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.userName {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account button {
+  padding: 7px 9px;
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.account button:hover {
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+.body {
+  min-height: calc(100svh - 64px);
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.sidebar {
+  padding: 24px 18px;
+  background: #f0f5f3;
+  border-right: 1px solid var(--color-border);
+}
+
+.sidebarLabel {
+  margin: 0 0 14px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.emptyText {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.content {
+  min-width: 0;
+  background: var(--color-background);
+}
+
+@media (max-width: 767px) {
+  .topBar {
+    padding: 0 16px;
+    grid-template-columns: 1fr auto;
+  }
+
+  .workspaceName,
+  .sidebar,
+  .userName {
+    display: none;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
