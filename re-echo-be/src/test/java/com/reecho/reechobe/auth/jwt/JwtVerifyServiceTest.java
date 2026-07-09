@@ -25,6 +25,48 @@ class JwtVerifyServiceTest {
     private static final String TEST_SECRET = "test-secret-change-me-test-secret-change-me";
 
     @Test
+    void access_token의_사용자_식별자를_검증한다() {
+        JwtProperties properties = jwtProperties(Duration.ofDays(7));
+        JwtIssueService issueService = new JwtIssueService(properties);
+        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        User user = User.createActive();
+        UUID userId = UUID.randomUUID();
+        ReflectionTestUtils.setField(user, "id", userId);
+        AuthToken token = issueService.issue(user);
+
+        UUID result = verifyService.verifyAccessToken(token.accessToken());
+
+        assertThat(result).isEqualTo(userId);
+    }
+
+    @Test
+    void refresh_token을_access_token으로_검증하면_예외를_던진다() {
+        JwtProperties properties = jwtProperties(Duration.ofDays(7));
+        JwtIssueService issueService = new JwtIssueService(properties);
+        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        User user = User.createActive();
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        AuthToken token = issueService.issue(user);
+
+        assertThatThrownBy(() -> verifyService.verifyAccessToken(token.refreshToken()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.AUTH_UNAUTHORIZED);
+    }
+
+    @Test
+    void 만료된_access_token이면_인증_예외를_던진다() throws Exception {
+        JwtProperties properties = jwtProperties(Duration.ofDays(7));
+        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        String accessToken = expiredToken(UUID.randomUUID(), "access");
+
+        assertThatThrownBy(() -> verifyService.verifyAccessToken(accessToken))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.AUTH_UNAUTHORIZED);
+    }
+
+    @Test
     void refresh_token의_사용자_식별자를_검증한다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtIssueService issueService = new JwtIssueService(properties);
@@ -58,7 +100,7 @@ class JwtVerifyServiceTest {
     void 만료된_refresh_token이면_예외를_던진다() throws Exception {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtVerifyService verifyService = new JwtVerifyService(properties);
-        String refreshToken = expiredRefreshToken(UUID.randomUUID());
+        String refreshToken = expiredToken(UUID.randomUUID(), "refresh");
 
         assertThatThrownBy(() -> verifyService.verifyRefreshToken(refreshToken))
                 .isInstanceOf(BusinessException.class)
@@ -66,14 +108,14 @@ class JwtVerifyServiceTest {
                 .isEqualTo(AuthErrorCode.AUTH_REFRESH_TOKEN_EXPIRED);
     }
 
-    private String expiredRefreshToken(UUID userId) throws Exception {
+    private String expiredToken(UUID userId, String tokenType) throws Exception {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .issuer("re-echo")
                 .subject(userId.toString())
                 .issueTime(Date.from(now.minus(Duration.ofHours(2))))
                 .expirationTime(Date.from(now.minus(Duration.ofHours(1))))
-                .claim("typ", "refresh")
+                .claim("typ", tokenType)
                 .build();
         SignedJWT signedJWT = new SignedJWT(
                 new JWSHeader(JWSAlgorithm.HS256),

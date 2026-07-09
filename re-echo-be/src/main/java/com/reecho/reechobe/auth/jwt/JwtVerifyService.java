@@ -7,6 +7,7 @@ import com.nimbusds.jwt.SignedJWT;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.common.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
@@ -21,52 +22,82 @@ import org.springframework.stereotype.Service;
 public class JwtVerifyService {
 
     private static final String TOKEN_TYPE_CLAIM = "typ";
+    private static final String ACCESS_TOKEN_TYPE = "access";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
 
     private final JwtProperties properties;
 
+    // Access Token이 유효하면 subject에 담긴 사용자 식별자를 반환한다.
+    public UUID verifyAccessToken(String accessToken) {
+        return verifyToken(
+                accessToken,
+                ACCESS_TOKEN_TYPE,
+                AuthErrorCode.AUTH_UNAUTHORIZED,
+                AuthErrorCode.AUTH_UNAUTHORIZED
+        );
+    }
+
     // Refresh Token이 유효하면 subject에 담긴 사용자 식별자를 반환한다.
     public UUID verifyRefreshToken(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+        return verifyToken(
+                refreshToken,
+                REFRESH_TOKEN_TYPE,
+                AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID,
+                AuthErrorCode.AUTH_REFRESH_TOKEN_EXPIRED
+        );
+    }
+
+    private UUID verifyToken(
+            String token,
+            String expectedTokenType,
+            ErrorCode invalidErrorCode,
+            ErrorCode expiredErrorCode
+    ) {
+        if (token == null || token.isBlank()) {
+            throw new BusinessException(invalidErrorCode);
         }
 
         try {
-            SignedJWT signedJWT = SignedJWT.parse(refreshToken);
+            SignedJWT signedJWT = SignedJWT.parse(token);
             if (!signedJWT.verify(new MACVerifier(secretBytes()))) {
-                throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+                throw new BusinessException(invalidErrorCode);
             }
 
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-            validateClaims(claims);
+            validateClaims(claims, expectedTokenType, invalidErrorCode, expiredErrorCode);
             return UUID.fromString(claims.getSubject());
         } catch (BusinessException exception) {
             throw exception;
         } catch (JOSEException | ParseException | IllegalArgumentException exception) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+            throw new BusinessException(invalidErrorCode);
         }
     }
 
-    private void validateClaims(JWTClaimsSet claims) throws ParseException {
+    private void validateClaims(
+            JWTClaimsSet claims,
+            String expectedTokenType,
+            ErrorCode invalidErrorCode,
+            ErrorCode expiredErrorCode
+    ) throws ParseException {
         if (!properties.getIssuer().equals(claims.getIssuer())) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+            throw new BusinessException(invalidErrorCode);
         }
 
-        if (!REFRESH_TOKEN_TYPE.equals(claims.getStringClaim(TOKEN_TYPE_CLAIM))) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+        if (!expectedTokenType.equals(claims.getStringClaim(TOKEN_TYPE_CLAIM))) {
+            throw new BusinessException(invalidErrorCode);
         }
 
         Date expirationTime = claims.getExpirationTime();
         if (expirationTime == null) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+            throw new BusinessException(invalidErrorCode);
         }
 
         if (!expirationTime.toInstant().isAfter(Instant.now())) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_EXPIRED);
+            throw new BusinessException(expiredErrorCode);
         }
 
         if (claims.getSubject() == null || claims.getSubject().isBlank()) {
-            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+            throw new BusinessException(invalidErrorCode);
         }
     }
 
