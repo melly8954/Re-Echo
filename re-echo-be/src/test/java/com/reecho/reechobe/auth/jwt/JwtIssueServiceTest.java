@@ -3,6 +3,7 @@ package com.reecho.reechobe.auth.jwt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.reecho.reechobe.auth.config.JwtCodecConfig;
 import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.user.domain.User;
 import java.time.Duration;
@@ -20,7 +21,7 @@ class JwtIssueServiceTest {
         properties.setSecret("test-secret-change-me-test-secret-change-me");
         properties.setAccessTokenTtl(Duration.ofMinutes(30));
         properties.setRefreshTokenTtl(Duration.ofDays(7));
-        JwtIssueService service = new JwtIssueService(properties);
+        JwtIssueService service = jwtIssueService(properties);
         User user = User.createActive();
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
 
@@ -39,7 +40,7 @@ class JwtIssueServiceTest {
         properties.setSecret("test-secret-change-me-test-secret-change-me");
         properties.setAccessTokenTtl(Duration.ofMinutes(30));
         properties.setRefreshTokenTtl(Duration.ofDays(7));
-        JwtIssueService service = new JwtIssueService(properties);
+        JwtIssueService service = jwtIssueService(properties);
 
         assertThatThrownBy(() -> service.issue(User.createActive()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -52,12 +53,20 @@ class JwtIssueServiceTest {
         properties.setSecret("test-secret-change-me-test-secret-change-me");
         properties.setAccessTokenTtl(Duration.ofMinutes(30));
         properties.setRefreshTokenTtl(Duration.ofDays(7));
-        JwtIssueService service = new JwtIssueService(properties);
+        JwtIssueService service = jwtIssueService(properties);
         User user = User.createActive();
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
 
         assertThatThrownBy(() -> service.issue(user))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("JWT 발급자 설정은 필수입니다.");
+    }
+
+    private JwtIssueService jwtIssueService(JwtProperties properties) {
+        JwtCodecConfig codecConfig = new JwtCodecConfig();
+        return new JwtIssueService(
+                properties,
+                codecConfig.jwtEncoder(codecConfig.jwtSecretKey(properties))
+        );
     }
 }

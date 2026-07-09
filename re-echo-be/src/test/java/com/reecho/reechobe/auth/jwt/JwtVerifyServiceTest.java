@@ -3,21 +3,20 @@ package com.reecho.reechobe.auth.jwt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
+import com.reecho.reechobe.auth.config.JwtCodecConfig;
 import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class JwtVerifyServiceTest {
@@ -27,8 +26,8 @@ class JwtVerifyServiceTest {
     @Test
     void access_token의_사용자_식별자를_검증한다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtIssueService issueService = new JwtIssueService(properties);
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        JwtIssueService issueService = jwtIssueService(properties);
+        JwtVerifyService verifyService = jwtVerifyService(properties);
         User user = User.createActive();
         UUID userId = UUID.randomUUID();
         ReflectionTestUtils.setField(user, "id", userId);
@@ -42,8 +41,8 @@ class JwtVerifyServiceTest {
     @Test
     void refresh_token을_access_token으로_검증하면_예외를_던진다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtIssueService issueService = new JwtIssueService(properties);
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        JwtIssueService issueService = jwtIssueService(properties);
+        JwtVerifyService verifyService = jwtVerifyService(properties);
         User user = User.createActive();
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         AuthToken token = issueService.issue(user);
@@ -55,10 +54,10 @@ class JwtVerifyServiceTest {
     }
 
     @Test
-    void 만료된_access_token이면_인증_예외를_던진다() throws Exception {
+    void 만료된_access_token이면_인증_예외를_던진다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
-        String accessToken = expiredToken(UUID.randomUUID(), "access");
+        JwtVerifyService verifyService = jwtVerifyService(properties);
+        String accessToken = expiredToken(properties, UUID.randomUUID(), "access");
 
         assertThatThrownBy(() -> verifyService.verifyAccessToken(accessToken))
                 .isInstanceOf(BusinessException.class)
@@ -69,8 +68,8 @@ class JwtVerifyServiceTest {
     @Test
     void refresh_token의_사용자_식별자를_검증한다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtIssueService issueService = new JwtIssueService(properties);
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        JwtIssueService issueService = jwtIssueService(properties);
+        JwtVerifyService verifyService = jwtVerifyService(properties);
         User user = User.createActive();
         UUID userId = UUID.randomUUID();
         ReflectionTestUtils.setField(user, "id", userId);
@@ -84,8 +83,8 @@ class JwtVerifyServiceTest {
     @Test
     void access_token으로_refresh를_요청하면_예외를_던진다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtIssueService issueService = new JwtIssueService(properties);
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
+        JwtIssueService issueService = jwtIssueService(properties);
+        JwtVerifyService verifyService = jwtVerifyService(properties);
         User user = User.createActive();
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         AuthToken token = issueService.issue(user);
@@ -97,10 +96,10 @@ class JwtVerifyServiceTest {
     }
 
     @Test
-    void 만료된_refresh_token이면_예외를_던진다() throws Exception {
+    void 만료된_refresh_token이면_예외를_던진다() {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
-        JwtVerifyService verifyService = new JwtVerifyService(properties);
-        String refreshToken = expiredToken(UUID.randomUUID(), "refresh");
+        JwtVerifyService verifyService = jwtVerifyService(properties);
+        String refreshToken = expiredToken(properties, UUID.randomUUID(), "refresh");
 
         assertThatThrownBy(() -> verifyService.verifyRefreshToken(refreshToken))
                 .isInstanceOf(BusinessException.class)
@@ -108,21 +107,36 @@ class JwtVerifyServiceTest {
                 .isEqualTo(AuthErrorCode.AUTH_REFRESH_TOKEN_EXPIRED);
     }
 
-    private String expiredToken(UUID userId, String tokenType) throws Exception {
+    private String expiredToken(JwtProperties properties, UUID userId, String tokenType) {
         Instant now = Instant.now();
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .issuer("re-echo")
+        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
+                .issuer(properties.getIssuer())
                 .subject(userId.toString())
-                .issueTime(Date.from(now.minus(Duration.ofHours(2))))
-                .expirationTime(Date.from(now.minus(Duration.ofHours(1))))
+                .issuedAt(now.minus(Duration.ofHours(2)))
+                .expiresAt(now.minus(Duration.ofHours(1)))
                 .claim("typ", tokenType)
                 .build();
-        SignedJWT signedJWT = new SignedJWT(
-                new JWSHeader(JWSAlgorithm.HS256),
-                claimsSet
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return jwtEncoder(properties)
+                .encode(JwtEncoderParameters.from(header, claimsSet))
+                .getTokenValue();
+    }
+
+    private JwtIssueService jwtIssueService(JwtProperties properties) {
+        return new JwtIssueService(properties, jwtEncoder(properties));
+    }
+
+    private JwtVerifyService jwtVerifyService(JwtProperties properties) {
+        JwtCodecConfig codecConfig = new JwtCodecConfig();
+        return new JwtVerifyService(
+                properties,
+                codecConfig.jwtDecoder(codecConfig.jwtSecretKey(properties))
         );
-        signedJWT.sign(new MACSigner(TEST_SECRET.getBytes(StandardCharsets.UTF_8)));
-        return signedJWT.serialize();
+    }
+
+    private JwtEncoder jwtEncoder(JwtProperties properties) {
+        JwtCodecConfig codecConfig = new JwtCodecConfig();
+        return codecConfig.jwtEncoder(codecConfig.jwtSecretKey(properties));
     }
 
     private JwtProperties jwtProperties(Duration refreshTokenTtl) {
