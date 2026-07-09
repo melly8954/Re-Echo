@@ -278,9 +278,12 @@
   - 로그인 성공 후 프론트엔드 OAuth 완료 URL로 리다이렉트한다.
   - 프론트엔드는 `/api/v1/auth/refresh`를 호출해 Access Token을
     응답 body로 받는다.
-- Error Responses
-  - `401 AUTH_INVALID_OAUTH_STATE`
-  - `401 AUTH_OAUTH_AUTHENTICATION_FAILED`
+- 실패 처리
+  - OAuth 상태값 오류, 사용자 취소, Provider 인증 실패, 내부 계정 연결
+    실패는 로그인 화면으로 `302 Found` 리다이렉트한다.
+  - 리다이렉트 Query Parameter
+    - `errorCode`: `AUTH_OAUTH_AUTHENTICATION_FAILED`
+  - 구체적인 실패 원인과 예외 메시지는 리다이렉트 URL에 포함하지 않는다.
 
 ### 11.3 Token Refresh
 
@@ -1038,7 +1041,6 @@
 ### 16.2 Auth
 
 - `AUTH_UNAUTHORIZED`
-- `AUTH_INVALID_OAUTH_STATE`
 - `AUTH_OAUTH_AUTHENTICATION_FAILED`
 - `AUTH_REFRESH_TOKEN_INVALID`
 - `AUTH_REFRESH_TOKEN_EXPIRED`

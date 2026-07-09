@@ -69,6 +69,8 @@
   - Google
   - Kakao
   - GitHub
+- OAuth 로그인 실패 시 내부 원인을 노출하지 않고 로그인 화면으로
+  이동하여 재시도를 안내
 - 로그인 성공 시 access token은 응답 body로 반환
 - 로그인/refresh 응답 헤더로 access token을 전달하지 않음
 - refresh token은 HttpOnly cookie로만 전달
