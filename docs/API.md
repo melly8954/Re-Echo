@@ -243,7 +243,8 @@
 | Read States | PUT | `/workspaces/{workspaceId}/channels/{channelId}/read-state` | 채널 읽음 갱신 |
 | Files | POST | `/workspaces/{workspaceId}/files/presign-upload` | 업로드 Presigned URL 발급 |
 | Files | GET | `/workspaces/{workspaceId}/files/{fileId}/download-url` | 다운로드 Presigned URL 발급 |
-| Profiles | PATCH | `/users/me/profile` | 내 프로필 수정 |
+| Profiles | PATCH | `/users/me/profile` | 계정 기본 프로필 수정 |
+| Profiles | PATCH | `/workspaces/{workspaceId}/members/me/profile` | 워크스페이스 내 프로필 수정 |
 
 ## 11. Endpoint Details
 
@@ -345,6 +346,21 @@
 - URL: `/api/v1/users/me`
 - Authentication: 필요
 - Authorization: 본인
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "id": "uuid",
+    "displayName": "홍길동",
+    "profileImageUrl": "https://...",
+    "status": "ACTIVE"
+  }
+}
+```
 
 ### 11.6 워크스페이스 목록 조회
 
@@ -379,7 +395,9 @@
 
 ### 11.7 워크스페이스 생성
 
-- Description: 새 워크스페이스를 생성하고 생성자를 `OWNER`로 등록한다. 기본 채널 `#general`을 함께 생성한다.
+- Description: 새 워크스페이스를 생성하고 생성자를 `OWNER`로 등록한다.
+  생성자의 계정 기본 프로필을 멤버십 프로필 초기값으로 복사하며 기본
+  채널 `#general`을 함께 생성한다.
 - Method: `POST`
 - URL: `/api/v1/workspaces`
 - Authentication: 필요
@@ -421,6 +439,8 @@
     "status": "ACTIVE",
     "myMembership": {
       "id": "uuid",
+      "displayName": "홍길동",
+      "profileImageUrl": "https://...",
       "role": "ADMIN",
       "status": "ACTIVE"
     },
@@ -507,7 +527,8 @@
 
 ### 11.15 초대 링크 참여
 
-- Description: 초대 링크로 워크스페이스에 참여한다. 참여 후 `#general`에 자동 가입된다.
+- Description: 초대 링크로 워크스페이스에 참여한다. 계정 기본 프로필을
+  멤버십 프로필 초기값으로 복사하고 `#general`에 자동 가입된다.
 - Method: `POST`
 - URL: `/api/v1/invite-links/{token}/join`
 - Authentication: 필요
@@ -896,13 +917,35 @@
 - Authentication: 필요
 - Authorization: 파일이 연결된 워크스페이스/채널 접근 가능 사용자
 
-### 11.38 내 프로필 수정
+### 11.38 계정 기본 프로필 수정
 
-- Description: 사용자 표시 이름과 프로필 이미지를 수정한다.
+- Description: 워크스페이스가 없는 상태와 새 멤버십의 초기값으로 사용하는
+  계정 기본 표시 이름과 프로필 이미지를 수정한다. 기존 멤버십 프로필은
+  변경하지 않는다.
 - Method: `PATCH`
 - URL: `/api/v1/users/me/profile`
 - Authentication: 필요
 - Authorization: 본인
+- Request Body
+
+```json
+{
+  "displayName": "홍길동",
+  "profileImageUrl": "https://..."
+}
+```
+
+- Response Body: `11.5 내 계정 조회`의 `result`와 동일
+
+### 11.39 워크스페이스 내 프로필 수정
+
+- Description: 현재 워크스페이스에서 사용하는 표시 이름과 프로필
+  이미지를 수정한다. 계정 기본 프로필과 다른 워크스페이스의 프로필은
+  변경하지 않는다.
+- Method: `PATCH`
+- URL: `/api/v1/workspaces/{workspaceId}/members/me/profile`
+- Authentication: 필요
+- Authorization: 해당 워크스페이스 멤버
 - Request Body
 
 ```json
