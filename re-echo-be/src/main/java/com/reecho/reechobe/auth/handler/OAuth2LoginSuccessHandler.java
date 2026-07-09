@@ -4,9 +4,7 @@ import com.reecho.reechobe.auth.jwt.AuthToken;
 import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
 import com.reecho.reechobe.auth.oauth.OAuth2UserProfile;
 import com.reecho.reechobe.auth.oauth.OAuth2UserProfileExtractor;
-import com.reecho.reechobe.auth.service.command.CompleteOAuthLoginCommandService;
-import com.reecho.reechobe.auth.service.command.IssueAuthTokenCommandService;
-import com.reecho.reechobe.user.domain.User;
+import com.reecho.reechobe.auth.service.command.OAuthLoginCommandService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,8 +22,7 @@ import org.springframework.stereotype.Component;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final OAuth2UserProfileExtractor profileExtractor;
-    private final CompleteOAuthLoginCommandService completeOAuthLoginCommandService;
-    private final IssueAuthTokenCommandService issueAuthTokenCommandService;
+    private final OAuthLoginCommandService oauthLoginCommandService;
     private final OAuth2LoginProperties properties;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
@@ -40,12 +37,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         OAuth2UserProfile profile = profileExtractor.extract(oauthToken);
-        User user = completeOAuthLoginCommandService.complete(
+        AuthToken token = oauthLoginCommandService.login(
                 profile.provider(),
                 profile.providerUserId(),
                 profile.providerEmail()
         );
-        AuthToken token = issueAuthTokenCommandService.issue(user);
 
         refreshTokenCookieWriter.add(response, token);
         invalidateOAuthSession(request);
