@@ -22,7 +22,7 @@ class JwtIssueServiceTest {
         properties.setAccessTokenTtl(Duration.ofMinutes(30));
         properties.setRefreshTokenTtl(Duration.ofDays(7));
         JwtIssueService service = jwtIssueService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
 
         AuthToken token = service.issue(user);
@@ -43,7 +43,7 @@ class JwtIssueServiceTest {
         properties.setRefreshTokenTtl(Duration.ofDays(7));
         JwtIssueService service = jwtIssueService(properties);
 
-        assertThatThrownBy(() -> service.issue(User.createActive()))
+        assertThatThrownBy(() -> service.issue(User.createActive("사용자", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("토큰을 발급할 사용자 식별자는 필수입니다.");
     }
@@ -55,7 +55,7 @@ class JwtIssueServiceTest {
         properties.setAccessTokenTtl(Duration.ofMinutes(30));
         properties.setRefreshTokenTtl(Duration.ofDays(7));
         JwtIssueService service = jwtIssueService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
 
         assertThatThrownBy(() -> service.issue(user))

@@ -28,7 +28,7 @@ class JwtVerifyServiceTest {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtIssueService issueService = jwtIssueService(properties);
         JwtVerifyService verifyService = jwtVerifyService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         UUID userId = UUID.randomUUID();
         ReflectionTestUtils.setField(user, "id", userId);
         AuthToken token = issueService.issue(user);
@@ -43,7 +43,7 @@ class JwtVerifyServiceTest {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtIssueService issueService = jwtIssueService(properties);
         JwtVerifyService verifyService = jwtVerifyService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         AuthToken token = issueService.issue(user);
 
@@ -70,7 +70,7 @@ class JwtVerifyServiceTest {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtIssueService issueService = jwtIssueService(properties);
         JwtVerifyService verifyService = jwtVerifyService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         UUID userId = UUID.randomUUID();
         ReflectionTestUtils.setField(user, "id", userId);
         AuthToken token = issueService.issue(user);
@@ -88,7 +88,7 @@ class JwtVerifyServiceTest {
         JwtProperties properties = jwtProperties(Duration.ofDays(7));
         JwtIssueService issueService = jwtIssueService(properties);
         JwtVerifyService verifyService = jwtVerifyService(properties);
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         AuthToken token = issueService.issue(user);
 

@@ -58,7 +58,7 @@ class OAuthLoginCommandServiceTest {
     @Test
     void 기존_oauth_사용자에게_토큰을_발급하고_refresh_token을_저장한다() {
         UUID userId = UUID.randomUUID();
-        User user = User.createActive();
+        User user = User.createActive("기존 사용자", null);
         ReflectionTestUtils.setField(user, "id", userId);
         UserIdentity userIdentity = UserIdentity.createOAuthLink(
                 user,
@@ -76,7 +76,9 @@ class OAuthLoginCommandServiceTest {
         AuthToken result = service.login(
                 OAuthProvider.GOOGLE,
                 "google-user-id",
-                "user@example.com"
+                "user@example.com",
+                "변경된 이름",
+                "https://example.com/new-profile.png"
         );
 
         assertThat(result).isSameAs(token);
@@ -107,10 +109,16 @@ class OAuthLoginCommandServiceTest {
         AuthToken result = service.login(
                 OAuthProvider.KAKAO,
                 "kakao-user-id",
-                "user@example.com"
+                "user@example.com",
+                "카카오 사용자",
+                "https://example.com/profile.png"
         );
 
         assertThat(result).isSameAs(token);
+        verify(userRepository).save(argThat(user ->
+                user.getDisplayName().equals("카카오 사용자")
+                        && user.getProfileImageUrl().equals("https://example.com/profile.png")
+        ));
         verify(userIdentityRepository).save(argThat(userIdentity ->
                 userIdentity.getProvider() == OAuthProvider.KAKAO
                         && userIdentity.getProviderUserId().equals("kakao-user-id")
@@ -125,7 +133,13 @@ class OAuthLoginCommandServiceTest {
 
     @Test
     void 공급자_사용자_식별자가_비어있으면_인증_예외를_던진다() {
-        assertThatThrownBy(() -> service.login(OAuthProvider.GITHUB, " ", null))
+        assertThatThrownBy(() -> service.login(
+                OAuthProvider.GITHUB,
+                " ",
+                null,
+                "사용자",
+                null
+        ))
                 .isInstanceOf(BusinessException.class);
 
         verify(userRepository, never()).save(any());

@@ -56,7 +56,7 @@ class AuthTokenCommandServiceTest {
     void refresh_token을_검증하고_새_토큰으로_회전한다() {
         UUID userId = UUID.randomUUID();
         UUID currentTokenId = UUID.randomUUID();
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", userId);
         VerifiedToken verifiedToken = verifiedToken(userId, currentTokenId);
         AuthToken newToken = authToken();
@@ -85,7 +85,7 @@ class AuthTokenCommandServiceTest {
     void 이미_회전된_refresh_token이면_예외를_던진다() {
         UUID userId = UUID.randomUUID();
         UUID currentTokenId = UUID.randomUUID();
-        User user = User.createActive();
+        User user = User.createActive("사용자", null);
         ReflectionTestUtils.setField(user, "id", userId);
         VerifiedToken verifiedToken = verifiedToken(userId, currentTokenId);
         AuthToken newToken = authToken();

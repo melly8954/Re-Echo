@@ -1,5 +1,7 @@
 CREATE TABLE users (
     id uuid PRIMARY KEY,
+    display_name varchar(80) NOT NULL,
+    profile_image_url text,
     status varchar(20) NOT NULL DEFAULT 'ACTIVE',
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),

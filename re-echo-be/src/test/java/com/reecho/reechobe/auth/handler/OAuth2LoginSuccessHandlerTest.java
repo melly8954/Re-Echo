@@ -63,14 +63,18 @@ class OAuth2LoginSuccessHandlerTest {
         OAuth2UserProfile profile = new OAuth2UserProfile(
                 OAuthProvider.GOOGLE,
                 "provider-user-id",
-                "user@example.com"
+                "user@example.com",
+                "구글 사용자",
+                "https://example.com/profile.png"
         );
         AuthToken token = authToken();
         when(profileExtractor.extract(authentication)).thenReturn(profile);
         when(oauthLoginCommandService.login(
                 profile.provider(),
                 profile.providerUserId(),
-                profile.providerEmail()
+                profile.providerEmail(),
+                profile.displayName(),
+                profile.profileImageUrl()
         )).thenReturn(token);
         MockHttpServletRequest request = requestWithSession();
         MockHttpSession session = (MockHttpSession) request.getSession(false);

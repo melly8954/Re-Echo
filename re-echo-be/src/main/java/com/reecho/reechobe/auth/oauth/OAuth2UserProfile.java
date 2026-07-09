@@ -6,7 +6,9 @@ import com.reecho.reechobe.user.domain.OAuthProvider;
 public record OAuth2UserProfile(
         OAuthProvider provider,
         String providerUserId,
-        String providerEmail
+        String providerEmail,
+        String displayName,
+        String profileImageUrl
 ) {
 
     public OAuth2UserProfile {
@@ -16,6 +18,10 @@ public record OAuth2UserProfile(
 
         if (providerUserId == null || providerUserId.isBlank()) {
             throw new IllegalArgumentException("OAuth 사용자 식별자는 필수입니다.");
+        }
+
+        if (displayName == null || displayName.isBlank()) {
+            throw new IllegalArgumentException("OAuth 사용자 표시 이름은 필수입니다.");
         }
     }
 }

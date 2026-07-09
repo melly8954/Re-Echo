@@ -42,7 +42,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             AuthToken token = oauthLoginCommandService.login(
                     profile.provider(),
                     profile.providerUserId(),
-                    profile.providerEmail()
+                    profile.providerEmail(),
+                    profile.displayName(),
+                    profile.profileImageUrl()
             );
 
             refreshTokenCookieWriter.add(response, token);

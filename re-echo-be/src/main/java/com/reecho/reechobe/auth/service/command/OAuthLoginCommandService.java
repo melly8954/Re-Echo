@@ -29,7 +29,9 @@ public class OAuthLoginCommandService {
     public AuthToken login(
             OAuthProvider provider,
             String providerUserId,
-            String providerEmail
+            String providerEmail,
+            String displayName,
+            String profileImageUrl
     ) {
         if (provider == null || providerUserId == null || providerUserId.isBlank()) {
             throw new BusinessException(AuthErrorCode.AUTH_OAUTH_AUTHENTICATION_FAILED);
@@ -37,7 +39,13 @@ public class OAuthLoginCommandService {
 
         User user = userIdentityRepository.findByProviderAndProviderUserId(provider, providerUserId)
                 .map(UserIdentity::getUser)
-                .orElseGet(() -> createUserIdentity(provider, providerUserId, providerEmail));
+                .orElseGet(() -> createUserIdentity(
+                        provider,
+                        providerUserId,
+                        providerEmail,
+                        displayName,
+                        profileImageUrl
+                ));
         AuthToken token = jwtIssueService.issue(user);
         refreshTokenStore.save(
                 user.getId(),
@@ -50,9 +58,11 @@ public class OAuthLoginCommandService {
     private User createUserIdentity(
             OAuthProvider provider,
             String providerUserId,
-            String providerEmail
+            String providerEmail,
+            String displayName,
+            String profileImageUrl
     ) {
-        User user = userRepository.save(User.createActive());
+        User user = userRepository.save(User.createActive(displayName, profileImageUrl));
         UserIdentity userIdentity = UserIdentity.createOAuthLink(user, provider, providerUserId, providerEmail);
         userIdentityRepository.save(userIdentity);
         return user;

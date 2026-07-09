@@ -19,7 +19,9 @@ class OAuth2UserProfileExtractorTest {
                 List.of(),
                 Map.of(
                         "sub", "google-user-id",
-                        "email", "user@example.com"
+                        "email", "user@example.com",
+                        "name", "구글 사용자",
+                        "picture", "https://example.com/google.png"
                 ),
                 "sub"
         );
@@ -34,6 +36,8 @@ class OAuth2UserProfileExtractorTest {
         assertThat(profile.provider()).isEqualTo(OAuthProvider.GOOGLE);
         assertThat(profile.providerUserId()).isEqualTo("google-user-id");
         assertThat(profile.providerEmail()).isEqualTo("user@example.com");
+        assertThat(profile.displayName()).isEqualTo("구글 사용자");
+        assertThat(profile.profileImageUrl()).isEqualTo("https://example.com/google.png");
     }
 
     @Test
@@ -42,7 +46,11 @@ class OAuth2UserProfileExtractorTest {
                 List.of(),
                 Map.of(
                         "id", "kakao-user-id",
-                        "kakao_account", Map.of("email", "user@example.com")
+                        "kakao_account", Map.of("email", "user@example.com"),
+                        "properties", Map.of(
+                                "nickname", "카카오 사용자",
+                                "profile_image", "https://example.com/kakao.png"
+                        )
                 ),
                 "id"
         );
@@ -57,6 +65,8 @@ class OAuth2UserProfileExtractorTest {
         assertThat(profile.provider()).isEqualTo(OAuthProvider.KAKAO);
         assertThat(profile.providerUserId()).isEqualTo("kakao-user-id");
         assertThat(profile.providerEmail()).isEqualTo("user@example.com");
+        assertThat(profile.displayName()).isEqualTo("카카오 사용자");
+        assertThat(profile.profileImageUrl()).isEqualTo("https://example.com/kakao.png");
     }
 
     @Test
@@ -66,6 +76,8 @@ class OAuth2UserProfileExtractorTest {
                 Map.of(
                         "sub", "kakao-sub-id",
                         "email", "oidc@example.com",
+                        "nickname", "카카오 OIDC 사용자",
+                        "picture", "https://example.com/kakao-oidc.png",
                         "kakao_account", Map.of("email", "legacy@example.com")
                 ),
                 "sub"
@@ -81,5 +93,31 @@ class OAuth2UserProfileExtractorTest {
         assertThat(profile.provider()).isEqualTo(OAuthProvider.KAKAO);
         assertThat(profile.providerUserId()).isEqualTo("kakao-sub-id");
         assertThat(profile.providerEmail()).isEqualTo("oidc@example.com");
+        assertThat(profile.displayName()).isEqualTo("카카오 OIDC 사용자");
+        assertThat(profile.profileImageUrl()).isEqualTo("https://example.com/kakao-oidc.png");
+    }
+
+    @Test
+    void github_이름이_없으면_login을_표시_이름으로_사용한다() {
+        DefaultOAuth2User principal = new DefaultOAuth2User(
+                List.of(),
+                Map.of(
+                        "id", "github-user-id",
+                        "login", "github-user",
+                        "avatar_url", "https://example.com/github.png"
+                ),
+                "id"
+        );
+        OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
+                principal,
+                principal.getAuthorities(),
+                "github"
+        );
+
+        OAuth2UserProfile profile = extractor.extract(authentication);
+
+        assertThat(profile.provider()).isEqualTo(OAuthProvider.GITHUB);
+        assertThat(profile.displayName()).isEqualTo("github-user");
+        assertThat(profile.profileImageUrl()).isEqualTo("https://example.com/github.png");
     }
 }
