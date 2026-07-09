@@ -25,6 +25,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final OAuthLoginCommandService oauthLoginCommandService;
     private final OAuth2LoginProperties properties;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
+    private final OAuth2LoginFailureHandler oauth2LoginFailureHandler;
 
     // OAuth2 사용자 정보를 내부 사용자로 연결하고 프론트엔드 완료 URL로 이동시킨다.
     @Override
@@ -33,19 +34,27 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletResponse response,
             Authentication authentication
     ) throws IOException, ServletException {
-        validateProperties();
+        try {
+            validateProperties();
 
-        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        OAuth2UserProfile profile = profileExtractor.extract(oauthToken);
-        AuthToken token = oauthLoginCommandService.login(
-                profile.provider(),
-                profile.providerUserId(),
-                profile.providerEmail()
-        );
+            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+            OAuth2UserProfile profile = profileExtractor.extract(oauthToken);
+            AuthToken token = oauthLoginCommandService.login(
+                    profile.provider(),
+                    profile.providerUserId(),
+                    profile.providerEmail()
+            );
 
-        refreshTokenCookieWriter.add(response, token);
-        invalidateOAuthSession(request);
-        response.sendRedirect(properties.getSuccessRedirectUri());
+            refreshTokenCookieWriter.add(response, token);
+            invalidateOAuthSession(request);
+            response.sendRedirect(properties.getSuccessRedirectUri());
+        } catch (RuntimeException exception) {
+            oauth2LoginFailureHandler.handlePostAuthenticationFailure(
+                    request,
+                    response,
+                    exception
+            );
+        }
     }
 
     private void validateProperties() {

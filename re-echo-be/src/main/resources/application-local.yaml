@@ -78,4 +78,4 @@ reecho:
       refresh-token-cookie-name: refreshToken
       refresh-token-secure: false
       success-redirect-uri: http://localhost:5173/oauth/callback
-      failure-redirect-uri: http://localhost:5173/login?error=oauth
+      failure-redirect-uri: http://localhost:5173/login
