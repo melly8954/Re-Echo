@@ -162,8 +162,8 @@ Re-Echo 1차 MVP는 여러 조직이 함께 사용하는 SaaS형 협업 채팅 �
 
 보조 저장소 및 분산 상태 저장소로 사용한다.
 
-- Access/Refresh Token 보조 관리
-- OAuth 로그인 중간 상태
+- `jti` 기반 세션별 Refresh Token 상태와 TTL 관리
+- Spring Session 기반 OAuth 로그인 중간 상태 공유
 - Pub/Sub
 - 입력 중 상태
 - 인스턴스 간 공유 상태
@@ -237,8 +237,9 @@ Re-Echo 1차 MVP는 여러 조직이 함께 사용하는 SaaS형 협업 채팅 �
   - 브라우저 메모리 보관
 - Refresh Token
   - HttpOnly cookie 기반
+  - 세션별 `jti`를 Redis에 저장하고 재발급 시 원자적으로 교체
 - OAuth 로그인 중간 상태
-  - Redis 공유 저장소 사용
+  - Spring Session Redis 공유 저장소 사용
 
 ### 9.3 인가 구조
 

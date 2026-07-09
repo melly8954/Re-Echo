@@ -29,6 +29,7 @@
 - Access Token은 응답 body로 전달한다.
 - Refresh Token은 `HttpOnly`, `Secure`, `SameSite=Lax` 쿠키로만 전달한다.
 - Refresh 시 Access Token과 Refresh Token을 모두 재발급한다.
+- 동일 사용자의 다중 로그인 세션을 허용하며 logout은 현재 세션만 종료한다.
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - `#general`은 나갈 수 없다.
 - 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기가 가능하다.
