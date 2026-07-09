@@ -7,11 +7,9 @@ import com.reecho.reechobe.auth.service.command.AuthTokenCommandService;
 import com.reecho.reechobe.auth.jwt.AuthToken;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.response.ApiResponse;
-import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,18 +43,14 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, "토큰이 재발급되었습니다.", result);
     }
 
-    // Access Token 또는 Refresh Token으로 현재 로그인 세션을 종료한다.
+    // 인증 상태와 관계없이 쿠키를 만료하고 유효한 현재 세션만 폐기한다.
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
-            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
-        authTokenCommandService.logout(
-                principal == null ? null : principal.userId(),
-                refreshToken
-        );
         refreshTokenCookieWriter.expire(response);
+        authTokenCommandService.logout(refreshToken);
         return ApiResponse.success(HttpStatus.OK, "로그아웃되었습니다.", null);
     }
 }

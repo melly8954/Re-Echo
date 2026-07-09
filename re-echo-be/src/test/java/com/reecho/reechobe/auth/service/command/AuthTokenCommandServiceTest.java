@@ -113,38 +113,53 @@ class AuthTokenCommandServiceTest {
         when(jwtVerifyService.verifyRefreshToken("refresh-token")).thenReturn(token);
         when(refreshTokenStore.revoke(userId, tokenId)).thenReturn(true);
 
-        service.logout(null, "refresh-token");
+        service.logout("refresh-token");
 
         verify(refreshTokenStore).revoke(userId, tokenId);
     }
 
     @Test
-    void access_token_인증만_있어도_클라이언트_로그아웃을_허용한다() {
-        service.logout(UUID.randomUUID(), null);
+    void refresh_token이_없어도_로그아웃에_성공한다() {
+        service.logout(null);
 
         verifyNoInteractions(jwtVerifyService, refreshTokenStore);
     }
 
     @Test
-    void 인증_수단이_없으면_예외를_던진다() {
-        assertThatThrownBy(() -> service.logout(null, null))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.AUTH_UNAUTHORIZED);
+    void 만료된_refresh_token이어도_로그아웃에_성공한다() {
+        when(jwtVerifyService.verifyRefreshToken("expired-token"))
+                .thenThrow(new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_EXPIRED));
+
+        service.logout("expired-token");
+
+        verifyNoInteractions(refreshTokenStore);
     }
 
     @Test
-    void redis에_없는_refresh_token만_제공하면_예외를_던진다() {
+    void 이미_폐기된_refresh_token이어도_로그아웃에_성공한다() {
         UUID userId = UUID.randomUUID();
         UUID tokenId = UUID.randomUUID();
         VerifiedToken token = verifiedToken(userId, tokenId);
         when(jwtVerifyService.verifyRefreshToken("revoked-token")).thenReturn(token);
         when(refreshTokenStore.revoke(userId, tokenId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.logout(null, "revoked-token"))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.AUTH_UNAUTHORIZED);
+        service.logout("revoked-token");
+
+        verify(refreshTokenStore).revoke(userId, tokenId);
+    }
+
+    @Test
+    void refresh_token_저장소_장애는_숨기지_않는다() {
+        UUID userId = UUID.randomUUID();
+        UUID tokenId = UUID.randomUUID();
+        VerifiedToken token = verifiedToken(userId, tokenId);
+        when(jwtVerifyService.verifyRefreshToken("refresh-token")).thenReturn(token);
+        when(refreshTokenStore.revoke(userId, tokenId))
+                .thenThrow(new IllegalStateException("Redis 연결 실패"));
+
+        assertThatThrownBy(() -> service.logout("refresh-token"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Redis 연결 실패");
     }
 
     private VerifiedToken verifiedToken(UUID userId, UUID tokenId) {

@@ -9,7 +9,6 @@ import com.reecho.reechobe.auth.refresh.RefreshTokenStore;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,13 +42,9 @@ public class AuthTokenCommandService {
         return newToken;
     }
 
-    // Refresh Token이 있으면 해당 세션을 폐기하고 Access 인증만 있어도 로그아웃을 허용한다.
-    public void logout(UUID authenticatedUserId, String refreshToken) {
-        boolean accessAuthenticated = authenticatedUserId != null;
+    // 토큰 상태와 관계없이 로그아웃 상태를 보장하고 유효한 세션만 폐기한다.
+    public void logout(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            if (!accessAuthenticated) {
-                throw new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED);
-            }
             return;
         }
 
@@ -57,22 +52,13 @@ public class AuthTokenCommandService {
         try {
             verifiedToken = jwtVerifyService.verifyRefreshToken(refreshToken);
         } catch (BusinessException exception) {
-            if (!accessAuthenticated) {
-                throw new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED);
-            }
+            // 만료·무효 토큰은 이미 로그아웃된 상태로 간주한다.
             return;
         }
 
-        if (accessAuthenticated && !authenticatedUserId.equals(verifiedToken.userId())) {
-            throw new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED);
-        }
-
-        boolean revoked = refreshTokenStore.revoke(
+        refreshTokenStore.revoke(
                 verifiedToken.userId(),
                 verifiedToken.tokenId()
         );
-        if (!revoked && !accessAuthenticated) {
-            throw new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED);
-        }
     }
 }
