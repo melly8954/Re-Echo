@@ -77,6 +77,45 @@
   font-size: 13px;
 }
 
+.profileImageControls {
+  display: grid;
+  gap: 8px;
+}
+
+.profileImageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profileImageActions input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.profileImageActions label,
+.profileImageActions button {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text);
+  background: #f6f8f7;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profileImageActions label:hover,
+.profileImageActions button:hover {
+  border-color: #9db7b1;
+}
+
 .field {
   display: grid;
   gap: 8px;
