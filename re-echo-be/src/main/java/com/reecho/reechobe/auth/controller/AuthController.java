@@ -3,7 +3,7 @@ package com.reecho.reechobe.auth.controller;
 import com.reecho.reechobe.auth.dto.RefreshTokenResponse;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.auth.service.command.RefreshTokenCommandService;
-import com.reecho.reechobe.auth.service.jwt.AccessToken;
+import com.reecho.reechobe.auth.service.jwt.AuthToken;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +30,10 @@ public class AuthController {
             throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
         }
 
-        AccessToken token = refreshTokenCommandService.refresh(refreshToken);
+        AuthToken token = refreshTokenCommandService.refresh(refreshToken);
         RefreshTokenResponse result = new RefreshTokenResponse(
-                token.token(),
-                token.expiresAt()
+                token.accessToken(),
+                token.accessTokenExpiresAt()
         );
         return ApiResponse.success(HttpStatus.OK, "토큰이 재발급되었습니다.", result);
     }
