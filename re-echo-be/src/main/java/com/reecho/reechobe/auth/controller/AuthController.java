@@ -3,7 +3,7 @@ package com.reecho.reechobe.auth.controller;
 import com.reecho.reechobe.auth.dto.RefreshTokenResponse;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.auth.service.command.RefreshTokenCommandService;
-import com.reecho.reechobe.auth.service.jwt.AuthToken;
+import com.reecho.reechobe.auth.jwt.AuthToken;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

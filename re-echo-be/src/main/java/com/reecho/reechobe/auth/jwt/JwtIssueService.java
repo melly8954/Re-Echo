@@ -1,7 +1,8 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.jwt;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.user.domain.User;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

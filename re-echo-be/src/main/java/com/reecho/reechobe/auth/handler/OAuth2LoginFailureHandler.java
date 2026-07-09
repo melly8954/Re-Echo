@@ -1,6 +1,6 @@
 package com.reecho.reechobe.auth.handler;
 
-import com.reecho.reechobe.auth.service.OAuth2LoginProperties;
+import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

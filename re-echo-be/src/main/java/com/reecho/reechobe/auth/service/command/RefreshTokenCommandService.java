@@ -1,9 +1,9 @@
 package com.reecho.reechobe.auth.service.command;
 
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
-import com.reecho.reechobe.auth.service.AuthToken;
-import com.reecho.reechobe.auth.service.JwtIssueService;
-import com.reecho.reechobe.auth.service.JwtVerifyService;
+import com.reecho.reechobe.auth.jwt.AuthToken;
+import com.reecho.reechobe.auth.jwt.JwtIssueService;
+import com.reecho.reechobe.auth.jwt.JwtVerifyService;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;

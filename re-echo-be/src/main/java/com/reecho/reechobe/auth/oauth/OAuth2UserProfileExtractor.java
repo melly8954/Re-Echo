@@ -1,4 +1,4 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.oauth;
 
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.common.exception.BusinessException;

@@ -1,4 +1,4 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

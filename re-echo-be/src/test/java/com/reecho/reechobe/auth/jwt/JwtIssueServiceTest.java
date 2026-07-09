@@ -1,8 +1,9 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.user.domain.User;
 import java.time.Duration;
 import java.time.Instant;

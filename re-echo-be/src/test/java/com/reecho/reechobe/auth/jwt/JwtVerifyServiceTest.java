@@ -1,4 +1,4 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -8,6 +8,7 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;

@@ -1,7 +1,7 @@
 package com.reecho.reechobe.auth.handler;
 
-import com.reecho.reechobe.auth.service.AuthToken;
-import com.reecho.reechobe.auth.service.OAuth2LoginProperties;
+import com.reecho.reechobe.auth.jwt.AuthToken;
+import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.time.Instant;

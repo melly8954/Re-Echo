@@ -1,10 +1,10 @@
 package com.reecho.reechobe.auth.handler;
 
-import com.reecho.reechobe.auth.service.AuthToken;
-import com.reecho.reechobe.auth.service.JwtIssueService;
-import com.reecho.reechobe.auth.service.OAuth2LoginProperties;
-import com.reecho.reechobe.auth.service.OAuth2UserProfile;
-import com.reecho.reechobe.auth.service.OAuth2UserProfileExtractor;
+import com.reecho.reechobe.auth.jwt.AuthToken;
+import com.reecho.reechobe.auth.jwt.JwtIssueService;
+import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
+import com.reecho.reechobe.auth.oauth.OAuth2UserProfile;
+import com.reecho.reechobe.auth.oauth.OAuth2UserProfileExtractor;
 import com.reecho.reechobe.auth.service.command.CompleteOAuthLoginCommandService;
 import com.reecho.reechobe.user.domain.User;
 import jakarta.servlet.ServletException;

@@ -1,4 +1,4 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.config;
 
 import lombok.Getter;
 import lombok.Setter;

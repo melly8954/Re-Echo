@@ -1,4 +1,4 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.oauth;
 
 import com.reecho.reechobe.user.domain.OAuthProvider;
 

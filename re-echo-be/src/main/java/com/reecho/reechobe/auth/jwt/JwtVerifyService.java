@@ -1,10 +1,11 @@
-package com.reecho.reechobe.auth.service;
+package com.reecho.reechobe.auth.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.reecho.reechobe.auth.exception.AuthErrorCode;
+import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.common.exception.BusinessException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
