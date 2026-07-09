@@ -4,6 +4,7 @@ import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
@@ -28,6 +29,10 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
             throw new IllegalStateException("OAuth 로그인 실패 리다이렉트 URI 설정은 필수입니다.");
         }
 
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
         response.sendRedirect(properties.getFailureRedirectUri());
     }
 }

@@ -36,17 +36,21 @@ public class JwtIssueService {
         Instant accessTokenExpiresAt = issuedAt.plus(properties.getAccessTokenTtl());
         Instant refreshTokenExpiresAt = issuedAt.plus(properties.getRefreshTokenTtl());
         UUID userId = user.getId();
+        UUID accessTokenId = UUID.randomUUID();
+        UUID refreshTokenId = UUID.randomUUID();
 
         return new AuthToken(
-                encode(userId, ACCESS_TOKEN_TYPE, issuedAt, accessTokenExpiresAt),
+                encode(userId, accessTokenId, ACCESS_TOKEN_TYPE, issuedAt, accessTokenExpiresAt),
                 accessTokenExpiresAt,
-                encode(userId, REFRESH_TOKEN_TYPE, issuedAt, refreshTokenExpiresAt),
+                encode(userId, refreshTokenId, REFRESH_TOKEN_TYPE, issuedAt, refreshTokenExpiresAt),
+                refreshTokenId,
                 refreshTokenExpiresAt
         );
     }
 
     private String encode(
             UUID userId,
+            UUID tokenId,
             String tokenType,
             Instant issuedAt,
             Instant expiresAt
@@ -54,6 +58,7 @@ public class JwtIssueService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.getIssuer())
                 .subject(userId.toString())
+                .id(tokenId.toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
                 .claim(TOKEN_TYPE_CLAIM, tokenType)

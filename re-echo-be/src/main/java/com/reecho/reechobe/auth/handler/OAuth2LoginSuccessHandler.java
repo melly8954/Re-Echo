@@ -1,15 +1,16 @@
 package com.reecho.reechobe.auth.handler;
 
 import com.reecho.reechobe.auth.jwt.AuthToken;
-import com.reecho.reechobe.auth.jwt.JwtIssueService;
 import com.reecho.reechobe.auth.config.OAuth2LoginProperties;
 import com.reecho.reechobe.auth.oauth.OAuth2UserProfile;
 import com.reecho.reechobe.auth.oauth.OAuth2UserProfileExtractor;
 import com.reecho.reechobe.auth.service.command.CompleteOAuthLoginCommandService;
+import com.reecho.reechobe.auth.service.command.IssueAuthTokenCommandService;
 import com.reecho.reechobe.user.domain.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -24,7 +25,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final OAuth2UserProfileExtractor profileExtractor;
     private final CompleteOAuthLoginCommandService completeOAuthLoginCommandService;
-    private final JwtIssueService jwtIssueService;
+    private final IssueAuthTokenCommandService issueAuthTokenCommandService;
     private final OAuth2LoginProperties properties;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
@@ -44,9 +45,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 profile.providerUserId(),
                 profile.providerEmail()
         );
-        AuthToken token = jwtIssueService.issue(user);
+        AuthToken token = issueAuthTokenCommandService.issue(user);
 
         refreshTokenCookieWriter.add(response, token);
+        invalidateOAuthSession(request);
         response.sendRedirect(properties.getSuccessRedirectUri());
     }
 
@@ -57,6 +59,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         if (properties.getSuccessRedirectUri() == null || properties.getSuccessRedirectUri().isBlank()) {
             throw new IllegalStateException("OAuth 로그인 성공 리다이렉트 URI 설정은 필수입니다.");
+        }
+    }
+
+    private void invalidateOAuthSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
         }
     }
 }

@@ -4,10 +4,11 @@ import com.reecho.reechobe.auth.exception.AuthErrorCode;
 import com.reecho.reechobe.auth.jwt.AuthToken;
 import com.reecho.reechobe.auth.jwt.JwtIssueService;
 import com.reecho.reechobe.auth.jwt.JwtVerifyService;
+import com.reecho.reechobe.auth.jwt.VerifiedToken;
+import com.reecho.reechobe.auth.refresh.RefreshTokenStore;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +21,24 @@ public class RefreshTokenCommandService {
     private final JwtVerifyService jwtVerifyService;
     private final JwtIssueService jwtIssueService;
     private final UserRepository userRepository;
+    private final RefreshTokenStore refreshTokenStore;
 
     // 쿠키로 받은 Refresh Token이 유효한 사용자에게만 새 토큰을 발급한다.
     @Transactional(readOnly = true)
     public AuthToken refresh(String refreshToken) {
-        UUID userId = jwtVerifyService.verifyRefreshToken(refreshToken);
-        User user = userRepository.findById(userId)
+        VerifiedToken verifiedToken = jwtVerifyService.verifyRefreshToken(refreshToken);
+        User user = userRepository.findById(verifiedToken.userId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID));
-        return jwtIssueService.issue(user);
+        AuthToken newToken = jwtIssueService.issue(user);
+        boolean rotated = refreshTokenStore.rotate(
+                verifiedToken.userId(),
+                verifiedToken.tokenId(),
+                newToken.refreshTokenId(),
+                newToken.refreshTokenExpiresAt()
+        );
+        if (!rotated) {
+            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+        }
+        return newToken;
     }
 }

@@ -9,6 +9,12 @@ spring:
     encoding: UTF-8
     clean-disabled: true
 
+  session:
+    store-type: redis
+    timeout: 10m
+    redis:
+      namespace: reecho:oauth-session
+
 management:
   endpoints:
     web:

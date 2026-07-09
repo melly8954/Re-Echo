@@ -23,6 +23,19 @@ public class RefreshTokenCookieWriter {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie(token).toString());
     }
 
+    // 로그아웃 시 브라우저가 보유한 Refresh Token 쿠키를 즉시 만료시킨다.
+    public void expire(HttpServletResponse response) {
+        validateProperties();
+        ResponseCookie cookie = ResponseCookie.from(properties.getRefreshTokenCookieName(), "")
+                .httpOnly(true)
+                .secure(properties.isRefreshTokenSecure())
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(Duration.ZERO)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
     private ResponseCookie refreshTokenCookie(AuthToken token) {
         return ResponseCookie.from(properties.getRefreshTokenCookieName(), token.refreshToken())
                 .httpOnly(true)

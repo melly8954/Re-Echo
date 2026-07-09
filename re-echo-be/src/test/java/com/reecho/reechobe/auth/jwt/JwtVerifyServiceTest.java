@@ -75,9 +75,12 @@ class JwtVerifyServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         AuthToken token = issueService.issue(user);
 
-        UUID result = verifyService.verifyRefreshToken(token.refreshToken());
+        VerifiedToken result = verifyService.verifyRefreshToken(token.refreshToken());
 
-        assertThat(result).isEqualTo(userId);
+        assertThat(result.userId()).isEqualTo(userId);
+        assertThat(result.tokenId()).isEqualTo(token.refreshTokenId());
+        assertThat(result.expiresAt().getEpochSecond())
+                .isEqualTo(token.refreshTokenExpiresAt().getEpochSecond());
     }
 
     @Test
@@ -112,6 +115,7 @@ class JwtVerifyServiceTest {
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
                 .issuer(properties.getIssuer())
                 .subject(userId.toString())
+                .id(UUID.randomUUID().toString())
                 .issuedAt(now.minus(Duration.ofHours(2)))
                 .expiresAt(now.minus(Duration.ofHours(1)))
                 .claim("typ", tokenType)

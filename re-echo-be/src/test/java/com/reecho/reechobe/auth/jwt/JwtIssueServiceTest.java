@@ -29,6 +29,7 @@ class JwtIssueServiceTest {
 
         assertThat(token.accessToken()).isNotBlank();
         assertThat(token.refreshToken()).isNotBlank();
+        assertThat(token.refreshTokenId()).isNotNull();
         assertThat(token.accessTokenExpiresAt()).isAfter(Instant.now());
         assertThat(token.refreshTokenExpiresAt()).isAfter(token.accessTokenExpiresAt());
     }
