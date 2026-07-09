@@ -243,6 +243,10 @@ src
 - Entity를 API 응답으로 직접 노출하지 않는다.
 - Request DTO와 Response DTO는 불변 값 전달 객체로 다루며,
   Java에서는 기본적으로 `record`를 사용한다.
+- 단순 DTO는 record 생성자를 사용하고, 필드가 많아 생성자 가독성이
+  떨어지는 Response DTO에만 builder 사용을 검토한다.
+- Entity 변환처럼 생성 의미가 필요한 DTO는 `from(...)`, `of(...)`
+  정적 팩터리 메서드를 사용할 수 있다.
 - DTO에 비즈니스 로직, 권한 판단, 영속성 의존 코드를 넣지 않는다.
 - Request DTO 검증은 Controller 입력 경계에서 수행한다.
 - Response DTO 구조는 `docs/API.md`의 응답 예시를 기준으로 맞춘다.
@@ -254,6 +258,8 @@ src
 - Entity 클래스에는 기본적으로 `@Entity`, `@Table(name = "...")`를 명시한다.
 - Entity는 Lombok의 `@Getter`, `@NoArgsConstructor(access = AccessLevel.PROTECTED)`, `@AllArgsConstructor(access = AccessLevel.PRIVATE)`, `@Builder(access = AccessLevel.PRIVATE)`를 기본으로 사용한다.
 - Entity 생성은 공개 builder 대신 정적 팩터리 메서드로 노출한다.
+- Entity에 공개 setter를 두지 않고, 상태 변경은 의도가 드러나는 도메인
+  메서드로 처리한다.
 - `@Column`과 `@JoinColumn`에는 기본적으로 `name`만 명시한다.
 - `nullable`, `length`, `uniqueConstraints`처럼 Flyway DDL과 중복되는 제약은 Entity에 반복하지 않는다.
 - 단, `updatable = false`, `insertable = false`처럼 JPA 동작 제어가 필요한 매핑 옵션은 필요한 경우 명시할 수 있다.
@@ -296,6 +302,8 @@ src
 ### 8.6 Security
 
 - 토큰, 쿠키, OAuth 민감정보를 로그에 남기지 않는다.
+- 민감정보가 포함된 record DTO는 `toString()` 결과를 로그에 남기지
+  않는다.
 - 인증 사용자 정보는 Security Context 기반으로 주입한다.
 - 최종 권한 검증은 Service 유스케이스 안에서 수행한다.
 - WebSocket handshake 인증도 HTTP 인증과 같은 Access Token 기준을
@@ -419,6 +427,7 @@ src
   계약성 예외를 반드시 포함한다.
 - API 테스트는 `docs/API.md`의 응답 형식과 에러 코드를 함께 검증한다.
 - 테스트 이름은 의도가 드러나게 작성한다.
+- 테스트 객체는 다양한 상태 구성이 필요한 경우 builder를 사용할 수 있다.
 
 ## 15. Git Convention
 
