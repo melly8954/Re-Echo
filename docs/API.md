@@ -311,12 +311,17 @@
 
 ### 11.4 Logout
 
-- Description: Refresh Token을 무효화하고 세션을 종료한다.
+- Description: 유효한 Refresh Token이 있으면 현재 세션을 무효화하고,
+  Refresh Token 쿠키를 만료한다.
 - Method: `POST`
 - URL: `/api/v1/auth/logout`
-- Authentication: Access Token 또는 Refresh Token 쿠키
-- Authorization: 인증 사용자
+- Authentication: 선택
+- Authorization: 불필요
 - Request Body: 없음
+- Idempotency
+  - 세션이 이미 종료되었거나 Refresh Token 쿠키가 없거나 만료·무효
+    상태여도 동일하게 성공 처리한다.
+  - 모든 요청에서 Refresh Token 쿠키를 만료한다.
 - Response Body
 
 ```json
@@ -327,6 +332,8 @@
   "result": null
 }
 ```
+
+- Success Response: `200 OK`
 
 ### 11.5 내 계정 조회
 

@@ -80,7 +80,11 @@
 - refresh 시 refresh token도 재발급하여 기존 token을 교체
 - 동일 사용자의 다중 브라우저·기기 로그인 세션을 허용
 - refresh token은 세션별로 관리하며 logout 시 현재 세션만 무효화
-- refresh token 만료 또는 무효는 401과 `AUTH_*` 비즈니스 예외로 처리
+- refresh 요청에서 refresh token 만료 또는 무효는 401과 `AUTH_*`
+  비즈니스 예외로 처리
+- logout은 멱등하게 처리하며 세션이 이미 종료되었거나 refresh token
+  cookie가 없거나 만료·무효 상태여도 `200 OK`를 반환
+- logout 요청 시 refresh token cookie는 항상 만료 처리
 - logout 응답은 빈 `result`와 성공 메시지를 반환
 
 ### 8.2 워크스페이스
