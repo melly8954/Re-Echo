@@ -2,6 +2,7 @@ package com.reecho.reechobe.auth.jwt;
 
 import com.reecho.reechobe.auth.config.JwtProperties;
 import com.reecho.reechobe.user.domain.User;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -72,12 +73,16 @@ public class JwtIssueService {
             throw new IllegalStateException("JWT 발급자 설정은 필수입니다.");
         }
 
-        if (properties.getAccessTokenTtl() == null) {
-            throw new IllegalStateException("Access Token 만료 시간 설정은 필수입니다.");
-        }
+        validateTokenTtl(properties.getAccessTokenTtl(), "Access Token");
+        validateTokenTtl(properties.getRefreshTokenTtl(), "Refresh Token");
+    }
 
-        if (properties.getRefreshTokenTtl() == null) {
-            throw new IllegalStateException("Refresh Token 만료 시간 설정은 필수입니다.");
+    private void validateTokenTtl(Duration ttl, String tokenName) {
+        if (ttl == null) {
+            throw new IllegalStateException(tokenName + " 만료 시간 설정은 필수입니다.");
+        }
+        if (ttl.isZero() || ttl.isNegative()) {
+            throw new IllegalStateException(tokenName + " 만료 시간 설정은 0보다 커야 합니다.");
         }
     }
 }
