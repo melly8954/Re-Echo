@@ -534,6 +534,11 @@ Re-Echo 사용자 기본 계정이다.
 - 프로필 이미지가 제거되거나 교체되면 기존 파일은 `ORPHANED`로
   표시하고 `orphaned_at`을 기록한다
 - 정기 스케줄러가 고아 파일과 만료 대상 파일을 정리한다
+- 프로필 이미지 정리 대상은 `purpose = 'PROFILE_IMAGE'`이고
+  `status IN ('ACTIVE', 'ORPHANED')`인 파일 중 사용자 계정과
+  워크스페이스 멤버십에서 더 이상 참조하지 않는 파일이다
+- `ORPHANED` 파일은 `orphaned_at`, 임시 `ACTIVE` 파일은 `created_at`이
+  정리 기준 시각보다 이전일 때 정리 후보가 된다
 
 ## 11. Index Strategy
 
