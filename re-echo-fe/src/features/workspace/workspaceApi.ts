@@ -32,6 +32,21 @@ export interface WorkspaceDetail {
   canRestore: boolean
 }
 
+export interface WorkspaceListItem {
+  id: string
+  name: string
+  imageUrl: string | null
+  role: WorkspaceMembershipRole
+  status: WorkspaceStatus
+  lastVisitedAt: string
+  defaultChannelId: string
+  unreadChannelCount: number
+}
+
+export interface WorkspaceList {
+  contents: WorkspaceListItem[]
+}
+
 export interface WorkspaceChannel {
   id: string
   name: string
@@ -50,6 +65,13 @@ export function createWorkspace(request: CreateWorkspaceRequest) {
     method: 'POST',
     authenticated: true,
     body: JSON.stringify(request),
+  })
+}
+
+export function getWorkspaces() {
+  return apiRequest<WorkspaceList>('/api/v1/workspaces', {
+    method: 'GET',
+    authenticated: true,
   })
 }
 

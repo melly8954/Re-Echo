@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useCreateWorkspace } from '../features/workspace/useCreateWorkspace'
+import { useWorkspaceList, workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
+import type { WorkspaceMembershipRole } from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspaceStartPage.module.css'
 
@@ -22,15 +25,30 @@ function getFieldError(error: unknown, field: string) {
     ?.reason ?? null
 }
 
+function getWorkspaceRoleLabel(role: WorkspaceMembershipRole) {
+  if (role === 'OWNER') {
+    return '소유자'
+  }
+  if (role === 'ADMIN') {
+    return '관리자'
+  }
+  return '멤버'
+}
+
 export function WorkspaceStartPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const createWorkspace = useCreateWorkspace()
+  const workspaceListQuery = useWorkspaceList()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [clientError, setClientError] = useState<string | null>(null)
   const trimmedName = name.trim()
   const trimmedDescription = description.trim()
   const nameError = clientError ?? getFieldError(createWorkspace.error, 'name')
+  const workspaces = workspaceListQuery.data?.contents ?? []
+  const ownedWorkspaces = workspaces.filter((workspace) => workspace.role === 'OWNER')
+  const joinedWorkspaces = workspaces.filter((workspace) => workspace.role !== 'OWNER')
 
   async function handleCreateWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,6 +70,7 @@ export function WorkspaceStartPage() {
         name: trimmedName,
         description: trimmedDescription || null,
       })
+      await queryClient.invalidateQueries({ queryKey: workspaceListQueryKey })
       void navigate(`/workspaces/${createdWorkspace.id}`)
     } catch {
       // mutation 상태를 통해 오류 메시지를 화면에 표시한다.
@@ -69,6 +88,90 @@ export function WorkspaceStartPage() {
             있습니다.
           </span>
         </div>
+
+        {workspaceListQuery.isLoading && (
+          <section className={styles.workspaceList} aria-label="워크스페이스 목록을 불러오는 중">
+            <div className={styles.workspaceSkeleton} />
+            <div className={styles.workspaceSkeleton} />
+          </section>
+        )}
+
+        {workspaceListQuery.isError && (
+          <section className={styles.listError} aria-live="polite">
+            <p>워크스페이스 목록을 불러올 수 없습니다.</p>
+            <button type="button" onClick={() => void workspaceListQuery.refetch()}>
+              다시 시도
+            </button>
+          </section>
+        )}
+
+        {!workspaceListQuery.isLoading && !workspaceListQuery.isError && workspaces.length > 0 && (
+          <section className={styles.workspaceList} aria-label="내 워크스페이스">
+            {ownedWorkspaces.length > 0 && (
+              <div className={styles.workspaceSection}>
+                <div className={styles.sectionHeading}>
+                  <h2>내가 만든 워크스페이스</h2>
+                  <span>{ownedWorkspaces.length}</span>
+                </div>
+                <div className={styles.workspaceGrid}>
+                  {ownedWorkspaces.map((workspace) => (
+                    <button
+                      key={workspace.id}
+                      className={styles.workspaceCard}
+                      type="button"
+                      onClick={() => void navigate(`/workspaces/${workspace.id}`)}
+                    >
+                      {workspace.imageUrl ? (
+                        <img src={workspace.imageUrl} alt="" />
+                      ) : (
+                        <span className={styles.workspaceImageFallback} aria-hidden="true">
+                          {workspace.name.slice(0, 1)}
+                        </span>
+                      )}
+                      <span className={styles.workspaceCardContent}>
+                        <strong>{workspace.name}</strong>
+                        <small>{workspace.status === 'ARCHIVED' ? '보관됨' : '활성'}</small>
+                      </span>
+                      <span className={styles.roleBadge}>{getWorkspaceRoleLabel(workspace.role)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {joinedWorkspaces.length > 0 && (
+              <div className={styles.workspaceSection}>
+                <div className={styles.sectionHeading}>
+                  <h2>참여 중인 워크스페이스</h2>
+                  <span>{joinedWorkspaces.length}</span>
+                </div>
+                <div className={styles.workspaceGrid}>
+                  {joinedWorkspaces.map((workspace) => (
+                    <button
+                      key={workspace.id}
+                      className={styles.workspaceCard}
+                      type="button"
+                      onClick={() => void navigate(`/workspaces/${workspace.id}`)}
+                    >
+                      {workspace.imageUrl ? (
+                        <img src={workspace.imageUrl} alt="" />
+                      ) : (
+                        <span className={styles.workspaceImageFallback} aria-hidden="true">
+                          {workspace.name.slice(0, 1)}
+                        </span>
+                      )}
+                      <span className={styles.workspaceCardContent}>
+                        <strong>{workspace.name}</strong>
+                        <small>{workspace.status === 'ARCHIVED' ? '보관됨' : '활성'}</small>
+                      </span>
+                      <span className={styles.roleBadge}>{getWorkspaceRoleLabel(workspace.role)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         <div className={styles.options}>
           <article className={styles.card}>
