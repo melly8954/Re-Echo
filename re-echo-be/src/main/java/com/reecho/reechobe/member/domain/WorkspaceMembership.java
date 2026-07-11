@@ -63,9 +63,6 @@ public class WorkspaceMembership {
     @Column(name = "removed_at")
     private LocalDateTime removedAt;
 
-    @Column(name = "banned_at")
-    private LocalDateTime bannedAt;
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

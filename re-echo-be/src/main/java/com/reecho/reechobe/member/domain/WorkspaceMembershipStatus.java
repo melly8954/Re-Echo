@@ -4,6 +4,5 @@ package com.reecho.reechobe.member.domain;
 public enum WorkspaceMembershipStatus {
     ACTIVE,
     LEFT,
-    REMOVED,
-    BANNED
+    REMOVED
 }
