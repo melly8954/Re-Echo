@@ -375,6 +375,12 @@ Re-Echo 사용자 기본 계정이다.
   `uploaded_by_membership_id`가 필요하다.
 - `purpose = 'PROFILE_IMAGE'`이면 이미지 MIME 타입만 허용하고
   `file_size_bytes <= 10485760`이어야 한다.
+- `purpose = 'PROFILE_IMAGE'`인 파일은 계정 기본 프로필 이미지와
+  워크스페이스 프로필 이미지 문맥을 구분한다.
+  - 계정 기본 프로필 이미지는 `workspace_id`와
+    `uploaded_by_membership_id`가 모두 `null`이다.
+  - 워크스페이스 프로필 이미지는 `workspace_id`와
+    `uploaded_by_membership_id`가 모두 필요하다.
 - `purpose = 'MESSAGE_ATTACHMENT'`이면 `file_size_bytes <= 20971520`
 
 ### 7.11 `message_attachments`

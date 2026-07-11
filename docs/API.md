@@ -975,6 +975,9 @@
 - Constraints
   - 허용 MIME 타입: `image/jpeg`, `image/png`, `image/webp`
   - 최대 크기: 10MB
+  - 서버는 파일 메타데이터에 `workspaceId`와 현재 사용자의
+    `membershipId`를 함께 저장해 워크스페이스 프로필 이미지 문맥을
+    고정한다.
 - Error Responses
   - `400 FILE_SIZE_EXCEEDED`
   - `400 FILE_CONTENT_TYPE_NOT_ALLOWED`
@@ -1151,6 +1154,9 @@
 - `MESSAGE_DELETED`
 
 모든 메시지 이벤트는 partial patch가 아니라 full snapshot을 전달한다.
+클라이언트가 로컬 메시지 상태와 수신 이벤트의 최신성을 비교할 때는
+event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
+우선 기준으로 사용한다.
 
 ### 14.6 Typing Event Payload
 
