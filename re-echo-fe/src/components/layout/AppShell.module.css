@@ -53,6 +53,10 @@
   align-items: center;
 }
 
+.channelMenuButton {
+  display: none;
+}
+
 .account img,
 .avatarFallback {
   width: 30px;
@@ -71,7 +75,9 @@
 }
 
 .accountLink,
-.accountButton {
+.accountButton,
+.channelMenuButton,
+.drawerCloseButton {
   padding: 7px 9px;
   color: var(--color-muted);
   background: transparent;
@@ -83,10 +89,21 @@
 }
 
 .accountLink:hover,
-.accountButton:hover {
+.accountButton:hover,
+.channelMenuButton:hover,
+.drawerCloseButton:hover {
   color: var(--color-text);
   background: var(--color-surface-subtle);
   border-color: var(--color-border);
+}
+
+.accountLink:focus-visible,
+.accountButton:focus-visible,
+.channelMenuButton:focus-visible,
+.drawerCloseButton:focus-visible,
+.mobileChannelOverlay:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .body {
@@ -122,6 +139,10 @@
   background: var(--color-background);
 }
 
+.mobileChannelLayer {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .topBar {
     padding: 0 16px;
@@ -138,7 +159,50 @@
     gap: 2px;
   }
 
+  .channelMenuButton {
+    display: inline-flex;
+  }
+
   .body {
     grid-template-columns: 1fr;
+  }
+
+  .mobileChannelLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: block;
+  }
+
+  .mobileChannelOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgb(31 45 42 / 42%);
+    border: 0;
+    cursor: pointer;
+  }
+
+  .mobileChannelDrawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(82vw, 320px);
+    padding: 22px 18px;
+    background: #f0f5f3;
+    border-right: 1px solid var(--color-border);
+    box-shadow: 12px 0 32px rgb(31 45 42 / 18%);
+  }
+
+  .mobileChannelHeader {
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobileChannelHeader .sidebarLabel {
+    margin: 0;
   }
 }

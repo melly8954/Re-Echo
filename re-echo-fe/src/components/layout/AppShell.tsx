@@ -1,10 +1,71 @@
-import type { PropsWithChildren } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, PropsWithChildren } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import styles from './AppShell.module.css'
 
 export function AppShell({ children }: PropsWithChildren) {
   const { user, logout } = useAuth()
+  const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
+  const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const channelDrawerRef = useRef<HTMLElement>(null)
+  const channelDrawerCloseButtonRef = useRef<HTMLButtonElement>(null)
+  const channelDrawerId = 'mobile-channel-drawer'
+
+  useEffect(() => {
+    if (!isChannelDrawerOpen) {
+      return undefined
+    }
+
+    channelDrawerCloseButtonRef.current?.focus()
+    const channelMenuButton = channelMenuButtonRef.current
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsChannelDrawerOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      channelMenuButton?.focus()
+    }
+  }, [isChannelDrawerOpen])
+
+  function handleChannelDrawerKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const focusableElements = channelDrawerRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled])',
+    )
+    if (!focusableElements || focusableElements.length === 0) {
+      return
+    }
+
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault()
+      lastElement.focus()
+      return
+    }
+    if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault()
+      firstElement.focus()
+    }
+  }
+
+  const channelList = (
+    <div>
+      <p className={styles.sidebarLabel}>채널</p>
+      <p className={styles.emptyText}>
+        워크스페이스에 참여하면 채널이 표시됩니다.
+      </p>
+    </div>
+  )
 
   return (
     <div className={styles.shell}>
@@ -15,6 +76,16 @@ export function AppShell({ children }: PropsWithChildren) {
         </Link>
         <p className={styles.workspaceName}>워크스페이스를 선택하세요</p>
         <div className={styles.account}>
+          <button
+            ref={channelMenuButtonRef}
+            className={styles.channelMenuButton}
+            type="button"
+            aria-controls={channelDrawerId}
+            aria-expanded={isChannelDrawerOpen}
+            onClick={() => setIsChannelDrawerOpen(true)}
+          >
+            채널
+          </button>
           {user?.profileImageUrl ? (
             <img src={user.profileImageUrl} alt="" />
           ) : (
@@ -38,15 +109,43 @@ export function AppShell({ children }: PropsWithChildren) {
 
       <div className={styles.body}>
         <aside className={styles.sidebar} aria-label="채널 목록">
-          <div>
-            <p className={styles.sidebarLabel}>채널</p>
-            <p className={styles.emptyText}>
-              워크스페이스에 참여하면 채널이 표시됩니다.
-            </p>
-          </div>
+          {channelList}
         </aside>
         <main className={styles.content}>{children}</main>
       </div>
+
+      {isChannelDrawerOpen ? (
+        <div className={styles.mobileChannelLayer}>
+          <button
+            className={styles.mobileChannelOverlay}
+            type="button"
+            aria-label="채널 목록 닫기"
+            onClick={() => setIsChannelDrawerOpen(false)}
+          />
+          <aside
+            ref={channelDrawerRef}
+            className={styles.mobileChannelDrawer}
+            id={channelDrawerId}
+            aria-label="모바일 채널 목록"
+            onKeyDown={handleChannelDrawerKeyDown}
+          >
+            <div className={styles.mobileChannelHeader}>
+              <p className={styles.sidebarLabel}>채널</p>
+              <button
+                ref={channelDrawerCloseButtonRef}
+                className={styles.drawerCloseButton}
+                type="button"
+                onClick={() => setIsChannelDrawerOpen(false)}
+              >
+                닫기
+              </button>
+            </div>
+            <p className={styles.emptyText}>
+              워크스페이스에 참여하면 채널이 표시됩니다.
+            </p>
+          </aside>
+        </div>
+      ) : null}
     </div>
   )
 }
