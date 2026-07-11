@@ -10,6 +10,8 @@ import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AuthTokenCommandService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthTokenCommandService.class);
 
     private final JwtVerifyService jwtVerifyService;
     private final JwtIssueService jwtIssueService;
@@ -59,9 +63,18 @@ public class AuthTokenCommandService {
             return;
         }
 
-        refreshTokenStore.revoke(
-                verifiedToken.userId(),
-                verifiedToken.tokenId()
-        );
+        try {
+            refreshTokenStore.revoke(
+                    verifiedToken.userId(),
+                    verifiedToken.tokenId()
+            );
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "Failed to revoke refresh token on logout. userId={}, tokenId={}",
+                    verifiedToken.userId(),
+                    verifiedToken.tokenId(),
+                    exception
+            );
+        }
     }
 }

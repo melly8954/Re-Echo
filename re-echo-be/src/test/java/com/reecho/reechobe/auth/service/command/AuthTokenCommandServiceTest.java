@@ -167,7 +167,7 @@ class AuthTokenCommandServiceTest {
     }
 
     @Test
-    void refresh_token_저장소_장애는_숨기지_않는다() {
+    void 로그아웃은_refresh_token_저장소_장애가_나도_성공한다() {
         UUID userId = UUID.randomUUID();
         UUID tokenId = UUID.randomUUID();
         VerifiedToken token = verifiedToken(userId, tokenId);
@@ -175,9 +175,9 @@ class AuthTokenCommandServiceTest {
         when(refreshTokenStore.revoke(userId, tokenId))
                 .thenThrow(new IllegalStateException("Redis 연결 실패"));
 
-        assertThatThrownBy(() -> service.logout("refresh-token"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Redis 연결 실패");
+        service.logout("refresh-token");
+
+        verify(refreshTokenStore).revoke(userId, tokenId);
     }
 
     private VerifiedToken verifiedToken(UUID userId, UUID tokenId) {
