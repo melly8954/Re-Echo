@@ -418,6 +418,20 @@
 ```
 
 - Success Response: `201 Created`
+- Response Body
+
+```json
+{
+  "status": 201,
+  "errorCode": null,
+  "message": "워크스페이스가 생성되었습니다.",
+  "result": {
+    "id": "uuid",
+    "defaultChannelId": "uuid"
+  }
+}
+```
+
 - Error Responses
   - `400 VALIDATION_ERROR`
   - `409 WORKSPACE_NAME_CONFLICT`
