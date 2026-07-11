@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -63,6 +64,18 @@ public class R2StorageClient implements StorageClient {
                 return false;
             }
             throw exception;
+        }
+    }
+
+    @Override
+    public void delete(String storageKey) {
+        requireConfigured();
+        try (S3Client s3Client = createS3Client()) {
+            DeleteObjectRequest request = DeleteObjectRequest.builder()
+                    .bucket(properties.bucket())
+                    .key(storageKey)
+                    .build();
+            s3Client.deleteObject(request);
         }
     }
 

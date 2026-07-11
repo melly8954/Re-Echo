@@ -87,3 +87,8 @@ reecho:
       secret-key: ${R2_SECRET_KEY:}
       public-base-url: ${R2_PUBLIC_BASE_URL:}
       presign-ttl: 10m
+  file-cleanup:
+    enabled: true
+    orphan-retention: 24h
+    batch-size: 100
+    cron: "0 0 3 * * *"

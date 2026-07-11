@@ -2,6 +2,7 @@ package com.reecho.reechobe.user.service.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.reecho.reechobe.file.service.ProfileImageFileService;
@@ -67,5 +68,44 @@ class UserProfileCommandServiceTest {
 
         assertThat(result.displayName()).isEqualTo("새 이름");
         assertThat(result.profileImageUrl()).isEqualTo("https://cdn.example.com/profile.png");
+    }
+
+    @Test
+    void 프로필_이미지를_교체하면_기존_이미지를_고아_파일로_표시한다() {
+        UUID userId = UUID.randomUUID();
+        UUID previousFileId = UUID.randomUUID();
+        UUID nextFileId = UUID.randomUUID();
+        User user = User.createActive("기존 이름", null);
+        user.updateProfileImage("https://cdn.example.com/old.png", previousFileId);
+        ReflectionTestUtils.setField(user, "id", userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(profileImageFileService.requireUploadedAccountProfileImageUrl(userId, nextFileId))
+                .thenReturn("https://cdn.example.com/new.png");
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest();
+        request.setDisplayName("새 이름");
+        request.setProfileImageFileId(nextFileId);
+
+        UserResponse result = service.updateProfile(userId, request);
+
+        assertThat(result.profileImageUrl()).isEqualTo("https://cdn.example.com/new.png");
+        verify(profileImageFileService).markAccountProfileImageOrphaned(userId, previousFileId);
+    }
+
+    @Test
+    void 프로필_이미지를_제거하면_기존_이미지를_고아_파일로_표시한다() {
+        UUID userId = UUID.randomUUID();
+        UUID previousFileId = UUID.randomUUID();
+        User user = User.createActive("기존 이름", null);
+        user.updateProfileImage("https://cdn.example.com/old.png", previousFileId);
+        ReflectionTestUtils.setField(user, "id", userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest();
+        request.setDisplayName("새 이름");
+        request.setProfileImageFileId(null);
+
+        UserResponse result = service.updateProfile(userId, request);
+
+        assertThat(result.profileImageUrl()).isNull();
+        verify(profileImageFileService).markAccountProfileImageOrphaned(userId, previousFileId);
     }
 }

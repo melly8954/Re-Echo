@@ -74,6 +74,16 @@ public class ProfileImageFileService {
         return storageClient.publicUrl(fileObject.getStorageKey());
     }
 
+    @Transactional
+    public void markAccountProfileImageOrphaned(UUID userId, UUID fileId) {
+        FileObject fileObject = fileObjectRepository.findById(fileId)
+                .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
+        if (!fileObject.isOwnedBy(userId) || !fileObject.isProfileImage()) {
+            throw new BusinessException(FileErrorCode.FILE_ACCESS_DENIED);
+        }
+        fileObject.markOrphaned();
+    }
+
     private void validateProfileImage(ProfileImagePresignRequest request) {
         if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
             throw new BusinessException(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);

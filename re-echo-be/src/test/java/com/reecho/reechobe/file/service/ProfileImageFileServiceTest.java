@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.file.domain.FileObject;
+import com.reecho.reechobe.file.domain.FileStatus;
 import com.reecho.reechobe.file.dto.PresignedUploadResponse;
 import com.reecho.reechobe.file.dto.ProfileImagePresignRequest;
 import com.reecho.reechobe.file.exception.FileErrorCode;
@@ -100,5 +101,25 @@ class ProfileImageFileServiceTest {
         ))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED.getDefaultMessage());
+    }
+
+    @Test
+    void 본인_프로필_이미지를_고아_파일로_표시한다() {
+        UUID userId = UUID.randomUUID();
+        UUID fileId = UUID.randomUUID();
+        FileObject fileObject = FileObject.createProfileImage(
+                fileId,
+                userId,
+                "profiles/user/file/profile.png",
+                "profile.png",
+                "image/png",
+                1200L
+        );
+        when(fileObjectRepository.findById(fileId)).thenReturn(Optional.of(fileObject));
+
+        service.markAccountProfileImageOrphaned(userId, fileId);
+
+        assertThat(fileObject.getStatus()).isEqualTo(FileStatus.ORPHANED);
+        assertThat(fileObject.getOrphanedAt()).isNotNull();
     }
 }

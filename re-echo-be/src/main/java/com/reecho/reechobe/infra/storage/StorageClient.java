@@ -10,6 +10,8 @@ public interface StorageClient {
 
     boolean exists(String storageKey);
 
+    void delete(String storageKey);
+
     String publicUrl(String storageKey);
 
     record PresignedUpload(

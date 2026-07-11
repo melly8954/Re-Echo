@@ -70,6 +70,9 @@ public class FileObject {
     @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
 
+    @Column(name = "orphaned_at")
+    private LocalDateTime orphanedAt;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -107,6 +110,23 @@ public class FileObject {
 
     public boolean isDeleted() {
         return status == FileStatus.DELETED;
+    }
+
+    public boolean isOrphaned() {
+        return status == FileStatus.ORPHANED;
+    }
+
+    public void markOrphaned() {
+        if (isDeleted()) {
+            return;
+        }
+        this.status = FileStatus.ORPHANED;
+        this.orphanedAt = LocalDateTime.now();
+    }
+
+    public void markDeleted() {
+        this.status = FileStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
     }
 
     @PrePersist

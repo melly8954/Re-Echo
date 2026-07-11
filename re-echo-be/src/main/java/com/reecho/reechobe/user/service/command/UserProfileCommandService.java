@@ -24,22 +24,41 @@ public class UserProfileCommandService {
     public UserResponse updateProfile(UUID userId, UpdateUserProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED));
+        UUID previousProfileImageFileId = user.getProfileImageFileId();
         user.updateDisplayName(request.displayName());
         if (request.profileImageFileIdPresent()) {
-            updateProfileImage(userId, user, request);
+            updateProfileImage(userId, user, previousProfileImageFileId, request);
         }
         return UserResponse.from(user);
     }
 
-    private void updateProfileImage(UUID userId, User user, UpdateUserProfileRequest request) {
+    private void updateProfileImage(
+            UUID userId,
+            User user,
+            UUID previousProfileImageFileId,
+            UpdateUserProfileRequest request
+    ) {
         if (request.profileImageFileId() == null) {
             user.removeProfileImage();
+            markPreviousProfileImageOrphaned(userId, previousProfileImageFileId, null);
             return;
         }
         String profileImageUrl = profileImageFileService.requireUploadedAccountProfileImageUrl(
                 userId,
                 request.profileImageFileId()
         );
+        markPreviousProfileImageOrphaned(userId, previousProfileImageFileId, request.profileImageFileId());
         user.updateProfileImage(profileImageUrl, request.profileImageFileId());
+    }
+
+    private void markPreviousProfileImageOrphaned(
+            UUID userId,
+            UUID previousProfileImageFileId,
+            UUID nextProfileImageFileId
+    ) {
+        if (previousProfileImageFileId == null || previousProfileImageFileId.equals(nextProfileImageFileId)) {
+            return;
+        }
+        profileImageFileService.markAccountProfileImageOrphaned(userId, previousProfileImageFileId);
     }
 }
