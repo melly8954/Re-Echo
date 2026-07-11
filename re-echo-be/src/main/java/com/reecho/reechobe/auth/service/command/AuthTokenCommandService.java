@@ -70,7 +70,7 @@ public class AuthTokenCommandService {
             );
         } catch (RuntimeException exception) {
             log.warn(
-                    "Failed to revoke refresh token on logout. userId={}, tokenId={}",
+                    "로그아웃 중 Refresh Token 폐기에 실패했습니다. userId={}, tokenId={}",
                     verifiedToken.userId(),
                     verifiedToken.tokenId(),
                     exception
