@@ -1,0 +1,114 @@
+package com.reecho.reechobe.workspace.domain;
+
+import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.common.exception.CommonErrorCode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+// 최상위 협업 공간의 기본 정보와 보관 상태를 보존한다.
+@Getter
+@Entity
+@Table(name = "workspaces")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PRIVATE)
+public class Workspace {
+
+    @Id
+    @Column(name = "id")
+    private UUID id;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "slug")
+    private String slug;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "created_by_user_id")
+    private UUID createdByUserId;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private WorkspaceStatus status = WorkspaceStatus.ACTIVE;
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
+    @Column(name = "archive_expires_at")
+    private LocalDateTime archiveExpiresAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public static Workspace create(
+            String name,
+            String description,
+            String imageUrl,
+            UUID createdByUserId
+    ) {
+        return Workspace.builder()
+                .id(UUID.randomUUID())
+                .name(normalizeName(name))
+                .description(normalizeNullable(description))
+                .imageUrl(normalizeNullable(imageUrl))
+                .createdByUserId(createdByUserId)
+                .status(WorkspaceStatus.ACTIVE)
+                .build();
+    }
+
+    @PrePersist
+    void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    private static String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR);
+        }
+        String normalizedName = name.trim();
+        if (normalizedName.length() > 100) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR);
+        }
+        return normalizedName;
+    }
+
+    private static String normalizeNullable(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+}

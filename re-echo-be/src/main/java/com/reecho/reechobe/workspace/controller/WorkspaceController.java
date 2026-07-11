@@ -1,0 +1,34 @@
+package com.reecho.reechobe.workspace.controller;
+
+import com.reecho.reechobe.common.response.ApiResponse;
+import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
+import com.reecho.reechobe.workspace.dto.CreateWorkspaceRequest;
+import com.reecho.reechobe.workspace.service.command.WorkspaceCreateCommandService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+// 워크스페이스 생성과 조회 API의 진입점을 제공한다.
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/workspaces")
+public class WorkspaceController {
+
+    private final WorkspaceCreateCommandService workspaceCreateCommandService;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Void> createWorkspace(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @Valid @RequestBody CreateWorkspaceRequest request
+    ) {
+        workspaceCreateCommandService.createWorkspace(principal.userId(), request);
+        return ApiResponse.success(HttpStatus.CREATED, "워크스페이스가 생성되었습니다.", null);
+    }
+}
