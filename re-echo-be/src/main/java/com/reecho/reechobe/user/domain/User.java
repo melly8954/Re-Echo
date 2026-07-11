@@ -1,5 +1,7 @@
 package com.reecho.reechobe.user.domain;
 
+import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.member.exception.MemberErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -97,11 +99,11 @@ public class User {
 
     private static String normalizeDisplayName(String displayName) {
         if (displayName == null || displayName.isBlank()) {
-            throw new IllegalArgumentException("계정 표시 이름은 1자 이상 80자 이하여야 합니다.");
+            throw new BusinessException(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
         }
         String normalizedDisplayName = displayName.trim();
         if (normalizedDisplayName.length() > 80) {
-            throw new IllegalArgumentException("계정 표시 이름은 1자 이상 80자 이하여야 합니다.");
+            throw new BusinessException(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
         }
         return normalizedDisplayName;
     }

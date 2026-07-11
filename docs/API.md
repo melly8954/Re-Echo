@@ -1216,6 +1216,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 ### 16.5 Member
 
 - `MEMBER_NOT_FOUND`
+- `MEMBER_INVALID_DISPLAY_NAME`
 - `MEMBER_BANNED`
 - `MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 - `MEMBER_LAST_OWNER_LEAVE_FORBIDDEN`

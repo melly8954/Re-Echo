@@ -3,6 +3,8 @@ package com.reecho.reechobe.user.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.member.exception.MemberErrorCode;
 import org.junit.jupiter.api.Test;
 
 class UserTest {
@@ -19,7 +21,17 @@ class UserTest {
     @Test
     void 표시_이름이_비어있으면_사용자를_생성할_수_없다() {
         assertThatThrownBy(() -> User.createActive(" ", null))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
+    }
+
+    @Test
+    void 표시_이름이_80자를_초과하면_사용자를_생성할_수_없다() {
+        assertThatThrownBy(() -> User.createActive("가".repeat(81), null))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
     }
 
     @Test
