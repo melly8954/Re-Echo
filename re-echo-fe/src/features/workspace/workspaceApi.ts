@@ -13,6 +13,7 @@ export interface CreatedWorkspace {
 export type WorkspaceStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED'
 export type WorkspaceMembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER'
 export type WorkspaceMembershipStatus = 'ACTIVE' | 'LEFT' | 'REMOVED'
+export type ChannelVisibility = 'PUBLIC' | 'PRIVATE'
 
 export interface WorkspaceDetail {
   id: string
@@ -31,6 +32,19 @@ export interface WorkspaceDetail {
   canRestore: boolean
 }
 
+export interface WorkspaceChannel {
+  id: string
+  name: string
+  visibility: ChannelVisibility
+  isGeneral: boolean
+  joined: boolean
+  unreadCount: number
+}
+
+export interface WorkspaceChannelList {
+  contents: WorkspaceChannel[]
+}
+
 export function createWorkspace(request: CreateWorkspaceRequest) {
   return apiRequest<CreatedWorkspace>('/api/v1/workspaces', {
     method: 'POST',
@@ -44,4 +58,14 @@ export function getWorkspaceDetail(workspaceId: string) {
     method: 'GET',
     authenticated: true,
   })
+}
+
+export function getWorkspaceChannels(workspaceId: string) {
+  return apiRequest<WorkspaceChannelList>(
+    `/api/v1/workspaces/${workspaceId}/channels`,
+    {
+      method: 'GET',
+      authenticated: true,
+    },
+  )
 }

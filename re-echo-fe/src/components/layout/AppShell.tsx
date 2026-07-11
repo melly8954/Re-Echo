@@ -8,12 +8,16 @@ interface ChannelNavigationItem {
   id: string
   name: string
   href: string
+  visibility: 'PUBLIC' | 'PRIVATE'
+  joined: boolean
+  unreadCount: number
 }
 
 interface AppShellProps {
   workspaceName?: string
   channels?: ChannelNavigationItem[]
   activeChannelId?: string
+  isChannelsLoading?: boolean
 }
 
 export function AppShell({
@@ -21,6 +25,7 @@ export function AppShell({
   workspaceName,
   channels = [],
   activeChannelId,
+  isChannelsLoading = false,
 }: PropsWithChildren<AppShellProps>) {
   const { user, logout } = useAuth()
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
@@ -80,7 +85,13 @@ export function AppShell({
 
   const channelNavigation = (
     <>
-      {channels.length > 0 ? (
+      {isChannelsLoading ? (
+        <div className={styles.channelSkeletonList} aria-label="채널 목록을 불러오는 중">
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : channels.length > 0 ? (
         <nav className={styles.channelList} aria-label="워크스페이스 채널">
           {channels.map((channel) => (
             <Link
@@ -88,12 +99,22 @@ export function AppShell({
               className={
                 channel.id === activeChannelId
                   ? `${styles.channelLink} ${styles.channelLinkActive}`
-                  : styles.channelLink
+                  : `${styles.channelLink} ${
+                      channel.joined ? '' : styles.channelLinkUnjoined
+                    }`
               }
               to={channel.href}
+              onClick={() => setIsChannelDrawerOpen(false)}
             >
-              <span aria-hidden="true">#</span>
-              {channel.name}
+              <span className={styles.channelPrefix} aria-hidden="true">
+                {channel.visibility === 'PRIVATE' ? 'private' : '#'}
+              </span>
+              <span className={styles.channelName}>{channel.name}</span>
+              {channel.unreadCount > 0 && (
+                <span className={styles.unreadBadge} aria-label={`읽지 않은 메시지 ${channel.unreadCount}개`}>
+                  {channel.unreadCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
