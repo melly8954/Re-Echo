@@ -19,6 +19,8 @@ export function AppShell({ children }: PropsWithChildren) {
 
     channelDrawerCloseButtonRef.current?.focus()
     const channelMenuButton = channelMenuButtonRef.current
+    const previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -29,6 +31,7 @@ export function AppShell({ children }: PropsWithChildren) {
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousBodyOverflow
       channelMenuButton?.focus()
     }
   }, [isChannelDrawerOpen])
