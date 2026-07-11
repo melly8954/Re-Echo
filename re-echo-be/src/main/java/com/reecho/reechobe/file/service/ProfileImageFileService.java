@@ -61,6 +61,7 @@ public class ProfileImageFileService {
         );
     }
 
+    // 외부 스토리지 확인 중 DB 커넥션 점유를 피하기 위해 트랜잭션을 열지 않는다.
     public String requireUploadedAccountProfileImageUrl(UUID userId, UUID fileId) {
         FileObject fileObject = fileObjectRepository.findById(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
