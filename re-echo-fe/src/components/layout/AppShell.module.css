@@ -134,6 +134,35 @@
   line-height: 1.55;
 }
 
+.channelList {
+  display: grid;
+  gap: 4px;
+}
+
+.channelLink {
+  min-height: 34px;
+  padding: 0 10px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--color-muted);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.channelLink:hover {
+  color: var(--color-text);
+  background: rgb(255 255 255 / 66%);
+}
+
+.channelLinkActive {
+  color: var(--color-text);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
 .content {
   min-width: 0;
   background: var(--color-background);

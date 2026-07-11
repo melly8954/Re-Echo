@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useCreateWorkspace } from '../features/workspace/useCreateWorkspace'
 import { ApiError } from '../shared/api/apiTypes'
@@ -22,6 +23,7 @@ function getFieldError(error: unknown, field: string) {
 }
 
 export function WorkspaceStartPage() {
+  const navigate = useNavigate()
   const createWorkspace = useCreateWorkspace()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -46,10 +48,11 @@ export function WorkspaceStartPage() {
     }
 
     try {
-      await createWorkspace.mutateAsync({
+      const createdWorkspace = await createWorkspace.mutateAsync({
         name: trimmedName,
         description: trimmedDescription || null,
       })
+      void navigate(`/workspaces/${createdWorkspace.id}`)
     } catch {
       // mutation 상태를 통해 오류 메시지를 화면에 표시한다.
     }

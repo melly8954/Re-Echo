@@ -3,6 +3,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '../pages/LoginPage'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
 import { ProfileSettingsPage } from '../pages/ProfileSettingsPage'
+import { WorkspacePage } from '../pages/WorkspacePage'
 import { WorkspaceStartPage } from '../pages/WorkspaceStartPage'
 
 // 공개 경로와 인증이 필요한 앱 경로를 한곳에서 구성한다.
@@ -13,6 +14,7 @@ export function AppRouter() {
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<WorkspaceStartPage />} />
+        <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
         <Route path="/settings/profile" element={<ProfileSettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

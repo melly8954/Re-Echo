@@ -4,7 +4,24 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import styles from './AppShell.module.css'
 
-export function AppShell({ children }: PropsWithChildren) {
+interface ChannelNavigationItem {
+  id: string
+  name: string
+  href: string
+}
+
+interface AppShellProps {
+  workspaceName?: string
+  channels?: ChannelNavigationItem[]
+  activeChannelId?: string
+}
+
+export function AppShell({
+  children,
+  workspaceName,
+  channels = [],
+  activeChannelId,
+}: PropsWithChildren<AppShellProps>) {
   const { user, logout } = useAuth()
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
   const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
@@ -61,12 +78,37 @@ export function AppShell({ children }: PropsWithChildren) {
     }
   }
 
+  const channelNavigation = (
+    <>
+      {channels.length > 0 ? (
+        <nav className={styles.channelList} aria-label="워크스페이스 채널">
+          {channels.map((channel) => (
+            <Link
+              key={channel.id}
+              className={
+                channel.id === activeChannelId
+                  ? `${styles.channelLink} ${styles.channelLinkActive}`
+                  : styles.channelLink
+              }
+              to={channel.href}
+            >
+              <span aria-hidden="true">#</span>
+              {channel.name}
+            </Link>
+          ))}
+        </nav>
+      ) : (
+        <p className={styles.emptyText}>
+          워크스페이스에 참여하면 채널이 표시됩니다.
+        </p>
+      )}
+    </>
+  )
+
   const channelList = (
     <div>
       <p className={styles.sidebarLabel}>채널</p>
-      <p className={styles.emptyText}>
-        워크스페이스에 참여하면 채널이 표시됩니다.
-      </p>
+      {channelNavigation}
     </div>
   )
 
@@ -77,7 +119,9 @@ export function AppShell({ children }: PropsWithChildren) {
           <span aria-hidden="true">R</span>
           Re-Echo
         </Link>
-        <p className={styles.workspaceName}>워크스페이스를 선택하세요</p>
+        <p className={styles.workspaceName}>
+          {workspaceName ?? '워크스페이스를 선택하세요'}
+        </p>
         <div className={styles.account}>
           <button
             ref={channelMenuButtonRef}
@@ -143,9 +187,7 @@ export function AppShell({ children }: PropsWithChildren) {
                 닫기
               </button>
             </div>
-            <p className={styles.emptyText}>
-              워크스페이스에 참여하면 채널이 표시됩니다.
-            </p>
+            {channelNavigation}
           </aside>
         </div>
       ) : null}
