@@ -364,6 +364,7 @@ Re-Echo 사용자 기본 계정이다.
 | image_height | integer |  |  | Y |  | 이미지 세로 크기 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ORPHANED`, `DELETED` |
 | uploaded_at | timestamptz |  |  | N | `now()` | 업로드 시각 |
+| orphaned_at | timestamptz |  |  | Y |  | 미연결 상태 전환 시각 |
 | deleted_at | timestamptz |  |  | Y |  | 삭제 시각 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 
@@ -530,6 +531,8 @@ Re-Echo 사용자 기본 계정이다.
 ### 10.5 파일
 
 - 파일 메타데이터 등록 실패 시 `ORPHANED` 상태가 될 수 있다
+- 프로필 이미지가 제거되거나 교체되면 기존 파일은 `ORPHANED`로
+  표시하고 `orphaned_at`을 기록한다
 - 정기 스케줄러가 고아 파일과 만료 대상 파일을 정리한다
 
 ## 11. Index Strategy
