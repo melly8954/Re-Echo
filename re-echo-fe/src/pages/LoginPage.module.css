@@ -1,0 +1,17 @@
+.page {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.page::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: '';
+  background: rgba(244, 247, 246, 0.38);
+  backdrop-filter: blur(1px);
+}

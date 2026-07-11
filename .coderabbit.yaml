@@ -1,0 +1,131 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "ko-KR"
+
+tone_instructions: >
+  Re-Echo의 프로덕션 코드 리뷰어처럼 한국어 존댓말로 리뷰하세요.
+  문제를 지적할 때는 원인과 개선 방향을 함께 설명하고,
+  정확성, 안정성, 유지보수성, 문서 계약 준수 여부를 우선하세요.
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+  poem: false
+  in_progress_fortune: false
+  review_status: true
+  review_details: false
+  path_filters:
+    - "AGENTS.md"
+    - ".coderabbit.yaml"
+    - "docs/**/*.md"
+
+    - "re-echo-be/build.gradle"
+    - "re-echo-be/settings.gradle"
+    - "re-echo-be/gradlew"
+    - "re-echo-be/gradlew.bat"
+    - "re-echo-be/gradle/wrapper/gradle-wrapper.properties"
+    - "re-echo-be/src/main/**"
+    - "re-echo-be/src/test/**"
+
+    - "re-echo-fe/package.json"
+    - "re-echo-fe/package-lock.json"
+    - "re-echo-fe/vite.config.*"
+    - "re-echo-fe/tsconfig*.json"
+    - "re-echo-fe/src/**"
+
+    - "!**/.gradle/**"
+    - "!**/.idea/**"
+    - "!**/build/**"
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!**/coverage/**"
+    - "!**/*.log"
+    - "!re-echo-be/gradle/wrapper/gradle-wrapper.jar"
+
+  path_instructions:
+    - path: "re-echo-be/**"
+      instructions: |
+        1. `docs/prd.md`, `docs/Architecture.md`, `docs/ERD.md`, `docs/API.md`, `docs/coding-convention.md` 순서로 계약과 구현 규칙을 확인해 주세요.
+        2. 백엔드는 Java 21, Spring Boot, 단일 모놀리식 구조를 전제로 리뷰해 주세요. Architecture에 없는 기술, 런타임 구성 요소, 배포 구조를 제안하지 말아 주세요.
+        3. Controller, Command Service, Query Service, Repository, Entity, DTO의 책임이 섞이지 않았는지 확인해 주세요. Controller에서 비즈니스 로직을 처리하거나 Repository에서 권한 정책을 판단하면 지적해 주세요.
+        4. API 응답은 `docs/API.md`의 공통 envelope인 `status`, `errorCode`, `message`, `result` 구조를 따라야 합니다. 목록 필드명은 `items`가 아니라 `contents`를 사용해야 합니다.
+        5. Entity를 API 응답으로 직접 노출하지 않는지, Request/Response DTO가 Entity와 분리되어 있는지, Java DTO는 특별한 이유가 없으면 `record`를 사용하는지 확인해 주세요.
+        6. Flyway 마이그레이션을 DB 스키마의 최종 기준으로 보고, 이미 배포된 마이그레이션 파일 수정이나 ERD에 없는 테이블, 컬럼, 상태값 추가를 지적해 주세요.
+        7. Access Token, Refresh Token, Cookie, Authorization Header, 개인정보 원문이 로그나 예외 응답에 노출되지 않는지 확인해 주세요.
+        8. Redis는 최종 진실 소스가 아니라 보조 상태와 실시간 전파 계층으로만 사용해야 합니다. 영속 데이터 기준이 Redis로 바뀌는 구현은 지적해 주세요.
+        9. 파일 업로드와 다운로드는 Presigned URL 기반 직접 전송과 DB 메타데이터 관리 방식을 따라야 합니다.
+        10. 테스트가 부족한 경우 API 계약, 권한 실패, 보관 상태, 초대 만료, 메시지 수정/삭제 권한 같은 계약성 예외를 중심으로 필요한 테스트를 제안해 주세요.
+
+    - path: "re-echo-be/src/main/resources/db/migration/**"
+      instructions: |
+        1. 마이그레이션은 `docs/ERD.md`의 엔티티, 관계, 상태값, 인덱스 전략과 일치해야 합니다.
+        2. 하나의 마이그레이션은 하나의 응집된 변경 단위를 가져야 하며, 파일명은 Flyway 버전 규칙을 따라야 합니다.
+        3. 배포된 마이그레이션을 수정하는 변경처럼 데이터 손상 위험이 있는 부분을 우선적으로 지적해 주세요.
+
+    - path: "re-echo-fe/**"
+      instructions: |
+        1. `docs/prd.md`, `docs/Architecture.md`, `docs/API.md`, `docs/coding-convention.md`, `docs/app-design.md`를 기준으로 프론트엔드 구현이 제품 범위, API 계약, UI 기준을 벗어나지 않는지 확인해 주세요.
+        2. 프론트엔드는 React, Vite, TypeScript, React Query, CSS Modules 기반 CSR SPA를 전제로 리뷰해 주세요. Architecture에 없는 상태 관리, UI 프레임워크, 런타임 의존성을 제안하지 말아 주세요.
+        3. `pages`, `features`, `components`, `shared`, `hooks`, `stores` 책임이 섞이지 않았는지 확인해 주세요.
+        4. 서버 상태는 React Query로 관리하고, 전역 store에는 인증 보조 상태, 모달, 토스트 같은 UI 상태만 두는지 확인해 주세요.
+        5. API request/response 타입과 WebSocket event payload가 `docs/API.md`의 계약과 같은 이름 체계를 유지하는지 확인해 주세요.
+        6. Access Token은 브라우저 메모리에 보관하고, Refresh Token은 HttpOnly cookie 기반이라는 인증 정책을 약화하는 구현을 지적해 주세요.
+        7. 컴포넌트 스타일은 CSS Module 중심으로 colocate하고, 인라인 스타일은 동적 값이 필요한 경우로 제한해 주세요.
+        8. 색상, 밀도, 레이아웃, 반응형, 접근성, 상태 표현은 `docs/app-design.md`의 기준을 우선 적용해 주세요.
+        9. 에러 처리, 로딩 상태, 권한 실패 처리처럼 실제 사용자 흐름에 영향을 주는 누락을 우선적으로 리뷰해 주세요.
+
+    - path: "docs/**"
+      instructions: |
+        1. 문서 변경은 `docs/prd.md`, `docs/Architecture.md`, `docs/ERD.md`, `docs/API.md`, `docs/coding-convention.md`, `docs/app-design.md`, `docs/decisions.md`의 역할 경계를 지켜야 합니다.
+        2. PRD에 없는 기능, Architecture에 없는 기술, ERD에 없는 테이블/컬럼/상태값, API에 없는 Endpoint/Request/Response/Error Code가 추가되면 지적해 주세요.
+        3. 하나의 문서 변경이 하위 문서나 구현 규칙에 영향을 주는 경우, 함께 갱신이 필요한 문서를 알려 주세요.
+        4. 기존 문서의 섹션 순서, 네이밍, 스타일을 불필요하게 바꾸는 대규모 재작성이나 포맷팅 변경을 지적해 주세요.
+        5. 한글 문서는 UTF-8 기준으로 자연스러운 한국어 문장을 사용해야 하며, 인코딩 깨짐이나 불필요한 타 언어 혼입을 지적해 주세요.
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "dev"
+    ignore_title_keywords:
+      - "WIP"
+      - "Draft"
+      - "[skip review]"
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
+      - "docs/coding-convention.md"
+      - "docs/prd.md"
+      - "docs/Architecture.md"
+      - "docs/ERD.md"
+      - "docs/API.md"
+      - "docs/decisions.md"
+      - "docs/app-design.md"
+  learnings:
+    scope: "local"
+  issues:
+    scope: "local"
+  pull_requests:
+    scope: "local"

@@ -1,0 +1,213 @@
+.page {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: clamp(36px, 6vw, 72px) 24px;
+  display: grid;
+  gap: 28px;
+}
+
+.heading {
+  display: grid;
+  gap: 7px;
+}
+
+.heading p,
+.heading h1,
+.heading span {
+  margin: 0;
+}
+
+.heading p {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.heading h1 {
+  font-size: clamp(26px, 5vw, 34px);
+}
+
+.heading span {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.form {
+  padding: 28px;
+  display: grid;
+  gap: 28px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.profileImageSection {
+  padding-bottom: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profileImageSection img,
+.avatarFallback {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.profileImageSection strong {
+  font-size: 14px;
+}
+
+.profileImageSection p {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.profileImageControls {
+  display: grid;
+  gap: 8px;
+}
+
+.profileImageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profileImageActions input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.profileImageActions label,
+.profileImageActions button {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text);
+  background: #f6f8f7;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profileImageActions label:hover,
+.profileImageActions button:hover {
+  border-color: #9db7b1;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.field input:hover {
+  border-color: #9db7b1;
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.help,
+.fieldError,
+.formError,
+.success {
+  margin: 0;
+  font-size: 13px;
+}
+
+.help {
+  color: var(--color-muted);
+}
+
+.fieldError,
+.formError {
+  color: var(--color-danger);
+}
+
+.formError,
+.success {
+  padding: 11px 13px;
+  border-radius: 6px;
+}
+
+.formError {
+  background: var(--color-danger-soft);
+}
+
+.success {
+  color: #08665f;
+  background: var(--color-primary-soft);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions button {
+  min-height: 42px;
+  padding: 0 18px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.actions button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.actions button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 28px 16px;
+  }
+
+  .form {
+    padding: 22px 18px;
+  }
+}
