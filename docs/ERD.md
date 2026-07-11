@@ -218,11 +218,10 @@ Re-Echo 사용자 기본 계정이다.
 | display_name | varchar(80) |  |  | N |  | 워크스페이스별 표시 이름 |
 | profile_image_url | text |  |  | Y |  | 워크스페이스별 프로필 이미지 URL |
 | profile_image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 프로필 이미지 참조 |
-| status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED`, `BANNED` |
+| status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED` |
 | joined_at | timestamptz |  |  | N | `now()` | 참여 시각 |
 | left_at | timestamptz |  |  | Y |  | 자진 탈퇴 시각 |
 | removed_at | timestamptz |  |  | Y |  | 관리자 강제 제거 시각 |
-| banned_at | timestamptz |  |  | Y |  | 차단 시각 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 | updated_at | timestamptz |  |  | N | `now()` | 수정 시각 |
 
@@ -230,7 +229,8 @@ Re-Echo 사용자 기본 계정이다.
 
 - `(workspace_id, user_id)` 유니크
 - 같은 워크스페이스 내 `display_name` 중복 허용
-- `BANNED` 상태면 재가입 불가
+- `LEFT` 상태는 재참여 시 기존 행을 `ACTIVE`로 복구
+- `REMOVED` 상태면 재가입 불가
 - `OWNER`는 워크스페이스당 정확히 1명이어야 하므로 애플리케이션 제약 추가 필요
 
 ### 7.5 `workspace_invite_links`
@@ -461,7 +461,6 @@ Re-Echo 사용자 기본 계정이다.
 - `ACTIVE`
 - `LEFT`
 - `REMOVED`
-- `BANNED`
 
 ### 9.4 Invite Link Status
 
@@ -526,7 +525,8 @@ Re-Echo 사용자 기본 계정이다.
 
 - 자진 탈퇴는 `LEFT`
 - 관리자 강제 제거는 `REMOVED`
-- 차단은 `BANNED`
+- 자진 탈퇴 후 재참여는 기존 멤버십 행을 `ACTIVE`로 복구한다.
+- 강제 제거된 멤버는 재가입할 수 없다.
 
 ### 10.4 메시지
 

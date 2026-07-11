@@ -542,7 +542,10 @@
   - `401 AUTH_UNAUTHORIZED`
   - `404 INVITE_NOT_FOUND`
   - `409 INVITE_EXPIRED`
-  - `409 MEMBER_BANNED`
+  - `409 MEMBER_REMOVED`
+- Rules
+  - 자진 탈퇴한 멤버가 다시 참여하면 기존 멤버십을 `ACTIVE`로 복구한다.
+  - 강제 제거된 멤버는 초대 링크로 다시 참여할 수 없다.
 
 ### 11.16 워크스페이스 멤버 목록 조회
 
@@ -1217,7 +1220,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 
 - `MEMBER_NOT_FOUND`
 - `MEMBER_INVALID_DISPLAY_NAME`
-- `MEMBER_BANNED`
+- `MEMBER_REMOVED`
 - `MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 - `MEMBER_LAST_OWNER_LEAVE_FORBIDDEN`
 - `MEMBER_REMOVE_FORBIDDEN`
