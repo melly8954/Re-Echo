@@ -61,7 +61,6 @@ public class ProfileImageFileService {
         );
     }
 
-    @Transactional(readOnly = true)
     public String requireUploadedAccountProfileImageUrl(UUID userId, UUID fileId) {
         FileObject fileObject = fileObjectRepository.findById(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
