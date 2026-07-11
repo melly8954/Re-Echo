@@ -2,6 +2,7 @@ package com.reecho.reechobe.member.repository;
 
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,11 @@ public interface WorkspaceMembershipRepository extends JpaRepository<WorkspaceMe
 
     Optional<WorkspaceMembership> findByWorkspaceIdAndUserIdAndStatus(
             UUID workspaceId,
+            UUID userId,
+            WorkspaceMembershipStatus status
+    );
+
+    List<WorkspaceMembership> findByUserIdAndStatusOrderByLastVisitedAtDesc(
             UUID userId,
             WorkspaceMembershipStatus status
     );

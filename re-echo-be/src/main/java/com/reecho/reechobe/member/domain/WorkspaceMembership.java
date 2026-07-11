@@ -57,6 +57,9 @@ public class WorkspaceMembership {
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 
+    @Column(name = "last_visited_at")
+    private LocalDateTime lastVisitedAt;
+
     @Column(name = "left_at")
     private LocalDateTime leftAt;
 
@@ -82,10 +85,16 @@ public class WorkspaceMembership {
                 .build();
     }
 
+    // 워크스페이스 재진입 순서와 복귀 기준을 위한 방문 시각을 갱신한다.
+    public void visit() {
+        this.lastVisitedAt = LocalDateTime.now();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         this.joinedAt = now;
+        this.lastVisitedAt = now;
         this.createdAt = now;
         this.updatedAt = now;
     }

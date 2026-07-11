@@ -9,6 +9,7 @@ import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
+import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
 import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
 import com.reecho.reechobe.user.domain.User;
@@ -18,6 +19,7 @@ import com.reecho.reechobe.workspace.dto.WorkspaceDetailResponse;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,6 +134,54 @@ class WorkspaceQueryServiceTest {
                 .isEqualTo(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
 
         verifyNoInteractions(channelRepository);
+    }
+
+    @Test
+    void 소유_워크스페이스와_참여_워크스페이스의_역할을_목록에_반환한다() {
+        UUID userId = UUID.randomUUID();
+        Workspace ownedWorkspace = createWorkspace(userId);
+        Workspace joinedWorkspace = createWorkspace(UUID.randomUUID());
+        WorkspaceMembership ownerMembership = createOwnerMembership(ownedWorkspace.getId(), userId);
+        WorkspaceMembership memberMembership = createOwnerMembership(joinedWorkspace.getId(), userId);
+        ReflectionTestUtils.setField(memberMembership, "role", WorkspaceMembershipRole.MEMBER);
+        ReflectionTestUtils.setField(ownerMembership, "lastVisitedAt", LocalDateTime.now());
+        ReflectionTestUtils.setField(memberMembership, "lastVisitedAt", LocalDateTime.now().minusDays(1));
+        Channel ownedGeneralChannel = Channel.createGeneral(ownedWorkspace.getId(), ownerMembership.getId());
+        Channel joinedGeneralChannel = Channel.createGeneral(joinedWorkspace.getId(), memberMembership.getId());
+        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByLastVisitedAtDesc(
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(List.of(ownerMembership, memberMembership));
+        when(workspaceRepository.findAllById(List.of(ownedWorkspace.getId(), joinedWorkspace.getId())))
+                .thenReturn(List.of(ownedWorkspace, joinedWorkspace));
+        when(channelRepository.findByWorkspaceIdInAndGeneralTrue(
+                List.of(ownedWorkspace.getId(), joinedWorkspace.getId())
+        )).thenReturn(List.of(ownedGeneralChannel, joinedGeneralChannel));
+
+        var result = service.getWorkspaceList(userId);
+
+        assertThat(result.contents()).extracting("id")
+                .containsExactly(ownedWorkspace.getId(), joinedWorkspace.getId());
+        assertThat(result.contents()).extracting("role")
+                .containsExactly(WorkspaceMembershipRole.OWNER, WorkspaceMembershipRole.MEMBER);
+        assertThat(result.contents()).extracting("defaultChannelId")
+                .containsExactly(ownedGeneralChannel.getId(), joinedGeneralChannel.getId());
+        assertThat(result.contents()).extracting("unreadChannelCount")
+                .containsOnly(0);
+    }
+
+    @Test
+    void 활성_워크스페이스_멤버십이_없으면_빈_목록을_반환한다() {
+        UUID userId = UUID.randomUUID();
+        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByLastVisitedAtDesc(
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(List.of());
+
+        var result = service.getWorkspaceList(userId);
+
+        assertThat(result.contents()).isEmpty();
+        verifyNoInteractions(workspaceRepository, channelRepository);
     }
 
     private Workspace createWorkspace(UUID createdByUserId) {

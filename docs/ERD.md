@@ -220,6 +220,7 @@ Re-Echo 사용자 기본 계정이다.
 | profile_image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 프로필 이미지 참조 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED` |
 | joined_at | timestamptz |  |  | N | `now()` | 참여 시각 |
+| last_visited_at | timestamptz |  |  | N | `now()` | 마지막 워크스페이스 진입 시각 |
 | left_at | timestamptz |  |  | Y |  | 자진 탈퇴 시각 |
 | removed_at | timestamptz |  |  | Y |  | 관리자 강제 제거 시각 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
@@ -561,8 +562,8 @@ Re-Echo 사용자 기본 계정이다.
 
 ### 11.2 주요 조회 인덱스
 
-- `workspace_memberships(user_id, status)`
-  - 사용자가 속한 워크스페이스 목록 조회
+- `workspace_memberships(user_id, status, last_visited_at desc)`
+  - 사용자가 속한 워크스페이스 목록의 최근 방문 순 조회
 - `workspace_memberships(workspace_id, display_name)`
   - 워크스페이스 멤버 목록 및 닉네임 조회
 - `channels(workspace_id, status, visibility)`

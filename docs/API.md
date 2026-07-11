@@ -374,6 +374,8 @@
 - URL: `/api/v1/workspaces`
 - Authentication: 필요
 - Authorization: 멤버십 보유 사용자
+- Note: `lastVisitedAt`은 워크스페이스 마지막 진입 시각이며, 최초 참여 시에는
+  참여 시각으로 초기화한다.
 - Response Body
 
 ```json

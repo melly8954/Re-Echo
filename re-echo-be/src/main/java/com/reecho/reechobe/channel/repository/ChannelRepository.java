@@ -13,6 +13,8 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
 
     Optional<Channel> findByWorkspaceIdAndGeneralTrue(UUID workspaceId);
 
+    List<Channel> findByWorkspaceIdInAndGeneralTrue(Iterable<UUID> workspaceIds);
+
     @Query(
             value = """
                     SELECT c.*

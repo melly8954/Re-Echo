@@ -5,6 +5,7 @@ import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import com.reecho.reechobe.workspace.dto.CreateWorkspaceRequest;
 import com.reecho.reechobe.workspace.dto.CreatedWorkspaceResponse;
 import com.reecho.reechobe.workspace.dto.WorkspaceDetailResponse;
+import com.reecho.reechobe.workspace.dto.WorkspaceListResponse;
 import com.reecho.reechobe.workspace.service.command.WorkspaceCreateCommandService;
 import com.reecho.reechobe.workspace.service.query.WorkspaceQueryService;
 import jakarta.validation.Valid;
@@ -28,6 +29,14 @@ public class WorkspaceController {
 
     private final WorkspaceCreateCommandService workspaceCreateCommandService;
     private final WorkspaceQueryService workspaceQueryService;
+
+    @GetMapping
+    public ApiResponse<WorkspaceListResponse> getWorkspaces(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal
+    ) {
+        WorkspaceListResponse result = workspaceQueryService.getWorkspaceList(principal.userId());
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스 목록을 조회했습니다.", result);
+    }
 
     @GetMapping("/{workspaceId}")
     public ApiResponse<WorkspaceDetailResponse> getWorkspace(
