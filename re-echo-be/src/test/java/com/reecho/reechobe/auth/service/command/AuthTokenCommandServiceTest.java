@@ -106,6 +106,24 @@ class AuthTokenCommandServiceTest {
     }
 
     @Test
+    void 비활성_계정은_refresh_token을_재발급하지_않는다() {
+        UUID userId = UUID.randomUUID();
+        UUID currentTokenId = UUID.randomUUID();
+        User user = User.createActive("사용자", null);
+        user.deactivate();
+        ReflectionTestUtils.setField(user, "id", userId);
+        VerifiedToken verifiedToken = verifiedToken(userId, currentTokenId);
+        when(jwtVerifyService.verifyRefreshToken("refresh-token")).thenReturn(verifiedToken);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.refresh("refresh-token"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+        verifyNoInteractions(jwtIssueService, refreshTokenStore);
+    }
+
+    @Test
     void refresh_token으로_현재_세션을_폐기한다() {
         UUID userId = UUID.randomUUID();
         UUID tokenId = UUID.randomUUID();

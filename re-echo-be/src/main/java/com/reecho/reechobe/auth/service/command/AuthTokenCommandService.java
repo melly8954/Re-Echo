@@ -29,6 +29,9 @@ public class AuthTokenCommandService {
         VerifiedToken verifiedToken = jwtVerifyService.verifyRefreshToken(refreshToken);
         User user = userRepository.findById(verifiedToken.userId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID));
+        if (!user.isActive()) {
+            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+        }
         AuthToken newToken = jwtIssueService.issue(user);
         boolean rotated = refreshTokenStore.rotate(
                 verifiedToken.userId(),

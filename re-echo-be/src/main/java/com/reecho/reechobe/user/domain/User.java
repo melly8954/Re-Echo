@@ -79,6 +79,10 @@ public class User {
         this.status = UserStatus.DEACTIVATED;
     }
 
+    public boolean isActive() {
+        return status == UserStatus.ACTIVE;
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
