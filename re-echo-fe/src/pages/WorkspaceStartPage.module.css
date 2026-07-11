@@ -76,26 +76,97 @@
 }
 
 .card p {
-  min-height: 44px;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.createForm {
+  margin-top: 2px;
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input {
+  min-height: 40px;
+  padding: 0 11px;
+}
+
+.field textarea {
+  min-height: 76px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.field input:hover,
+.field textarea:hover {
+  border-color: #9db7b1;
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--color-danger);
 }
 
 .card button {
   min-height: 42px;
   margin-top: 10px;
-  color: #6c7a76;
-  background: #edf1f0;
-  border: 1px solid #d9e0de;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
   border-radius: 6px;
-  cursor: not-allowed;
+  cursor: pointer;
   font-weight: 700;
+}
+
+.card button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.card button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
 }
 
 .card small {
   color: var(--color-muted);
   font-size: 11px;
   text-align: center;
+}
+
+.fieldError,
+.formError,
+.success {
+  margin: 0;
+  text-align: left;
+}
+
+.fieldError,
+.formError {
+  color: var(--color-danger);
+}
+
+.success {
+  color: #08665f;
 }
 
 @media (max-width: 767px) {

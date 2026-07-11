@@ -3,6 +3,7 @@ package com.reecho.reechobe.workspace.controller;
 import com.reecho.reechobe.common.response.ApiResponse;
 import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import com.reecho.reechobe.workspace.dto.CreateWorkspaceRequest;
+import com.reecho.reechobe.workspace.dto.CreatedWorkspaceResponse;
 import com.reecho.reechobe.workspace.service.command.WorkspaceCreateCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,11 @@ public class WorkspaceController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Void> createWorkspace(
+    public ApiResponse<CreatedWorkspaceResponse> createWorkspace(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @Valid @RequestBody CreateWorkspaceRequest request
     ) {
-        workspaceCreateCommandService.createWorkspace(principal.userId(), request);
-        return ApiResponse.success(HttpStatus.CREATED, "워크스페이스가 생성되었습니다.", null);
+        CreatedWorkspaceResponse result = workspaceCreateCommandService.createWorkspace(principal.userId(), request);
+        return ApiResponse.success(HttpStatus.CREATED, "워크스페이스가 생성되었습니다.", result);
     }
 }

@@ -12,6 +12,7 @@ import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;
 import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.dto.CreateWorkspaceRequest;
+import com.reecho.reechobe.workspace.dto.CreatedWorkspaceResponse;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class WorkspaceCreateCommandService {
     private final ChannelMembershipRepository channelMembershipRepository;
 
     @Transactional
-    public void createWorkspace(UUID userId, CreateWorkspaceRequest request) {
+    public CreatedWorkspaceResponse createWorkspace(UUID userId, CreateWorkspaceRequest request) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED));
 
@@ -53,5 +54,7 @@ public class WorkspaceCreateCommandService {
                 ownerMembership.getId()
         );
         channelMembershipRepository.save(channelMembership);
+
+        return new CreatedWorkspaceResponse(workspace.getId(), generalChannel.getId());
     }
 }

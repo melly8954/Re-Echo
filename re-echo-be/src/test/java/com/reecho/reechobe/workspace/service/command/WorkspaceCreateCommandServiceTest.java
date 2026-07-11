@@ -24,6 +24,7 @@ import com.reecho.reechobe.user.repository.UserRepository;
 import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.dto.CreateWorkspaceRequest;
+import com.reecho.reechobe.workspace.dto.CreatedWorkspaceResponse;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,7 +81,7 @@ class WorkspaceCreateCommandServiceTest {
                 " https://example.com/workspace.png "
         );
 
-        service.createWorkspace(userId, request);
+        CreatedWorkspaceResponse result = service.createWorkspace(userId, request);
 
         ArgumentCaptor<Workspace> workspaceCaptor = ArgumentCaptor.forClass(Workspace.class);
         ArgumentCaptor<WorkspaceMembership> membershipCaptor = ArgumentCaptor.forClass(WorkspaceMembership.class);
@@ -122,6 +123,8 @@ class WorkspaceCreateCommandServiceTest {
         assertThat(channelMembership.getChannelId()).isEqualTo(channel.getId());
         assertThat(channelMembership.getWorkspaceMembershipId()).isEqualTo(membership.getId());
         assertThat(channelMembership.getStatus()).isEqualTo(ChannelMembershipStatus.ACTIVE);
+        assertThat(result.id()).isEqualTo(workspace.getId());
+        assertThat(result.defaultChannelId()).isEqualTo(channel.getId());
     }
 
     @Test
