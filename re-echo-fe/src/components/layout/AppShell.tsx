@@ -1,12 +1,9 @@
-import type {
-  ChangeEvent,
-  KeyboardEvent as ReactKeyboardEvent,
-  PropsWithChildren,
-  ReactNode,
-} from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, PropsWithChildren, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
+import { WorkspaceCreateDialog } from '../../features/workspace/WorkspaceCreateDialog'
+import { WorkspaceInviteEntryDialog } from '../../features/workspace/WorkspaceInviteEntryDialog'
 import { useWorkspaceList } from '../../features/workspace/useWorkspaceList'
 import styles from './AppShell.module.css'
 
@@ -34,7 +31,6 @@ interface AppShellProps {
 export function AppShell({
   children,
   workspaceId,
-  workspaceName,
   channels = [],
   isWorkspaceHome = false,
   activeChannelId,
@@ -47,13 +43,13 @@ export function AppShell({
   const { user, status, logout } = useAuth()
   const workspaceListQuery = useWorkspaceList(status === 'authenticated')
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
+  const [isWorkspaceCreateOpen, setIsWorkspaceCreateOpen] = useState(false)
+  const [isWorkspaceInviteOpen, setIsWorkspaceInviteOpen] = useState(false)
   const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerRef = useRef<HTMLElement>(null)
   const channelDrawerCloseButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerId = 'mobile-channel-drawer'
   const workspaces = workspaceListQuery.data?.contents ?? []
-  const ownedWorkspaces = workspaces.filter((workspace) => workspace.role === 'OWNER')
-  const joinedWorkspaces = workspaces.filter((workspace) => workspace.role !== 'OWNER')
 
   useEffect(() => {
     if (!isChannelDrawerOpen) {
@@ -104,13 +100,14 @@ export function AppShell({
     }
   }
 
-  function handleWorkspaceChange(event: ChangeEvent<HTMLSelectElement>) {
-    const nextWorkspaceId = event.target.value
-    if (!nextWorkspaceId || nextWorkspaceId === workspaceId) {
-      return
-    }
+  function openWorkspaceCreateDialog() {
+    setIsChannelDrawerOpen(false)
+    setIsWorkspaceCreateOpen(true)
+  }
 
-    void navigate(`/workspaces/${nextWorkspaceId}`)
+  function openWorkspaceInviteDialog() {
+    setIsChannelDrawerOpen(false)
+    setIsWorkspaceInviteOpen(true)
   }
 
   const channelNavigation = (
@@ -170,50 +167,61 @@ export function AppShell({
     </>
   )
 
-  const workspaceSelector = workspaceId && (
-    <section className={styles.workspaceSelector} aria-labelledby="workspace-selector-title">
-      <p id="workspace-selector-title" className={styles.sidebarLabel}>
+  const workspaceList = (
+    <section className={styles.workspaceListSection} aria-labelledby="workspace-list-title">
+      <p id="workspace-list-title" className={styles.sidebarLabel}>
         워크스페이스
       </p>
-      <select
-        value={workspaceId}
-        aria-label="워크스페이스 선택"
-        title={workspaceName ?? '워크스페이스를 선택하세요'}
-        disabled={workspaceListQuery.isLoading || workspaceListQuery.isError}
-        onChange={handleWorkspaceChange}
-      >
-        <option value="" disabled>
-          {workspaceListQuery.isLoading
-            ? '워크스페이스 불러오는 중'
-            : workspaceListQuery.isError
-              ? '워크스페이스 목록 오류'
-              : '워크스페이스를 선택하세요'}
-        </option>
-        {ownedWorkspaces.length > 0 && (
-          <optgroup label="내가 만든 워크스페이스">
-            {ownedWorkspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {joinedWorkspaces.length > 0 && (
-          <optgroup label="참여 중인 워크스페이스">
-            {joinedWorkspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </optgroup>
-        )}
-      </select>
+      {workspaceListQuery.isLoading ? (
+        <div className={styles.workspaceListSkeleton} aria-label="워크스페이스 목록을 불러오는 중">
+          <span />
+          <span />
+        </div>
+      ) : workspaces.length > 0 ? (
+        <nav className={styles.workspaceList} aria-label="워크스페이스 목록">
+          {workspaces.map((workspace) => (
+            <Link
+              key={workspace.id}
+              className={
+                workspace.id === workspaceId
+                  ? `${styles.workspaceLink} ${styles.workspaceLinkActive}`
+                  : styles.workspaceLink
+              }
+              to={`/workspaces/${workspace.id}`}
+              title={workspace.name}
+              onClick={() => setIsChannelDrawerOpen(false)}
+            >
+              <span>{workspace.name}</span>
+              {workspace.status === 'ARCHIVED' ? (
+                <small>보관됨</small>
+              ) : workspace.unreadChannelCount > 0 ? (
+                <small aria-label={`읽지 않은 채널 ${workspace.unreadChannelCount}개`}>
+                  {workspace.unreadChannelCount}
+                </small>
+              ) : null}
+            </Link>
+          ))}
+        </nav>
+      ) : (
+        <p className={styles.emptyText}>참여 중인 워크스페이스가 없습니다.</p>
+      )}
       {workspaceListQuery.isError && (
         <button type="button" onClick={() => void workspaceListQuery.refetch()}>
           다시 시도
         </button>
       )}
     </section>
+  )
+
+  const workspaceActions = (
+    <div className={styles.workspaceActions}>
+      <button type="button" onClick={openWorkspaceCreateDialog}>
+        새 워크스페이스 만들기
+      </button>
+      <button type="button" onClick={openWorkspaceInviteDialog}>
+        초대 링크로 참여
+      </button>
+    </div>
   )
 
   const workspaceNavigation = workspaceId && (
@@ -235,24 +243,29 @@ export function AppShell({
 
   const channelList = (
     <div>
-      {workspaceSelector}
+      {workspaceList}
+      {workspaceActions}
       {workspaceNavigation}
-      <div className={styles.channelHeader}>
-        <p className={styles.sidebarLabel}>채널</p>
-        {channelHeaderAction}
-      </div>
-      {channelNavigation}
+      {workspaceId && (
+        <>
+          <div className={styles.channelHeader}>
+            <p className={styles.sidebarLabel}>채널</p>
+            {channelHeaderAction}
+          </div>
+          {channelNavigation}
+        </>
+      )}
     </div>
   )
-  const hasWorkspaceNavigation = Boolean(workspaceId)
+  const hasWorkspaceNavigation = status === 'authenticated'
 
   return (
     <div className={styles.shell}>
       <header className={styles.topBar}>
-        <Link className={styles.brand} to="/" aria-label="Re-Echo 홈">
+        <div className={styles.brand} aria-label="Re-Echo">
           <span aria-hidden="true">R</span>
           Re-Echo
-        </Link>
+        </div>
         <div className={styles.account}>
           <button
             ref={channelMenuButtonRef}
@@ -262,7 +275,7 @@ export function AppShell({
             aria-expanded={isChannelDrawerOpen}
             onClick={() => setIsChannelDrawerOpen(true)}
           >
-            채널
+            메뉴
           </button>
           {user?.profileImageUrl ? (
             <img src={user.profileImageUrl} alt="" />
@@ -295,7 +308,7 @@ export function AppShell({
         }
       >
         {hasWorkspaceNavigation && (
-          <aside className={styles.sidebar} aria-label="채널 목록">
+          <aside className={styles.sidebar} aria-label="워크스페이스 및 채널 탐색">
             {channelList}
           </aside>
         )}
@@ -322,13 +335,13 @@ export function AppShell({
             ref={channelDrawerRef}
             className={styles.mobileChannelDrawer}
             id={channelDrawerId}
-            aria-label="모바일 채널 목록"
+            aria-label="모바일 워크스페이스 및 채널 메뉴"
             onKeyDown={handleChannelDrawerKeyDown}
           >
             <div className={styles.mobileChannelHeader}>
               <div className={styles.mobileChannelTitle}>
-                <p className={styles.sidebarLabel}>채널</p>
-                {channelHeaderAction}
+                <p className={styles.sidebarLabel}>메뉴</p>
+                {workspaceId && channelHeaderAction}
               </div>
               <button
                 ref={channelDrawerCloseButtonRef}
@@ -339,12 +352,25 @@ export function AppShell({
                 닫기
               </button>
             </div>
-            {workspaceSelector}
+            {workspaceList}
+            {workspaceActions}
             {workspaceNavigation}
-            {channelNavigation}
+            {workspaceId && channelNavigation}
           </aside>
         </div>
       ) : null}
+      <WorkspaceCreateDialog
+        isOpen={isWorkspaceCreateOpen}
+        onClose={() => setIsWorkspaceCreateOpen(false)}
+        onCreated={(createdWorkspaceId) => {
+          setIsWorkspaceCreateOpen(false)
+          void navigate(`/workspaces/${createdWorkspaceId}`)
+        }}
+      />
+      <WorkspaceInviteEntryDialog
+        isOpen={isWorkspaceInviteOpen}
+        onClose={() => setIsWorkspaceInviteOpen(false)}
+      />
     </div>
   )
 }

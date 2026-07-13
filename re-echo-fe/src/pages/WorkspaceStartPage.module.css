@@ -43,6 +43,44 @@
   gap: 18px;
 }
 
+.statusPanel {
+  width: min(100%, 480px);
+  margin: 0;
+  padding: 28px;
+  display: grid;
+  gap: 14px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.statusPanel h1,
+.statusPanel p {
+  margin: 0;
+}
+
+.statusPanel h1 {
+  color: var(--color-text);
+  font-size: 20px;
+}
+
+.statusPanel p {
+  line-height: 1.6;
+}
+
+.statusPanel button {
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .workspaceSections {
   width: min(100%, 760px);
   display: grid;
