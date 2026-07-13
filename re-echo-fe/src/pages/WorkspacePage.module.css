@@ -138,6 +138,74 @@
   font-size: 14px;
 }
 
+.channelCreateForm {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.channelCreateForm label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.channelCreateForm span {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.channelCreateForm input,
+.channelCreateForm select {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.channelCreateForm input:focus-visible,
+.channelCreateForm select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.channelCreateForm button {
+  min-height: 34px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.channelCreateForm button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.channelCreateForm button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.channelCreateError {
+  margin: 0;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .memberPanel {
   display: grid;
   gap: 18px;

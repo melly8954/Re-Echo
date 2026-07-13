@@ -1,9 +1,15 @@
+import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspaceInviteLink'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
-import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
+import {
+  useWorkspaceChannels,
+  workspaceChannelsQueryKey,
+} from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
 import {
   getWorkspaceMembershipStatusLabel,
@@ -12,6 +18,7 @@ import {
 } from '../features/workspace/workspaceLabels'
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type {
+  ChannelVisibility,
   WorkspaceInviteLink,
   WorkspaceMembershipRole,
 } from '../features/workspace/workspaceApi'
@@ -20,13 +27,20 @@ import styles from './WorkspacePage.module.css'
 
 export function WorkspacePage() {
   const { workspaceId } = useParams()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const queryClient = useQueryClient()
+  const createChannel = useCreateWorkspaceChannel()
   const getInviteLink = useGetWorkspaceInviteLink()
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
   const channelsQuery = useWorkspaceChannels(workspaceId ?? '')
   const membersQuery = useWorkspaceMembers(workspaceId ?? '')
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
+  const [channelName, setChannelName] = useState('')
+  const [channelVisibility, setChannelVisibility] =
+    useState<ChannelVisibility>('PUBLIC')
+  const [channelCreateError, setChannelCreateError] = useState<string | null>(null)
 
   if (!workspaceId) {
     return <Navigate to="/" replace />
@@ -41,6 +55,7 @@ export function WorkspacePage() {
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
+  const canCreateChannel = canIssueInvite
   const members = membersQuery.data?.contents ?? []
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
@@ -96,6 +111,85 @@ export function WorkspacePage() {
     const inviteUrl = `${window.location.origin}/invite-links/${inviteLink.token}`
     await navigator.clipboard.writeText(inviteUrl)
   }
+
+  async function handleCreateChannel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!workspaceId || !canCreateChannel) {
+      return
+    }
+
+    const trimmedName = channelName.trim()
+    if (!trimmedName) {
+      setChannelCreateError('채널 이름을 입력해 주세요.')
+      return
+    }
+
+    setChannelCreateError(null)
+    try {
+      const createdChannel = await createChannel.mutateAsync({
+        workspaceId,
+        request: {
+          name: trimmedName,
+          description: null,
+          visibility: channelVisibility,
+          memberIds: [],
+        },
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelsQueryKey(workspaceId),
+      })
+      setChannelName('')
+      setChannelVisibility('PUBLIC')
+      void navigate(`/workspaces/${workspaceId}?channelId=${createdChannel.id}`)
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setChannelCreateError(error.message)
+        return
+      }
+      setChannelCreateError('채널을 생성하지 못했습니다.')
+    }
+  }
+
+  const channelCreateForm = canCreateChannel ? (
+    <form className={styles.channelCreateForm} onSubmit={handleCreateChannel}>
+      <label>
+        <span>채널 이름</span>
+        <input
+          type="text"
+          value={channelName}
+          maxLength={80}
+          placeholder="예: design"
+          onChange={(event) => {
+            setChannelName(event.target.value)
+            setChannelCreateError(null)
+          }}
+        />
+      </label>
+      <label>
+        <span>공개 범위</span>
+        <select
+          value={channelVisibility}
+          onChange={(event) =>
+            setChannelVisibility(event.target.value as ChannelVisibility)
+          }
+        >
+          <option value="PUBLIC">공개</option>
+          <option value="PRIVATE">비공개</option>
+        </select>
+      </label>
+      {channelCreateError && (
+        <p className={styles.channelCreateError} role="alert">
+          {channelCreateError}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={createChannel.isPending || !channelName.trim()}
+      >
+        {createChannel.isPending ? '생성 중' : '채널 생성'}
+      </button>
+    </form>
+  ) : undefined
 
   const memberPanel = (
     <section className={styles.memberPanel} aria-labelledby="workspace-member-title">
@@ -171,6 +265,7 @@ export function WorkspacePage() {
       }))}
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
+      channelActions={channelCreateForm}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="워크스페이스 참여자"
     >

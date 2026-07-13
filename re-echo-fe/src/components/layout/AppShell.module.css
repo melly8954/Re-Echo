@@ -181,6 +181,10 @@
   gap: 4px;
 }
 
+.channelActions {
+  margin-bottom: 14px;
+}
+
 .channelSkeletonList {
   display: grid;
   gap: 8px;

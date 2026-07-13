@@ -25,6 +25,7 @@ interface AppShellProps {
   channels?: ChannelNavigationItem[]
   activeChannelId?: string
   isChannelsLoading?: boolean
+  channelActions?: ReactNode
   rightSidebar?: ReactNode
   rightSidebarLabel?: string
 }
@@ -36,6 +37,7 @@ export function AppShell({
   channels = [],
   activeChannelId,
   isChannelsLoading = false,
+  channelActions,
   rightSidebar,
   rightSidebarLabel,
 }: PropsWithChildren<AppShellProps>) {
@@ -81,7 +83,7 @@ export function AppShell({
     }
 
     const focusableElements = channelDrawerRef.current?.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled])',
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])',
     )
     if (!focusableElements || focusableElements.length === 0) {
       return
@@ -155,6 +157,9 @@ export function AppShell({
   const channelList = (
     <div>
       <p className={styles.sidebarLabel}>채널</p>
+      {channelActions && (
+        <div className={styles.channelActions}>{channelActions}</div>
+      )}
       {channelNavigation}
     </div>
   )
@@ -283,6 +288,9 @@ export function AppShell({
                 닫기
               </button>
             </div>
+            {channelActions && (
+              <div className={styles.channelActions}>{channelActions}</div>
+            )}
             {channelNavigation}
           </aside>
         </div>

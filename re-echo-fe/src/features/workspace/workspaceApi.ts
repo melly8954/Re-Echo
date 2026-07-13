@@ -10,6 +10,17 @@ export interface CreatedWorkspace {
   defaultChannelId: string
 }
 
+export interface CreateWorkspaceChannelRequest {
+  name: string
+  description?: string | null
+  visibility: ChannelVisibility
+  memberIds?: string[]
+}
+
+export interface CreatedWorkspaceChannel {
+  id: string
+}
+
 export type WorkspaceStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED'
 export type WorkspaceMembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER'
 export type WorkspaceMembershipStatus = 'ACTIVE' | 'LEFT' | 'REMOVED'
@@ -116,6 +127,20 @@ export function getWorkspaceChannels(workspaceId: string) {
     {
       method: 'GET',
       authenticated: true,
+    },
+  )
+}
+
+export function createWorkspaceChannel(
+  workspaceId: string,
+  request: CreateWorkspaceChannelRequest,
+) {
+  return apiRequest<CreatedWorkspaceChannel>(
+    `/api/v1/workspaces/${workspaceId}/channels`,
+    {
+      method: 'POST',
+      authenticated: true,
+      body: JSON.stringify(request),
     },
   )
 }
