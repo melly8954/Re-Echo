@@ -33,7 +33,7 @@
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - `#general`은 나갈 수 없다.
 - 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기가 가능하다.
-- 비공개 채널은 멤버가 아니면 존재와 메시지에 접근할 수 없다.
+- 비공개 채널은 멤버가 아니면 목록에 표시되지 않고 메시지에 접근할 수 없다.
 - 워크스페이스와 채널은 삭제 요청 시 즉시 물리 삭제하지 않고 보관 후 15일 뒤 자동 삭제한다.
 - 메시지 목록은 cursor pagination을 사용하며 cursor 기준은 `createdAt + messageId` 조합이다.
 - 읽음 갱신은 REST API로만 처리하고 읽음 상태 전용 실시간 브로드캐스트는 제공하지 않는다.
@@ -640,6 +640,8 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels`
 - Authentication: 필요
 - Authorization: 해당 워크스페이스 멤버
+- Note: 공개 채널은 워크스페이스 멤버에게 표시되며, 비공개 채널은
+  참여 중인 채널만 표시된다.
 - Response Body
 
 ```json
@@ -738,6 +740,7 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/join`
 - Authentication: 필요
 - Authorization: 워크스페이스 멤버
+- Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_ALREADY_JOINED`
   - `403 CHANNEL_JOIN_FORBIDDEN`
@@ -749,6 +752,7 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/leave`
 - Authentication: 필요
 - Authorization: 채널 멤버
+- Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_GENERAL_LEAVE_FORBIDDEN`
 
