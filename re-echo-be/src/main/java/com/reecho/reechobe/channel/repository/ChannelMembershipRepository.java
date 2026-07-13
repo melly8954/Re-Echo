@@ -32,4 +32,17 @@ public interface ChannelMembershipRepository extends JpaRepository<ChannelMember
             @Param("workspaceMembershipId") UUID workspaceMembershipId,
             @Param("status") ChannelMembershipStatus status
     );
+
+    @Query("""
+            select channelMembership.channelId as channelId,
+                   count(channelMembership) as memberCount
+            from ChannelMembership channelMembership
+            where channelMembership.channelId in :channelIds
+              and channelMembership.status = :status
+            group by channelMembership.channelId
+            """)
+    List<ChannelMemberCountProjection> countByChannelIdsAndStatus(
+            @Param("channelIds") List<UUID> channelIds,
+            @Param("status") ChannelMembershipStatus status
+    );
 }

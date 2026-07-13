@@ -2,6 +2,7 @@ package com.reecho.reechobe.channel.service.query;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +12,7 @@ import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.ChannelListResponse;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
+import com.reecho.reechobe.channel.repository.ChannelMemberCountProjection;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
@@ -77,6 +79,13 @@ class ChannelQueryServiceTest {
         )).thenReturn(List.of(generalChannel.getId()));
         when(channelRepository.findAccessibleActiveChannels(workspace.getId(), membership.getId()))
                 .thenReturn(List.of(generalChannel));
+        ChannelMemberCountProjection memberCount = mock(ChannelMemberCountProjection.class);
+        when(memberCount.getChannelId()).thenReturn(generalChannel.getId());
+        when(memberCount.getMemberCount()).thenReturn(2L);
+        when(channelMembershipRepository.countByChannelIdsAndStatus(
+                List.of(generalChannel.getId()),
+                ChannelMembershipStatus.ACTIVE
+        )).thenReturn(List.of(memberCount));
 
         ChannelListResponse result = service.getChannels(userId, workspace.getId());
 
@@ -86,6 +95,7 @@ class ChannelQueryServiceTest {
             assertThat(channel.general()).isTrue();
             assertThat(channel.joined()).isTrue();
             assertThat(channel.unreadCount()).isZero();
+            assertThat(channel.memberCount()).isEqualTo(2L);
         });
     }
 

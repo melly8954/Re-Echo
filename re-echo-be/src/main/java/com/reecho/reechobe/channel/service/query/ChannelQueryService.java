@@ -21,8 +21,10 @@ import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,13 +50,28 @@ public class ChannelQueryService {
                         ChannelMembershipStatus.ACTIVE
                 )
         );
+        List<Channel> channels = channelRepository.findAccessibleActiveChannels(
+                workspaceId,
+                membership.getId()
+        );
+        Map<UUID, Long> memberCountByChannelId = channelMembershipRepository
+                .countByChannelIdsAndStatus(
+                        channels.stream().map(Channel::getId).toList(),
+                        ChannelMembershipStatus.ACTIVE
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        channelMemberCount -> channelMemberCount.getChannelId(),
+                        channelMemberCount -> channelMemberCount.getMemberCount()
+                ));
+
         return ChannelListResponse.of(
-                channelRepository.findAccessibleActiveChannels(workspaceId, membership.getId())
-                        .stream()
+                channels.stream()
                         .map(channel -> ChannelListItemResponse.from(
                                 channel,
                                 joinedChannelIds.contains(channel.getId()),
-                                membership.getId()
+                                membership.getId(),
+                                memberCountByChannelId.getOrDefault(channel.getId(), 0L)
                         ))
                         .toList()
         );
