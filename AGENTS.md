@@ -110,6 +110,8 @@ feat, fix, refactor, docs, style, test, perf, chore, ci, build
 
 커밋 제안, staging, commit 작업을 수행할 때는
 `docs/coding-convention.md`의 커밋 분리 원칙을 따른다.
+사용자가 구현, 수정, 반영을 요청한 작업은 검증 후 커밋까지 수행하되,
+push는 사용자가 직접 수행하므로 자동으로 실행하지 않는다.
 
 # 6. 부칙
 
