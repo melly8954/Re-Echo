@@ -25,7 +25,7 @@ interface AppShellProps {
   channels?: ChannelNavigationItem[]
   activeChannelId?: string
   isChannelsLoading?: boolean
-  channelActions?: ReactNode
+  channelHeaderAction?: ReactNode
   rightSidebar?: ReactNode
   rightSidebarLabel?: string
 }
@@ -37,7 +37,7 @@ export function AppShell({
   channels = [],
   activeChannelId,
   isChannelsLoading = false,
-  channelActions,
+  channelHeaderAction,
   rightSidebar,
   rightSidebarLabel,
 }: PropsWithChildren<AppShellProps>) {
@@ -156,10 +156,10 @@ export function AppShell({
 
   const channelList = (
     <div>
-      <p className={styles.sidebarLabel}>채널</p>
-      {channelActions && (
-        <div className={styles.channelActions}>{channelActions}</div>
-      )}
+      <div className={styles.channelHeader}>
+        <p className={styles.sidebarLabel}>채널</p>
+        {channelHeaderAction}
+      </div>
       {channelNavigation}
     </div>
   )
@@ -278,7 +278,10 @@ export function AppShell({
             onKeyDown={handleChannelDrawerKeyDown}
           >
             <div className={styles.mobileChannelHeader}>
-              <p className={styles.sidebarLabel}>채널</p>
+              <div className={styles.mobileChannelTitle}>
+                <p className={styles.sidebarLabel}>채널</p>
+                {channelHeaderAction}
+              </div>
               <button
                 ref={channelDrawerCloseButtonRef}
                 className={styles.drawerCloseButton}
@@ -288,9 +291,6 @@ export function AppShell({
                 닫기
               </button>
             </div>
-            {channelActions && (
-              <div className={styles.channelActions}>{channelActions}</div>
-            )}
             {channelNavigation}
           </aside>
         </div>

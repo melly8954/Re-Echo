@@ -138,24 +138,109 @@
   font-size: 14px;
 }
 
-.channelCreateForm {
-  padding: 10px;
-  display: grid;
-  gap: 8px;
+.channelCreateActionButton {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-primary);
   background: rgb(255 255 255 / 72%);
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.channelCreateActionButton:hover {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.channelCreateActionButton:focus-visible,
+.channelCreateCloseButton:focus-visible,
+.channelCreateSecondaryButton:focus-visible,
+.channelCreatePrimaryButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.channelCreateLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.channelCreateOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.channelCreateDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  padding: 22px;
+  display: grid;
+  gap: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.channelCreateDialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.channelCreateDialog h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.channelCreateCloseButton,
+.channelCreateSecondaryButton {
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.channelCreateCloseButton {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.channelCreateForm {
+  display: grid;
+  gap: 14px;
 }
 
 .channelCreateForm label {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 7px;
 }
 
 .channelCreateForm span {
   color: var(--color-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -163,8 +248,8 @@
 .channelCreateForm select {
   width: 100%;
   min-width: 0;
-  height: 34px;
-  padding: 0 9px;
+  height: 40px;
+  padding: 0 11px;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -179,8 +264,26 @@
   outline-offset: 2px;
 }
 
-.channelCreateForm button {
-  min-height: 34px;
+.channelCreateError {
+  margin: 0;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.channelCreateFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.channelCreateSecondaryButton,
+.channelCreatePrimaryButton {
+  min-height: 38px;
+  padding: 0 13px;
+}
+
+.channelCreatePrimaryButton {
   color: #fff;
   background: var(--color-primary);
   border: 0;
@@ -189,21 +292,19 @@
   font-weight: 800;
 }
 
-.channelCreateForm button:hover:not(:disabled) {
+.channelCreateSecondaryButton:hover {
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+}
+
+.channelCreatePrimaryButton:hover:not(:disabled) {
   background: var(--color-primary-hover);
 }
 
-.channelCreateForm button:disabled {
+.channelCreatePrimaryButton:disabled {
   color: #76837f;
   background: #e4e9e7;
   cursor: not-allowed;
-}
-
-.channelCreateError {
-  margin: 0;
-  color: #b42318;
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .memberPanel {

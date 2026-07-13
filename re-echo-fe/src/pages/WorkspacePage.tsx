@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
@@ -41,6 +41,28 @@ export function WorkspacePage() {
   const [channelVisibility, setChannelVisibility] =
     useState<ChannelVisibility>('PUBLIC')
   const [channelCreateError, setChannelCreateError] = useState<string | null>(null)
+  const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isChannelCreateOpen) {
+      return undefined
+    }
+
+    const previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !createChannel.isPending) {
+        setIsChannelCreateOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousBodyOverflow
+    }
+  }, [createChannel.isPending, isChannelCreateOpen])
 
   if (!workspaceId) {
     return <Navigate to="/" replace />
@@ -140,6 +162,7 @@ export function WorkspacePage() {
       })
       setChannelName('')
       setChannelVisibility('PUBLIC')
+      setIsChannelCreateOpen(false)
       void navigate(`/workspaces/${workspaceId}?channelId=${createdChannel.id}`)
     } catch (error) {
       if (error instanceof ApiError) {
@@ -150,46 +173,108 @@ export function WorkspacePage() {
     }
   }
 
-  const channelCreateForm = canCreateChannel ? (
-    <form className={styles.channelCreateForm} onSubmit={handleCreateChannel}>
-      <label>
-        <span>채널 이름</span>
-        <input
-          type="text"
-          value={channelName}
-          maxLength={80}
-          placeholder="예: design"
-          onChange={(event) => {
-            setChannelName(event.target.value)
-            setChannelCreateError(null)
-          }}
-        />
-      </label>
-      <label>
-        <span>공개 범위</span>
-        <select
-          value={channelVisibility}
-          onChange={(event) =>
-            setChannelVisibility(event.target.value as ChannelVisibility)
-          }
-        >
-          <option value="PUBLIC">공개</option>
-          <option value="PRIVATE">비공개</option>
-        </select>
-      </label>
-      {channelCreateError && (
-        <p className={styles.channelCreateError} role="alert">
-          {channelCreateError}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={createChannel.isPending || !channelName.trim()}
-      >
-        {createChannel.isPending ? '생성 중' : '채널 생성'}
-      </button>
-    </form>
+  function closeChannelCreateDialog() {
+    if (createChannel.isPending) {
+      return
+    }
+    setIsChannelCreateOpen(false)
+  }
+
+  const channelCreateAction = canCreateChannel ? (
+    <button
+      className={styles.channelCreateActionButton}
+      type="button"
+      aria-label="채널 생성"
+      title="채널 생성"
+      onClick={() => {
+        setChannelCreateError(null)
+        setIsChannelCreateOpen(true)
+      }}
+    >
+      +
+    </button>
   ) : undefined
+
+  const channelCreateDialog = canCreateChannel && isChannelCreateOpen && (
+    <div className={styles.channelCreateLayer}>
+      <button
+        className={styles.channelCreateOverlay}
+        type="button"
+        aria-label="채널 생성 닫기"
+        onClick={closeChannelCreateDialog}
+      />
+      <section
+        className={styles.channelCreateDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="channel-create-title"
+      >
+        <header>
+          <div>
+            <p className={styles.eyebrow}>새 채널</p>
+            <h2 id="channel-create-title">채널 생성</h2>
+          </div>
+          <button
+            className={styles.channelCreateCloseButton}
+            type="button"
+            onClick={closeChannelCreateDialog}
+          >
+            닫기
+          </button>
+        </header>
+
+        <form className={styles.channelCreateForm} onSubmit={handleCreateChannel}>
+          <label>
+            <span>채널 이름</span>
+            <input
+              type="text"
+              value={channelName}
+              maxLength={80}
+              placeholder="예: design"
+              autoFocus
+              onChange={(event) => {
+                setChannelName(event.target.value)
+                setChannelCreateError(null)
+              }}
+            />
+          </label>
+          <label>
+            <span>공개 범위</span>
+            <select
+              value={channelVisibility}
+              onChange={(event) =>
+                setChannelVisibility(event.target.value as ChannelVisibility)
+              }
+            >
+              <option value="PUBLIC">공개</option>
+              <option value="PRIVATE">비공개</option>
+            </select>
+          </label>
+          {channelCreateError && (
+            <p className={styles.channelCreateError} role="alert">
+              {channelCreateError}
+            </p>
+          )}
+          <div className={styles.channelCreateFooter}>
+            <button
+              type="button"
+              className={styles.channelCreateSecondaryButton}
+              onClick={closeChannelCreateDialog}
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className={styles.channelCreatePrimaryButton}
+              disabled={createChannel.isPending || !channelName.trim()}
+            >
+              {createChannel.isPending ? '생성 중' : '생성'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
 
   const memberPanel = (
     <section className={styles.memberPanel} aria-labelledby="workspace-member-title">
@@ -265,7 +350,7 @@ export function WorkspacePage() {
       }))}
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
-      channelActions={channelCreateForm}
+      channelHeaderAction={channelCreateAction}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="워크스페이스 참여자"
     >
@@ -352,6 +437,7 @@ export function WorkspacePage() {
           </div>
         )}
       </section>
+      {channelCreateDialog}
     </AppShell>
   )
 }
