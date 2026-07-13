@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
 import { ApiError } from '../shared/api/apiTypes'
@@ -8,8 +10,10 @@ import styles from './WorkspacePage.module.css'
 export function WorkspacePage() {
   const { workspaceId } = useParams()
   const [searchParams] = useSearchParams()
+  const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
   const channelsQuery = useWorkspaceChannels(workspaceId ?? '')
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null)
 
   if (!workspaceId) {
     return <Navigate to="/" replace />
@@ -21,6 +25,29 @@ export function WorkspacePage() {
   const activeChannel =
     channels.find((channel) => channel.id === requestedChannelId) ??
     channels.find((channel) => channel.id === workspace?.defaultChannelId)
+  const canIssueInvite =
+    workspace?.myMembership.role === 'OWNER' ||
+    workspace?.myMembership.role === 'ADMIN'
+
+  async function handleCopyInviteLink() {
+    if (!workspaceId) {
+      return
+    }
+
+    setInviteMessage(null)
+    try {
+      const inviteLink = await issueInviteLink.mutateAsync(workspaceId)
+      const inviteUrl = `${window.location.origin}/invite-links/${inviteLink.token}`
+      await navigator.clipboard.writeText(inviteUrl)
+      setInviteMessage('초대 링크를 복사했습니다.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setInviteMessage(error.message)
+        return
+      }
+      setInviteMessage('초대 링크를 복사하지 못했습니다.')
+    }
+  }
 
   return (
     <AppShell
@@ -86,8 +113,23 @@ export function WorkspacePage() {
               <div className={styles.status}>
                 <span>{workspace.myMembership.role}</span>
                 <span>{workspace.status}</span>
+                {canIssueInvite && (
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyInviteLink()}
+                    disabled={issueInviteLink.isPending}
+                  >
+                    {issueInviteLink.isPending ? '발급 중' : '초대 링크 복사'}
+                  </button>
+                )}
               </div>
             </header>
+
+            {inviteMessage && (
+              <p className={styles.inviteMessage} role="status">
+                {inviteMessage}
+              </p>
+            )}
 
             <section className={styles.messagePanel} aria-label="메시지 영역">
               <div>

@@ -89,6 +89,34 @@
   font-weight: 800;
 }
 
+.status button {
+  min-height: 32px;
+  padding: 0 11px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.status button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.status button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.inviteMessage {
+  margin: -6px 0 0;
+  color: #08665f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .messagePanel {
   min-height: 360px;
   padding: 24px;

@@ -60,6 +60,22 @@ export interface WorkspaceChannelList {
   contents: WorkspaceChannel[]
 }
 
+export interface WorkspaceInviteLink {
+  token: string
+  expiresAt: string
+}
+
+export interface WorkspaceInvitePreview {
+  workspaceName: string
+  workspaceImageUrl: string | null
+  expiresAt: string
+}
+
+export interface JoinedWorkspace {
+  id: string
+  defaultChannelId: string
+}
+
 export function createWorkspace(request: CreateWorkspaceRequest) {
   return apiRequest<CreatedWorkspace>('/api/v1/workspaces', {
     method: 'POST',
@@ -90,4 +106,27 @@ export function getWorkspaceChannels(workspaceId: string) {
       authenticated: true,
     },
   )
+}
+
+export function issueWorkspaceInviteLink(workspaceId: string) {
+  return apiRequest<WorkspaceInviteLink>(
+    `/api/v1/workspaces/${workspaceId}/invite-link`,
+    {
+      method: 'POST',
+      authenticated: true,
+    },
+  )
+}
+
+export function getWorkspaceInvitePreview(token: string) {
+  return apiRequest<WorkspaceInvitePreview>(`/api/v1/invite-links/${token}`, {
+    method: 'GET',
+  })
+}
+
+export function joinWorkspaceByInviteLink(token: string) {
+  return apiRequest<JoinedWorkspace>(`/api/v1/invite-links/${token}/join`, {
+    method: 'POST',
+    authenticated: true,
+  })
 }

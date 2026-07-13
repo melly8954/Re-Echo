@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '../pages/LoginPage'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
+import { InviteLinkPage } from '../pages/InviteLinkPage'
 import { ProfileSettingsPage } from '../pages/ProfileSettingsPage'
 import { WorkspacePage } from '../pages/WorkspacePage'
 import { WorkspaceStartPage } from '../pages/WorkspaceStartPage'
@@ -12,6 +13,7 @@ export function AppRouter() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="/invite-links/:token" element={<InviteLinkPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<WorkspaceStartPage />} />
         <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
