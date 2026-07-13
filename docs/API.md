@@ -221,7 +221,7 @@
 | Workspaces | PATCH | `/workspaces/{workspaceId}/archive` | 워크스페이스 보관 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}/restore` | 워크스페이스 복원 |
 | Invites | GET | `/workspaces/{workspaceId}/invite-link` | 활성 초대 링크 조회 |
-| Invites | POST | `/workspaces/{workspaceId}/invite-link` | 초대 링크 발급/재발급 |
+| Invites | POST | `/workspaces/{workspaceId}/invite-link` | 초대 링크 발급/명시적 재발급 |
 | Invites | GET | `/invite-links/{token}` | 초대 링크 미리보기 |
 | Invites | POST | `/invite-links/{token}/join` | 초대 링크로 워크스페이스 참여 |
 | Members | GET | `/workspaces/{workspaceId}/members` | 워크스페이스 멤버 목록 조회 |
@@ -509,15 +509,19 @@
 
 ### 11.12 활성 초대 링크 조회
 
-- Description: 현재 활성화된 초대 링크를 조회한다.
+- Description: 현재 활성화된 초대 링크를 조회한다. 링크 복사처럼 기존
+  초대 링크를 공유하는 동작은 이 API를 우선 사용해 활성 링크를
+  재사용한다.
 - Method: `GET`
 - URL: `/api/v1/workspaces/{workspaceId}/invite-link`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.13 초대 링크 발급/재발급
+### 11.13 초대 링크 발급/명시적 재발급
 
-- Description: 24시간 만료 초대 링크를 발급한다. 기존 활성 링크가 있으면 무효화하고 새 링크로 교체한다.
+- Description: 활성 초대 링크가 없으면 24시간 만료 초대 링크를
+  발급한다. 사용자가 명시적으로 재발급을 요청한 경우에만 기존 활성
+  링크를 무효화하고 새 링크로 교체한다.
 - Method: `POST`
 - URL: `/api/v1/workspaces/{workspaceId}/invite-link`
 - Authentication: 필요
@@ -1271,7 +1275,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 - OAuth 로그인 시작과 콜백 처리는 Spring Security의 기본
   `/oauth2/authorization/{provider}`, `/login/oauth2/code/{provider}`
   패턴을 사용한다.
-- 초대 링크는 워크스페이스당 활성 링크 1개 정책을 반영해 조회와 발급 리소스를 분리한다.
+- 초대 링크는 워크스페이스당 활성 링크 1개 정책을 반영해 조회와 발급 리소스를 분리한다. 링크 복사/공유는 기존 활성 링크 조회를 우선하고, 명시적 재발급만 기존 링크를 무효화한다.
 - 멤버 강제 제거와 자진 탈퇴는 단순 필드 수정이 아니라 권한/상태 검증이 큰 도메인 동작이므로 명령형 endpoint를 허용한다.
 - 읽음 상태는 메시지별 영수증이 아니라 채널별 마지막 읽은 메시지 기준점으로 단순화한다.
 - 파일 첨부는 업로드와 메시지 연결을 분리해 대용량 바이너리가 애플리케이션 서버를 통과하지 않게 한다.
