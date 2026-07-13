@@ -135,7 +135,11 @@ export function AppShell({
               onClick={() => setIsChannelDrawerOpen(false)}
             >
               <span className={styles.channelPrefix} aria-hidden="true">
-                {channel.visibility === 'PRIVATE' ? 'private' : '#'}
+                {channel.visibility === 'PRIVATE' ? (
+                  <span className={styles.lockIcon} />
+                ) : (
+                  '#'
+                )}
               </span>
               <span className={styles.channelName}>{channel.name}</span>
               {channel.unreadCount > 0 && (

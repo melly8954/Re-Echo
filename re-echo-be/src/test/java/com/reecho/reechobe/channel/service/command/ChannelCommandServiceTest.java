@@ -12,6 +12,7 @@ import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
+import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
@@ -166,6 +167,187 @@ class ChannelCommandServiceTest {
                 .isEqualTo(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
 
         verifyNoInteractions(channelRepository, channelMembershipRepository);
+    }
+
+    @Test
+    void 관리자는_비공개_채널에_멤버를_추가할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        WorkspaceMembership member = createMembership(
+                workspace.getId(),
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        Channel channel = Channel.create(
+                workspace.getId(),
+                "secret",
+                null,
+                ChannelVisibility.PRIVATE,
+                admin.getId()
+        );
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(workspaceMembershipRepository.findAllById(Set.of(member.getId()))).thenReturn(List.of(member));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.empty());
+
+        service.addPrivateChannelMembers(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new AddChannelMembersRequest(Set.of(member.getId()))
+        );
+
+        ArgumentCaptor<ChannelMembership> channelMembershipCaptor =
+                ArgumentCaptor.forClass(ChannelMembership.class);
+        verify(channelMembershipRepository).save(channelMembershipCaptor.capture());
+        assertThat(channelMembershipCaptor.getValue().getChannelId()).isEqualTo(channel.getId());
+        assertThat(channelMembershipCaptor.getValue().getWorkspaceMembershipId()).isEqualTo(member.getId());
+    }
+
+    @Test
+    void 나간_비공개_채널_멤버를_다시_추가하면_기존_멤버십을_복구한다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership owner = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.OWNER);
+        WorkspaceMembership member = createMembership(
+                workspace.getId(),
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        Channel channel = Channel.create(
+                workspace.getId(),
+                "secret",
+                null,
+                ChannelVisibility.PRIVATE,
+                owner.getId()
+        );
+        ChannelMembership channelMembership = ChannelMembership.join(channel.getId(), member.getId());
+        channelMembership.leave();
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(owner));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(workspaceMembershipRepository.findAllById(Set.of(member.getId()))).thenReturn(List.of(member));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.of(channelMembership));
+
+        service.addPrivateChannelMembers(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new AddChannelMembersRequest(Set.of(member.getId()))
+        );
+
+        assertThat(channelMembership.getStatus()).isEqualTo(ChannelMembershipStatus.ACTIVE);
+        assertThat(channelMembership.getLeftAt()).isNull();
+        verify(channelMembershipRepository, never()).save(any(ChannelMembership.class));
+    }
+
+    @Test
+    void 일반_멤버는_비공개_채널에_멤버를_추가할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> service.addPrivateChannelMembers(
+                userId,
+                workspace.getId(),
+                UUID.randomUUID(),
+                new AddChannelMembersRequest(Set.of(UUID.randomUUID()))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+
+        verifyNoInteractions(channelRepository, channelMembershipRepository);
+    }
+
+    @Test
+    void 공개_채널에는_비공개_채널_멤버_추가_api를_사용할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership owner = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.OWNER);
+        WorkspaceMembership member = createMembership(
+                workspace.getId(),
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, owner.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(owner));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        assertThatThrownBy(() -> service.addPrivateChannelMembers(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new AddChannelMembersRequest(Set.of(member.getId()))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.VALIDATION_ERROR);
+
+        verify(channelMembershipRepository, never()).save(any(ChannelMembership.class));
+    }
+
+    @Test
+    void 다른_워크스페이스_멤버는_비공개_채널에_추가할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership owner = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.OWNER);
+        WorkspaceMembership otherWorkspaceMember = createMembership(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        Channel channel = Channel.create(
+                workspace.getId(),
+                "secret",
+                null,
+                ChannelVisibility.PRIVATE,
+                owner.getId()
+        );
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(owner));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(workspaceMembershipRepository.findAllById(Set.of(otherWorkspaceMember.getId())))
+                .thenReturn(List.of(otherWorkspaceMember));
+
+        assertThatThrownBy(() -> service.addPrivateChannelMembers(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new AddChannelMembersRequest(Set.of(otherWorkspaceMember.getId()))
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(MemberErrorCode.MEMBER_NOT_FOUND);
+
+        verify(channelMembershipRepository, never()).save(any(ChannelMembership.class));
     }
 
     @Test

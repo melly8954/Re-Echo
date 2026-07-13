@@ -5,6 +5,7 @@ import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
+import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
@@ -29,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 채널 생성과 공개 채널 참여 상태 변경을 트랜잭션으로 처리한다.
+// 채널 생성과 채널 참여 상태 변경을 트랜잭션으로 처리한다.
 @Service
 @RequiredArgsConstructor
 public class ChannelCommandService {
@@ -86,6 +87,32 @@ public class ChannelCommandService {
                 }, () -> channelMembershipRepository.save(
                         ChannelMembership.join(channelId, membership.getId())
                 ));
+    }
+
+    @Transactional
+    public void addPrivateChannelMembers(
+            UUID userId,
+            UUID workspaceId,
+            UUID channelId,
+            AddChannelMembersRequest request
+    ) {
+        validateActiveWorkspace(workspaceId);
+        WorkspaceMembership requesterMembership = getActiveWorkspaceMembership(userId, workspaceId);
+        if (requesterMembership.getRole() == WorkspaceMembershipRole.MEMBER) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+        }
+
+        Channel channel = getActiveWorkspaceChannel(workspaceId, channelId);
+        if (channel.getVisibility() != ChannelVisibility.PRIVATE) {
+            throw new BusinessException(
+                    CommonErrorCode.VALIDATION_ERROR,
+                    "비공개 채널에만 멤버를 추가할 수 있습니다."
+            );
+        }
+
+        Set<UUID> memberIds = new LinkedHashSet<>(request.memberIds());
+        validateInitialMembers(workspaceId, memberIds);
+        memberIds.forEach(memberId -> addOrReactivatePrivateChannelMember(channelId, memberId));
     }
 
     @Transactional
@@ -151,5 +178,16 @@ public class ChannelCommandService {
         if (validMembershipCount != memberIds.size()) {
             throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
+    }
+
+    private void addOrReactivatePrivateChannelMember(UUID channelId, UUID workspaceMembershipId) {
+        channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channelId, workspaceMembershipId)
+                .ifPresentOrElse(channelMembership -> {
+                    if (channelMembership.getStatus() == ChannelMembershipStatus.LEFT) {
+                        channelMembership.rejoin();
+                    }
+                }, () -> channelMembershipRepository.save(
+                        ChannelMembership.join(channelId, workspaceMembershipId)
+                ));
     }
 }

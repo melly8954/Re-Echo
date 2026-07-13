@@ -1,5 +1,6 @@
 package com.reecho.reechobe.channel.controller;
 
+import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.ChannelListResponse;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
@@ -76,6 +77,17 @@ public class ChannelController {
     ) {
         channelCommandService.joinPublicChannel(principal.userId(), workspaceId, channelId);
         return ApiResponse.success(HttpStatus.OK, "채널에 참여했습니다.", null);
+    }
+
+    @PostMapping("/{channelId}/members")
+    public ApiResponse<Void> addPrivateChannelMembers(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId,
+            @Valid @RequestBody AddChannelMembersRequest request
+    ) {
+        channelCommandService.addPrivateChannelMembers(principal.userId(), workspaceId, channelId, request);
+        return ApiResponse.success(HttpStatus.OK, "비공개 채널 멤버를 추가했습니다.", null);
     }
 
     @PostMapping("/{channelId}/leave")

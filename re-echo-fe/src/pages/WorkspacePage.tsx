@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { useAddWorkspacePrivateChannelMembers } from '../features/workspace/useAddWorkspacePrivateChannelMembers'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspaceInviteLink'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
@@ -40,6 +41,7 @@ export function WorkspacePage() {
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const createChannel = useCreateWorkspaceChannel()
+  const addPrivateChannelMembers = useAddWorkspacePrivateChannelMembers()
   const joinChannel = useJoinWorkspaceChannel()
   const leaveChannel = useLeaveWorkspaceChannel()
   const getInviteLink = useGetWorkspaceInviteLink()
@@ -55,10 +57,17 @@ export function WorkspacePage() {
   const [selectedPrivateMemberIds, setSelectedPrivateMemberIds] = useState<
     string[]
   >([])
+  const [selectedChannelMemberIds, setSelectedChannelMemberIds] = useState<
+    string[]
+  >([])
+  const [channelMemberAddError, setChannelMemberAddError] = useState<
+    string | null
+  >(null)
   const [channelMembershipMessage, setChannelMembershipMessage] = useState<
     string | null
   >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
+  const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [memberPanelScope, setMemberPanelScope] =
     useState<MemberPanelScope>('CHANNEL')
 
@@ -96,6 +105,9 @@ export function WorkspacePage() {
 
   useEffect(() => {
     setChannelMembershipMessage(null)
+    setChannelMemberAddError(null)
+    setSelectedChannelMemberIds([])
+    setIsChannelMemberAddOpen(false)
     setMemberPanelScope('CHANNEL')
   }, [activeChannel?.id])
 
@@ -106,6 +118,10 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
+  const canManageActivePrivateChannel =
+    canCreateChannel &&
+    activeChannel?.visibility === 'PRIVATE' &&
+    activeChannel.joined
   const canLeaveActiveChannel =
     activeChannel?.visibility === 'PUBLIC' &&
     activeChannel.joined &&
@@ -126,6 +142,17 @@ export function WorkspacePage() {
     workspaceMembersQuery.data?.contents.filter(
       (member) => member.id !== workspace?.myMembership.id,
     ) ?? []
+  const activeChannelMemberIds = new Set(
+    channelMembersQuery.data?.contents.map((member) => member.id) ?? [],
+  )
+  const privateChannelAddOptions =
+    workspaceMembersQuery.data?.contents.filter(
+      (member) => !activeChannelMemberIds.has(member.id),
+    ) ?? []
+  const isChannelMemberAddLoading =
+    workspaceMembersQuery.isLoading || channelMembersQuery.isLoading
+  const isChannelMemberAddUnavailable =
+    workspaceMembersQuery.isError || channelMembersQuery.isError
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
     label: string
@@ -276,6 +303,43 @@ export function WorkspacePage() {
     }
   }
 
+  async function handleAddPrivateChannelMembers(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!workspaceId || !activeChannel || !canManageActivePrivateChannel) {
+      return
+    }
+    if (selectedChannelMemberIds.length === 0) {
+      setChannelMemberAddError('추가할 멤버를 선택해 주세요.')
+      return
+    }
+
+    setChannelMemberAddError(null)
+    try {
+      await addPrivateChannelMembers.mutateAsync({
+        workspaceId,
+        channelId: activeChannel.id,
+        request: {
+          memberIds: selectedChannelMemberIds,
+        },
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelMembersQueryKey(workspaceId, activeChannel.id),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelsQueryKey(workspaceId),
+      })
+      setSelectedChannelMemberIds([])
+      setIsChannelMemberAddOpen(false)
+      setChannelMembershipMessage('비공개 채널 멤버를 추가했습니다.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setChannelMemberAddError(error.message)
+        return
+      }
+      setChannelMemberAddError('비공개 채널 멤버를 추가하지 못했습니다.')
+    }
+  }
+
   function closeChannelCreateDialog() {
     if (createChannel.isPending) {
       return
@@ -289,6 +353,15 @@ export function WorkspacePage() {
         ? currentMemberIds.filter((currentMemberId) => currentMemberId !== memberId)
         : [...currentMemberIds, memberId],
     )
+  }
+
+  function toggleChannelMemberToAdd(memberId: string) {
+    setSelectedChannelMemberIds((currentMemberIds) =>
+      currentMemberIds.includes(memberId)
+        ? currentMemberIds.filter((currentMemberId) => currentMemberId !== memberId)
+        : [...currentMemberIds, memberId],
+    )
+    setChannelMemberAddError(null)
   }
 
   const channelCreateAction = canCreateChannel ? (
@@ -453,6 +526,13 @@ export function WorkspacePage() {
         <div>
           <p className={styles.eyebrow}>참여자</p>
           <h2 id="workspace-member-title">{memberPanelTitle}</h2>
+          <p className={styles.memberPanelContext}>
+            {isWorkspaceMemberPanel
+              ? (workspace?.name ?? '워크스페이스')
+              : `${activeChannel?.visibility === 'PRIVATE' ? '잠금' : '#'} ${
+                  activeChannel?.name ?? '채널'
+                }`}
+          </p>
         </div>
         <span>{members.length}</span>
       </div>
@@ -469,7 +549,7 @@ export function WorkspacePage() {
           disabled={!activeChannel}
           onClick={() => setMemberPanelScope('CHANNEL')}
         >
-          채널
+          채널 참여자
         </button>
         <button
           type="button"
@@ -481,9 +561,94 @@ export function WorkspacePage() {
           aria-pressed={memberPanelScope === 'WORKSPACE'}
           onClick={() => setMemberPanelScope('WORKSPACE')}
         >
-          워크스페이스
+          워크스페이스 전체
         </button>
       </div>
+
+      {canManageActivePrivateChannel && memberPanelScope === 'CHANNEL' && (
+        <div className={styles.memberAddToolbar}>
+          <p>비공개 채널 멤버는 관리자가 직접 추가합니다.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setChannelMemberAddError(null)
+              setIsChannelMemberAddOpen((isOpen) => !isOpen)
+            }}
+          >
+            {isChannelMemberAddOpen ? '닫기' : '멤버 추가'}
+          </button>
+        </div>
+      )}
+
+      {canManageActivePrivateChannel &&
+        memberPanelScope === 'CHANNEL' &&
+        isChannelMemberAddOpen && (
+          <form
+            className={styles.memberAddPanel}
+            onSubmit={handleAddPrivateChannelMembers}
+          >
+            <div className={styles.memberAddPanelHeader}>
+              <strong>추가할 멤버</strong>
+              <span>{selectedChannelMemberIds.length}</span>
+            </div>
+            {isChannelMemberAddLoading && (
+              <div className={styles.memberSkeletonList} aria-label="추가 가능 멤버를 불러오는 중">
+                <span />
+                <span />
+              </div>
+            )}
+            {isChannelMemberAddUnavailable && (
+              <p className={styles.channelCreateError}>
+                추가 가능 멤버를 불러올 수 없습니다.
+              </p>
+            )}
+            {!isChannelMemberAddLoading &&
+              !isChannelMemberAddUnavailable &&
+              privateChannelAddOptions.length === 0 && (
+                <p className={styles.channelCreateEmptyText}>
+                  추가할 워크스페이스 멤버가 없습니다.
+                </p>
+              )}
+            {!isChannelMemberAddLoading &&
+              !isChannelMemberAddUnavailable &&
+              privateChannelAddOptions.length > 0 && (
+                <div className={styles.memberAddList}>
+                  {privateChannelAddOptions.map((member) => (
+                    <label key={member.id} className={styles.memberAddItem}>
+                      <input
+                        type="checkbox"
+                        checked={selectedChannelMemberIds.includes(member.id)}
+                        onChange={() => toggleChannelMemberToAdd(member.id)}
+                      />
+                      {member.profileImageUrl ? (
+                        <img src={member.profileImageUrl} alt="" />
+                      ) : (
+                        <span className={styles.memberAvatarFallback} aria-hidden="true">
+                          {member.displayName.slice(0, 1)}
+                        </span>
+                      )}
+                      <span>{member.displayName}</span>
+                      <small>{getWorkspaceRoleLabel(member.role)}</small>
+                    </label>
+                  ))}
+                </div>
+              )}
+            {channelMemberAddError && (
+              <p className={styles.channelCreateError} role="alert">
+                {channelMemberAddError}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={
+                addPrivateChannelMembers.isPending ||
+                selectedChannelMemberIds.length === 0
+              }
+            >
+              {addPrivateChannelMembers.isPending ? '추가 중' : '추가'}
+            </button>
+          </form>
+        )}
 
       {membersQuery.isLoading && (
         <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
@@ -596,7 +761,7 @@ export function WorkspacePage() {
             <header className={styles.header}>
               <div>
                 <p className={styles.eyebrow}>
-                  {activeChannel?.visibility === 'PRIVATE' ? '비공개' : '#'}{' '}
+                  {activeChannel?.visibility === 'PRIVATE' ? '잠금' : '#'}{' '}
                   {activeChannel?.name ?? '채널'}
                 </p>
                 <h1 id="workspace-page-title">{workspace.name}</h1>

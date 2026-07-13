@@ -468,6 +468,13 @@
   line-height: 1.3;
 }
 
+.memberPanelContext {
+  margin: 5px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .memberPanelHeader span {
   min-width: 26px;
   height: 26px;
@@ -521,6 +528,130 @@
 }
 
 .memberPanelTab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.memberAddToolbar {
+  padding: 10px;
+  display: grid;
+  gap: 9px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.memberAddToolbar p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.memberAddToolbar button,
+.memberAddPanel button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.memberAddToolbar button:hover,
+.memberAddPanel button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.memberAddPanel {
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.memberAddPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.memberAddPanelHeader strong {
+  font-size: 13px;
+}
+
+.memberAddPanelHeader span {
+  color: #08665f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberAddList {
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.memberAddItem {
+  min-width: 0;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: auto 32px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.memberAddItem input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+}
+
+.memberAddItem img,
+.memberAddItem .memberAvatarFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+}
+
+.memberAddItem img {
+  object-fit: cover;
+}
+
+.memberAddItem span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.memberAddItem small {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.memberAddPanel button {
+  justify-self: end;
+}
+
+.memberAddPanel button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.memberAddToolbar button:focus-visible,
+.memberAddPanel button:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }

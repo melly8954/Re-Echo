@@ -220,11 +220,36 @@
 }
 
 .channelPrefix {
-  min-width: 34px;
+  width: 18px;
+  flex: 0 0 18px;
+  display: inline-grid;
+  place-items: center;
   color: var(--color-muted);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 800;
   text-align: center;
+}
+
+.lockIcon {
+  position: relative;
+  width: 12px;
+  height: 10px;
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.lockIcon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 8px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  transform: translateX(-50%);
 }
 
 .channelName {

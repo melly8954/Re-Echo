@@ -17,6 +17,10 @@ export interface CreateWorkspaceChannelRequest {
   memberIds?: string[]
 }
 
+export interface AddWorkspaceChannelMembersRequest {
+  memberIds: string[]
+}
+
 export interface CreatedWorkspaceChannel {
   id: string
 }
@@ -161,6 +165,21 @@ export function leaveWorkspaceChannel(workspaceId: string, channelId: string) {
     {
       method: 'POST',
       authenticated: true,
+    },
+  )
+}
+
+export function addWorkspacePrivateChannelMembers(
+  workspaceId: string,
+  channelId: string,
+  request: AddWorkspaceChannelMembersRequest,
+) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members`,
+    {
+      method: 'POST',
+      authenticated: true,
+      body: JSON.stringify(request),
     },
   )
 }
