@@ -144,6 +144,138 @@ class WorkspaceMemberCommandServiceTest {
         verifyNoInteractions(channelMembershipRepository);
     }
 
+    @Test
+    void 소유자가_일반_멤버를_관리자로_변경할_수_있다() {
+        UUID workspaceId = UUID.randomUUID();
+        WorkspaceMembership owner = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.OWNER
+        );
+        WorkspaceMembership member = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspaceId,
+                owner.getUserId(),
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(owner));
+        when(workspaceMembershipRepository.findByIdAndWorkspaceIdAndStatus(
+                member.getId(),
+                workspaceId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+
+        service.changeMemberRole(
+                owner.getUserId(),
+                workspaceId,
+                member.getId(),
+                WorkspaceMembershipRole.ADMIN
+        );
+
+        assertThat(member.getRole()).isEqualTo(WorkspaceMembershipRole.ADMIN);
+    }
+
+    @Test
+    void 소유자가_아닌_멤버는_역할을_변경할_수_없다() {
+        UUID workspaceId = UUID.randomUUID();
+        WorkspaceMembership admin = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.ADMIN
+        );
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspaceId,
+                admin.getUserId(),
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service.changeMemberRole(
+                admin.getUserId(),
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
+    }
+
+    @Test
+    void 관리자도_일반_멤버를_강제_제거하면_채널_멤버십이_함께_종료된다() {
+        UUID workspaceId = UUID.randomUUID();
+        WorkspaceMembership admin = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.ADMIN
+        );
+        WorkspaceMembership member = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.MEMBER
+        );
+        ChannelMembership channelMembership = ChannelMembership.join(
+                UUID.randomUUID(),
+                member.getId()
+        );
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspaceId,
+                admin.getUserId(),
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(workspaceMembershipRepository.findByIdAndWorkspaceIdAndStatus(
+                member.getId(),
+                workspaceId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelMembershipRepository.findByWorkspaceMembershipIdAndStatus(
+                member.getId(),
+                ChannelMembershipStatus.ACTIVE
+        )).thenReturn(List.of(channelMembership));
+
+        service.removeMember(admin.getUserId(), workspaceId, member.getId());
+
+        assertThat(member.getStatus()).isEqualTo(WorkspaceMembershipStatus.REMOVED);
+        assertThat(member.getRemovedAt()).isNotNull();
+        assertThat(channelMembership.getStatus()).isEqualTo(ChannelMembershipStatus.LEFT);
+    }
+
+    @Test
+    void 소유자는_강제_제거할_수_없다() {
+        UUID workspaceId = UUID.randomUUID();
+        WorkspaceMembership admin = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.ADMIN
+        );
+        WorkspaceMembership owner = createMembership(
+                workspaceId,
+                UUID.randomUUID(),
+                WorkspaceMembershipRole.OWNER
+        );
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspaceId,
+                admin.getUserId(),
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(workspaceMembershipRepository.findByIdAndWorkspaceIdAndStatus(
+                owner.getId(),
+                workspaceId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(owner));
+
+        assertThatThrownBy(() -> service.removeMember(
+                admin.getUserId(),
+                workspaceId,
+                owner.getId()
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(MemberErrorCode.MEMBER_REMOVE_FORBIDDEN);
+    }
+
     private WorkspaceMembership createMembership(
             UUID workspaceId,
             UUID userId,

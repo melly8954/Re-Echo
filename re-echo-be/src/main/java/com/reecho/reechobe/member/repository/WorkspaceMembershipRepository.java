@@ -21,6 +21,12 @@ public interface WorkspaceMembershipRepository extends JpaRepository<WorkspaceMe
 
     Optional<WorkspaceMembership> findByWorkspaceIdAndUserId(UUID workspaceId, UUID userId);
 
+    Optional<WorkspaceMembership> findByIdAndWorkspaceIdAndStatus(
+            UUID id,
+            UUID workspaceId,
+            WorkspaceMembershipStatus status
+    );
+
     List<WorkspaceMembership> findByUserIdAndStatusOrderByLastVisitedAtDesc(
             UUID userId,
             WorkspaceMembershipStatus status

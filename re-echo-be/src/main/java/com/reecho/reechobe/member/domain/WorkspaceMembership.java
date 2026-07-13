@@ -121,6 +121,17 @@ public class WorkspaceMembership {
         this.leftAt = LocalDateTime.now();
     }
 
+    // 소유자가 관리자 권한을 부여하거나 일반 멤버 권한으로 되돌린다.
+    public void changeRole(WorkspaceMembershipRole role) {
+        this.role = role;
+    }
+
+    // 강제 제거된 멤버는 초대 링크로 다시 참여할 수 없도록 상태를 보존한다.
+    public void remove() {
+        this.status = WorkspaceMembershipStatus.REMOVED;
+        this.removedAt = LocalDateTime.now();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

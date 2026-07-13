@@ -29,8 +29,6 @@ import type {
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
 
-type MemberPanelScope = 'CHANNEL' | 'WORKSPACE'
-
 export function WorkspacePage() {
   const { workspaceId, channelId } = useParams()
   const routeWorkspaceId = workspaceId ?? ''
@@ -61,8 +59,6 @@ export function WorkspacePage() {
   >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
-  const [memberPanelScope, setMemberPanelScope] =
-    useState<MemberPanelScope>('CHANNEL')
 
   useEffect(() => {
     if (!isChannelCreateOpen) {
@@ -104,7 +100,6 @@ export function WorkspacePage() {
     setChannelMemberAddError(null)
     setSelectedChannelMemberIds([])
     setIsChannelMemberAddOpen(false)
-    setMemberPanelScope('CHANNEL')
   }, [activeChannel?.id])
 
   if (!workspaceId) {
@@ -128,17 +123,7 @@ export function WorkspacePage() {
         ),
     )
   const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
-  const isWorkspaceMemberPanel = memberPanelScope === 'WORKSPACE'
-  const membersQuery = isWorkspaceMemberPanel
-    ? workspaceMembersQuery
-    : channelMembersQuery
-  const members = membersQuery.data?.contents ?? []
-  const memberPanelTitle = isWorkspaceMemberPanel
-    ? '워크스페이스 참여자'
-    : '채널 참여자'
-  const memberPanelErrorMessage = isWorkspaceMemberPanel
-    ? '워크스페이스 참여자 목록을 불러올 수 없습니다.'
-    : '채널 참여자 목록을 불러올 수 없습니다.'
+  const members = channelMembersQuery.data?.contents ?? []
   const privateChannelMemberOptions =
     workspaceMembersQuery.data?.contents.filter(
       (member) => member.id !== workspace?.myMembership.id,
@@ -493,47 +478,17 @@ export function WorkspacePage() {
       <div className={styles.memberPanelHeader}>
         <div>
           <p className={styles.eyebrow}>참여자</p>
-          <h2 id="workspace-member-title">{memberPanelTitle}</h2>
+          <h2 id="workspace-member-title">채널 참여자</h2>
           <p className={styles.memberPanelContext}>
-            {isWorkspaceMemberPanel
-              ? (workspace?.name ?? '워크스페이스')
-              : `${activeChannel?.visibility === 'PRIVATE' ? '잠금' : '#'} ${
-                  activeChannel?.name ?? '채널'
-                }`}
+            {`${activeChannel?.visibility === 'PRIVATE' ? '잠금' : '#'} ${
+              activeChannel?.name ?? '채널'
+            }`}
           </p>
         </div>
         <span>{members.length}</span>
       </div>
 
-      <div className={styles.memberPanelTabs} aria-label="참여자 범위">
-        <button
-          type="button"
-          className={
-            memberPanelScope === 'CHANNEL'
-              ? `${styles.memberPanelTab} ${styles.memberPanelTabActive}`
-              : styles.memberPanelTab
-          }
-          aria-pressed={memberPanelScope === 'CHANNEL'}
-          disabled={!activeChannel}
-          onClick={() => setMemberPanelScope('CHANNEL')}
-        >
-          채널 참여자
-        </button>
-        <button
-          type="button"
-          className={
-            memberPanelScope === 'WORKSPACE'
-              ? `${styles.memberPanelTab} ${styles.memberPanelTabActive}`
-              : styles.memberPanelTab
-          }
-          aria-pressed={memberPanelScope === 'WORKSPACE'}
-          onClick={() => setMemberPanelScope('WORKSPACE')}
-        >
-          워크스페이스 전체
-        </button>
-      </div>
-
-      {canManageActivePrivateChannel && memberPanelScope === 'CHANNEL' && (
+      {canManageActivePrivateChannel && (
         <div className={styles.memberAddToolbar}>
           <p>비공개 채널 멤버는 관리자가 직접 추가합니다.</p>
           <button
@@ -548,9 +503,7 @@ export function WorkspacePage() {
         </div>
       )}
 
-      {canManageActivePrivateChannel &&
-        memberPanelScope === 'CHANNEL' &&
-        isChannelMemberAddOpen && (
+      {canManageActivePrivateChannel && isChannelMemberAddOpen && (
           <form
             className={styles.memberAddPanel}
             onSubmit={handleAddPrivateChannelMembers}
@@ -618,7 +571,7 @@ export function WorkspacePage() {
           </form>
         )}
 
-      {membersQuery.isLoading && (
+      {channelMembersQuery.isLoading && (
         <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
           <span />
           <span />
@@ -626,16 +579,16 @@ export function WorkspacePage() {
         </div>
       )}
 
-      {membersQuery.isError && (
+      {channelMembersQuery.isError && (
         <div className={styles.memberError}>
-          <p>{memberPanelErrorMessage}</p>
-          <button type="button" onClick={() => void membersQuery.refetch()}>
+          <p>채널 참여자 목록을 불러올 수 없습니다.</p>
+          <button type="button" onClick={() => void channelMembersQuery.refetch()}>
             다시 시도
           </button>
         </div>
       )}
 
-      {!membersQuery.isLoading && !membersQuery.isError && (
+      {!channelMembersQuery.isLoading && !channelMembersQuery.isError && (
         <div className={styles.memberGroups}>
           {memberGroups
             .filter((group) => group.members.length > 0)
@@ -684,7 +637,7 @@ export function WorkspacePage() {
       isChannelsLoading={channelsQuery.isLoading}
       channelHeaderAction={channelCreateAction}
       rightSidebar={workspace ? memberPanel : undefined}
-      rightSidebarLabel={memberPanelTitle}
+      rightSidebarLabel="채널 참여자"
     >
       <section className={styles.page} aria-labelledby="workspace-page-title">
         {workspaceQuery.isLoading && (

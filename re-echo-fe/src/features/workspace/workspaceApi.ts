@@ -74,6 +74,10 @@ export interface WorkspaceMemberList {
   contents: WorkspaceMember[]
 }
 
+export interface ChangeWorkspaceMemberRoleRequest {
+  role: WorkspaceMembershipRole
+}
+
 export interface WorkspaceChannel {
   id: string
   name: string
@@ -191,6 +195,31 @@ export function getWorkspaceMembers(workspaceId: string) {
     `/api/v1/workspaces/${workspaceId}/members`,
     {
       method: 'GET',
+      authenticated: true,
+    },
+  )
+}
+
+export function changeWorkspaceMemberRole(
+  workspaceId: string,
+  memberId: string,
+  request: ChangeWorkspaceMemberRoleRequest,
+) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}/role`,
+    {
+      method: 'PATCH',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export function removeWorkspaceMember(workspaceId: string, memberId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}/remove`,
+    {
+      method: 'POST',
       authenticated: true,
     },
   )

@@ -5,6 +5,7 @@ import { AppShell } from '../components/layout/AppShell'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useLeaveWorkspace } from '../features/workspace/useLeaveWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
+import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
 import {
@@ -35,6 +36,7 @@ export function WorkspaceHomePage() {
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [isWorkspaceLeaveOpen, setIsWorkspaceLeaveOpen] = useState(false)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
+  const [isMemberManagementOpen, setIsMemberManagementOpen] = useState(false)
   const workspace = workspaceQuery.data
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
@@ -245,6 +247,15 @@ export function WorkspaceHomePage() {
               <div className={styles.actions}>
                 <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
                 <span>{getWorkspaceStatusLabel(workspace.status)}</span>
+                {canIssueInvite && (
+                  <button
+                    type="button"
+                    className={styles.memberManageButton}
+                    onClick={() => setIsMemberManagementOpen(true)}
+                  >
+                    멤버 관리
+                  </button>
+                )}
                 {canLeaveWorkspace && (
                   <button
                     type="button"
@@ -349,6 +360,15 @@ export function WorkspaceHomePage() {
         )}
       </section>
       {workspaceLeaveDialog}
+      {workspace && canIssueInvite && (
+        <WorkspaceMemberManagementDialog
+          workspaceId={workspaceId}
+          workspaceName={workspace.name}
+          currentMembership={workspace.myMembership}
+          isOpen={isMemberManagementOpen}
+          onClose={() => setIsMemberManagementOpen(false)}
+        />
+      )}
       {canCreateChannel && (
         <WorkspaceChannelCreateDialog
           workspaceId={workspaceId}
