@@ -32,8 +32,11 @@
 - 동일 사용자의 다중 로그인 세션을 허용하며 logout은 현재 세션만 종료한다.
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - `#general`은 나갈 수 없다.
-- 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기가 가능하다.
+- 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기/재참여가 가능하다.
 - 비공개 채널은 멤버가 아니면 목록에 표시되지 않고 메시지에 접근할 수 없다.
+- 비공개 채널은 자진 나가기가 가능하며, 재참여는 관리자 추가를 통해서만 가능하다.
+- 공개/비공개 채널 모두 강제 제거된 멤버는 재참여할 수 없다.
+- 비공개 채널 생성자는 채널 보관 전까지 자진 나가기와 강제 제거가 불가능하다.
 - 워크스페이스와 채널은 삭제 요청 시 즉시 물리 삭제하지 않고 보관 후 15일 뒤 자동 삭제한다.
 - 메시지 목록은 cursor pagination을 사용하며 cursor 기준은 `createdAt + messageId` 조합이다.
 - 읽음 갱신은 REST API로만 처리하고 읽음 상태 전용 실시간 브로드캐스트는 제공하지 않는다.
@@ -235,10 +238,10 @@
 | Channels | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/archive` | 채널 보관 |
 | Channels | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/restore` | 채널 복원 |
 | Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/join` | 공개 채널 참여 |
-| Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/leave` | 공개 채널 나가기 |
+| Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/leave` | 채널 나가기 |
 | Channel Members | GET | `/workspaces/{workspaceId}/channels/{channelId}/members` | 채널 멤버 목록 조회 |
 | Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/members` | 비공개 채널 멤버 추가 |
-| Channel Members | DELETE | `/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}` | 비공개 채널 멤버 제거 |
+| Channel Members | DELETE | `/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}` | 채널 멤버 강제 제거 |
 | Messages | GET | `/workspaces/{workspaceId}/channels/{channelId}/messages` | 메시지 목록 조회 |
 | Messages | POST | `/workspaces/{workspaceId}/channels/{channelId}/messages` | 메시지 생성 |
 | Messages | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}` | 본인 메시지 수정 |
@@ -657,6 +660,7 @@
         "visibility": "PUBLIC",
         "isGeneral": true,
         "joined": true,
+        "createdByMe": false,
         "unreadCount": 3
       }
     ]
@@ -743,11 +747,14 @@
 - Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_ALREADY_JOINED`
+  - `409 CHANNEL_MEMBER_REMOVED`
   - `403 CHANNEL_JOIN_FORBIDDEN`
 
-### 11.27 공개 채널 나가기
+### 11.27 채널 나가기
 
-- Description: 공개 채널에서 나간다.
+- Description: 공개 또는 비공개 채널에서 자진 나간다. 비공개 채널에서
+  나간 사용자는 목록에서 해당 채널이 사라지며, 재참여하려면 관리자가
+  다시 추가해야 한다.
 - Method: `POST`
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/leave`
 - Authentication: 필요
@@ -755,6 +762,7 @@
 - Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_GENERAL_LEAVE_FORBIDDEN`
+  - `409 CHANNEL_CREATOR_LEAVE_FORBIDDEN`
 
 ### 11.28 채널 멤버 목록 조회
 
@@ -803,13 +811,19 @@
 }
 ```
 
-### 11.30 비공개 채널 멤버 제거
+### 11.30 채널 멤버 강제 제거
 
-- Description: 비공개 채널에서 멤버를 제거한다.
+- Description: 공개 또는 비공개 채널에서 멤버를 강제 제거한다. 강제
+  제거된 멤버는 해당 채널에 재참여할 수 없다.
 - Method: `DELETE`
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
+- Error Responses
+  - `409 CHANNEL_MEMBER_REMOVED`
+- Note
+  - `#general`에서는 멤버를 제거할 수 없다.
+  - 비공개 채널 생성자는 채널 보관 전까지 제거할 수 없다.
 
 ### 11.31 메시지 목록 조회
 
