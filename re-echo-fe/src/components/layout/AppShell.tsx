@@ -2,6 +2,7 @@ import type {
   ChangeEvent,
   KeyboardEvent as ReactKeyboardEvent,
   PropsWithChildren,
+  ReactNode,
 } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -24,6 +25,8 @@ interface AppShellProps {
   channels?: ChannelNavigationItem[]
   activeChannelId?: string
   isChannelsLoading?: boolean
+  rightSidebar?: ReactNode
+  rightSidebarLabel?: string
 }
 
 export function AppShell({
@@ -33,6 +36,8 @@ export function AppShell({
   channels = [],
   activeChannelId,
   isChannelsLoading = false,
+  rightSidebar,
+  rightSidebarLabel,
 }: PropsWithChildren<AppShellProps>) {
   const navigate = useNavigate()
   const { user, status, logout } = useAuth()
@@ -233,11 +238,23 @@ export function AppShell({
         </div>
       </header>
 
-      <div className={styles.body}>
+      <div
+        className={
+          rightSidebar ? `${styles.body} ${styles.bodyWithRightSidebar}` : styles.body
+        }
+      >
         <aside className={styles.sidebar} aria-label="채널 목록">
           {channelList}
         </aside>
         <main className={styles.content}>{children}</main>
+        {rightSidebar && (
+          <aside
+            className={styles.rightSidebar}
+            aria-label={rightSidebarLabel ?? '보조 패널'}
+          >
+            {rightSidebar}
+          </aside>
+        )}
       </div>
 
       {isChannelDrawerOpen ? (

@@ -11,7 +11,10 @@ import {
   getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
-import type { WorkspaceInviteLink } from '../features/workspace/workspaceApi'
+import type {
+  WorkspaceInviteLink,
+  WorkspaceMembershipRole,
+} from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
 
@@ -39,6 +42,27 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const members = membersQuery.data?.contents ?? []
+  const memberGroups: Array<{
+    role: WorkspaceMembershipRole
+    label: string
+    members: typeof members
+  }> = [
+    {
+      role: 'OWNER',
+      label: '소유자',
+      members: members.filter((member) => member.role === 'OWNER'),
+    },
+    {
+      role: 'ADMIN',
+      label: '관리자',
+      members: members.filter((member) => member.role === 'ADMIN'),
+    },
+    {
+      role: 'MEMBER',
+      label: '멤버',
+      members: members.filter((member) => member.role === 'MEMBER'),
+    },
+  ]
 
   async function handleCopyInviteLink() {
     if (!workspaceId) {
@@ -73,6 +97,70 @@ export function WorkspacePage() {
     await navigator.clipboard.writeText(inviteUrl)
   }
 
+  const memberPanel = (
+    <section className={styles.memberPanel} aria-labelledby="workspace-member-title">
+      <div className={styles.memberPanelHeader}>
+        <div>
+          <p className={styles.eyebrow}>참여자</p>
+          <h2 id="workspace-member-title">워크스페이스 참여자</h2>
+        </div>
+        <span>{members.length}</span>
+      </div>
+
+      {membersQuery.isLoading && (
+        <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
+
+      {membersQuery.isError && (
+        <div className={styles.memberError}>
+          <p>참여자 목록을 불러올 수 없습니다.</p>
+          <button type="button" onClick={() => void membersQuery.refetch()}>
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {!membersQuery.isLoading && !membersQuery.isError && (
+        <div className={styles.memberGroups}>
+          {memberGroups
+            .filter((group) => group.members.length > 0)
+            .map((group) => (
+              <section key={group.role} className={styles.memberGroup}>
+                <h3>
+                  {group.label}
+                  <span>{group.members.length}</span>
+                </h3>
+                <div className={styles.memberList}>
+                  {group.members.map((member) => (
+                    <div key={member.id} className={styles.memberItem}>
+                      {member.profileImageUrl ? (
+                        <img src={member.profileImageUrl} alt="" />
+                      ) : (
+                        <span className={styles.memberAvatarFallback} aria-hidden="true">
+                          {member.displayName.slice(0, 1)}
+                        </span>
+                      )}
+                      <div className={styles.memberContent}>
+                        <div>
+                          <strong>{member.displayName}</strong>
+                          {member.id === workspace?.myMembership.id && <em>나</em>}
+                        </div>
+                        <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+        </div>
+      )}
+    </section>
+  )
+
   return (
     <AppShell
       workspaceId={workspaceId}
@@ -83,6 +171,8 @@ export function WorkspacePage() {
       }))}
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
+      rightSidebar={workspace ? memberPanel : undefined}
+      rightSidebarLabel="워크스페이스 참여자"
     >
       <section className={styles.page} aria-labelledby="workspace-page-title">
         {workspaceQuery.isLoading && (
@@ -158,67 +248,12 @@ export function WorkspacePage() {
               </p>
             )}
 
-            <div className={styles.workspaceMain}>
-              <section className={styles.messagePanel} aria-label="메시지 영역">
-                <div>
-                  <strong>{activeChannel?.name ?? '채널'}</strong>
-                  <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
-                </div>
-              </section>
-
-              <aside className={styles.memberPanel} aria-labelledby="workspace-member-title">
-                <div className={styles.memberPanelHeader}>
-                  <div>
-                    <p className={styles.eyebrow}>멤버</p>
-                    <h2 id="workspace-member-title">현재 워크스페이스 멤버</h2>
-                  </div>
-                  <span>{members.length}</span>
-                </div>
-
-                {membersQuery.isLoading && (
-                  <div className={styles.memberSkeletonList} aria-label="멤버 목록을 불러오는 중">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                )}
-
-                {membersQuery.isError && (
-                  <div className={styles.memberError}>
-                    <p>멤버 목록을 불러올 수 없습니다.</p>
-                    <button type="button" onClick={() => void membersQuery.refetch()}>
-                      다시 시도
-                    </button>
-                  </div>
-                )}
-
-                {!membersQuery.isLoading && !membersQuery.isError && (
-                  <div className={styles.memberList}>
-                    {members.map((member) => (
-                      <div key={member.id} className={styles.memberItem}>
-                        {member.profileImageUrl ? (
-                          <img src={member.profileImageUrl} alt="" />
-                        ) : (
-                          <span className={styles.memberAvatarFallback} aria-hidden="true">
-                            {member.displayName.slice(0, 1)}
-                          </span>
-                        )}
-                        <div className={styles.memberContent}>
-                          <div>
-                            <strong>{member.displayName}</strong>
-                            {member.id === workspace.myMembership.id && <em>나</em>}
-                          </div>
-                          <small>
-                            {getWorkspaceRoleLabel(member.role)} ·{' '}
-                            {getWorkspaceMembershipStatusLabel(member.status)}
-                          </small>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </aside>
-            </div>
+            <section className={styles.messagePanel} aria-label="메시지 영역">
+              <div>
+                <strong>{activeChannel?.name ?? '채널'}</strong>
+                <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
+              </div>
+            </section>
           </div>
         )}
       </section>

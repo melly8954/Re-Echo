@@ -117,13 +117,6 @@
   font-weight: 700;
 }
 
-.workspaceMain {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 18px;
-  align-items: start;
-}
-
 .messagePanel {
   min-height: 360px;
   padding: 24px;
@@ -146,12 +139,8 @@
 }
 
 .memberPanel {
-  padding: 20px;
   display: grid;
-  gap: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  gap: 18px;
 }
 
 .memberPanelHeader {
@@ -163,7 +152,7 @@
 
 .memberPanelHeader h2 {
   margin: 4px 0 0;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.3;
 }
 
@@ -179,8 +168,34 @@
   font-weight: 800;
 }
 
-.memberList,
+.memberGroups,
 .memberSkeletonList {
+  display: grid;
+  gap: 18px;
+}
+
+.memberGroup {
+  display: grid;
+  gap: 9px;
+}
+
+.memberGroup h3 {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberGroup h3 span {
+  color: #08665f;
+  font-size: 11px;
+}
+
+.memberList {
   display: grid;
   gap: 10px;
 }
@@ -307,9 +322,5 @@
 
   .status {
     justify-content: flex-start;
-  }
-
-  .workspaceMain {
-    grid-template-columns: 1fr;
   }
 }
