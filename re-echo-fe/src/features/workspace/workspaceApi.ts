@@ -145,6 +145,26 @@ export function createWorkspaceChannel(
   )
 }
 
+export function joinWorkspaceChannel(workspaceId: string, channelId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/join`,
+    {
+      method: 'POST',
+      authenticated: true,
+    },
+  )
+}
+
+export function leaveWorkspaceChannel(workspaceId: string, channelId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/leave`,
+    {
+      method: 'POST',
+      authenticated: true,
+    },
+  )
+}
+
 export function getWorkspaceMembers(workspaceId: string) {
   return apiRequest<WorkspaceMemberList>(
     `/api/v1/workspaces/${workspaceId}/members`,

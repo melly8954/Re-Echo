@@ -117,6 +117,13 @@
   font-weight: 700;
 }
 
+.channelMembershipMessage {
+  margin: -6px 0 0;
+  color: #08665f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .messagePanel {
   min-height: 360px;
   padding: 24px;
@@ -136,6 +143,37 @@
   margin: 8px 0 0;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.channelJoinPrompt {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.channelJoinPrompt p {
+  margin: 0;
+}
+
+.channelJoinPrompt button {
+  min-height: 38px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.channelJoinPrompt button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.channelJoinPrompt button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
 }
 
 .channelCreateActionButton {

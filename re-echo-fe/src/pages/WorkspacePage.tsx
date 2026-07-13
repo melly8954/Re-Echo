@@ -6,6 +6,8 @@ import { AppShell } from '../components/layout/AppShell'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspaceInviteLink'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
+import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
+import { useLeaveWorkspaceChannel } from '../features/workspace/useLeaveWorkspaceChannel'
 import {
   useWorkspaceChannels,
   workspaceChannelsQueryKey,
@@ -31,6 +33,8 @@ export function WorkspacePage() {
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const createChannel = useCreateWorkspaceChannel()
+  const joinChannel = useJoinWorkspaceChannel()
+  const leaveChannel = useLeaveWorkspaceChannel()
   const getInviteLink = useGetWorkspaceInviteLink()
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
@@ -41,6 +45,9 @@ export function WorkspacePage() {
   const [channelVisibility, setChannelVisibility] =
     useState<ChannelVisibility>('PUBLIC')
   const [channelCreateError, setChannelCreateError] = useState<string | null>(null)
+  const [channelMembershipMessage, setChannelMembershipMessage] = useState<
+    string | null
+  >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
 
   useEffect(() => {
@@ -78,6 +85,11 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
+  const canLeaveActiveChannel =
+    activeChannel?.visibility === 'PUBLIC' &&
+    activeChannel.joined &&
+    !activeChannel.isGeneral
+  const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
   const members = membersQuery.data?.contents ?? []
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
@@ -170,6 +182,54 @@ export function WorkspacePage() {
         return
       }
       setChannelCreateError('채널을 생성하지 못했습니다.')
+    }
+  }
+
+  async function handleJoinActiveChannel() {
+    if (!workspaceId || !activeChannel || activeChannel.joined) {
+      return
+    }
+
+    setChannelMembershipMessage(null)
+    try {
+      await joinChannel.mutateAsync({
+        workspaceId,
+        channelId: activeChannel.id,
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelsQueryKey(workspaceId),
+      })
+      setChannelMembershipMessage('채널에 참여했습니다.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setChannelMembershipMessage(error.message)
+        return
+      }
+      setChannelMembershipMessage('채널에 참여하지 못했습니다.')
+    }
+  }
+
+  async function handleLeaveActiveChannel() {
+    if (!workspaceId || !activeChannel || !canLeaveActiveChannel) {
+      return
+    }
+
+    setChannelMembershipMessage(null)
+    try {
+      await leaveChannel.mutateAsync({
+        workspaceId,
+        channelId: activeChannel.id,
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelsQueryKey(workspaceId),
+      })
+      setChannelMembershipMessage('채널에서 나갔습니다.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setChannelMembershipMessage(error.message)
+        return
+      }
+      setChannelMembershipMessage('채널에서 나가지 못했습니다.')
     }
   }
 
@@ -419,6 +479,15 @@ export function WorkspacePage() {
                       : '초대 링크 복사'}
                   </button>
                 )}
+                {canLeaveActiveChannel && (
+                  <button
+                    type="button"
+                    onClick={() => void handleLeaveActiveChannel()}
+                    disabled={isChannelMembershipPending}
+                  >
+                    {leaveChannel.isPending ? '나가는 중' : '채널 나가기'}
+                  </button>
+                )}
               </div>
             </header>
 
@@ -428,11 +497,33 @@ export function WorkspacePage() {
               </p>
             )}
 
+            {channelMembershipMessage && (
+              <p className={styles.channelMembershipMessage} role="status">
+                {channelMembershipMessage}
+              </p>
+            )}
+
             <section className={styles.messagePanel} aria-label="메시지 영역">
-              <div>
-                <strong>{activeChannel?.name ?? '채널'}</strong>
-                <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
-              </div>
+              {activeChannel && !activeChannel.joined ? (
+                <div className={styles.channelJoinPrompt}>
+                  <strong>{activeChannel.name}</strong>
+                  <p>
+                    공개 채널입니다. 참여하면 과거 메시지 전체를 볼 수 있습니다.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void handleJoinActiveChannel()}
+                    disabled={isChannelMembershipPending}
+                  >
+                    {joinChannel.isPending ? '참여 중' : '채널 참여'}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <strong>{activeChannel?.name ?? '채널'}</strong>
+                  <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
+                </div>
+              )}
             </section>
           </div>
         )}
