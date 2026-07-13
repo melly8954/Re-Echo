@@ -170,24 +170,73 @@ export function AppShell({
     </>
   )
 
+  const workspaceSelector = workspaceId && (
+    <section className={styles.workspaceSelector} aria-labelledby="workspace-selector-title">
+      <p id="workspace-selector-title" className={styles.sidebarLabel}>
+        워크스페이스
+      </p>
+      <select
+        value={workspaceId}
+        aria-label="워크스페이스 선택"
+        title={workspaceName ?? '워크스페이스를 선택하세요'}
+        disabled={workspaceListQuery.isLoading || workspaceListQuery.isError}
+        onChange={handleWorkspaceChange}
+      >
+        <option value="" disabled>
+          {workspaceListQuery.isLoading
+            ? '워크스페이스 불러오는 중'
+            : workspaceListQuery.isError
+              ? '워크스페이스 목록 오류'
+              : '워크스페이스를 선택하세요'}
+        </option>
+        {ownedWorkspaces.length > 0 && (
+          <optgroup label="내가 만든 워크스페이스">
+            {ownedWorkspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {joinedWorkspaces.length > 0 && (
+          <optgroup label="참여 중인 워크스페이스">
+            {joinedWorkspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+      {workspaceListQuery.isError && (
+        <button type="button" onClick={() => void workspaceListQuery.refetch()}>
+          다시 시도
+        </button>
+      )}
+    </section>
+  )
+
+  const workspaceNavigation = workspaceId && (
+    <nav className={styles.workspaceNavigation} aria-label="워크스페이스 탐색">
+      <Link
+        className={
+          isWorkspaceHome
+            ? `${styles.workspaceHomeLink} ${styles.workspaceHomeLinkActive}`
+            : styles.workspaceHomeLink
+        }
+        to={`/workspaces/${workspaceId}`}
+        onClick={() => setIsChannelDrawerOpen(false)}
+      >
+        <span aria-hidden="true">⌂</span>
+        홈
+      </Link>
+    </nav>
+  )
+
   const channelList = (
     <div>
-      {workspaceId && (
-        <nav className={styles.workspaceNavigation} aria-label="워크스페이스 탐색">
-          <Link
-            className={
-              isWorkspaceHome
-                ? `${styles.workspaceHomeLink} ${styles.workspaceHomeLinkActive}`
-                : styles.workspaceHomeLink
-            }
-            to={`/workspaces/${workspaceId}`}
-            onClick={() => setIsChannelDrawerOpen(false)}
-          >
-            <span aria-hidden="true">⌂</span>
-            홈
-          </Link>
-        </nav>
-      )}
+      {workspaceSelector}
+      {workspaceNavigation}
       <div className={styles.channelHeader}>
         <p className={styles.sidebarLabel}>채널</p>
         {channelHeaderAction}
@@ -203,46 +252,6 @@ export function AppShell({
           <span aria-hidden="true">R</span>
           Re-Echo
         </Link>
-        <div className={styles.workspaceSelector}>
-          <select
-            value={workspaceId ?? ''}
-            aria-label="워크스페이스 선택"
-            title={workspaceName ?? '워크스페이스를 선택하세요'}
-            disabled={workspaceListQuery.isLoading || workspaceListQuery.isError}
-            onChange={handleWorkspaceChange}
-          >
-            <option value="" disabled>
-              {workspaceListQuery.isLoading
-                ? '워크스페이스 불러오는 중'
-                : workspaceListQuery.isError
-                  ? '워크스페이스 목록 오류'
-                  : '워크스페이스를 선택하세요'}
-            </option>
-            {ownedWorkspaces.length > 0 && (
-              <optgroup label="내가 만든 워크스페이스">
-                {ownedWorkspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {joinedWorkspaces.length > 0 && (
-              <optgroup label="참여 중인 워크스페이스">
-                {joinedWorkspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          {workspaceListQuery.isError && (
-            <button type="button" onClick={() => void workspaceListQuery.refetch()}>
-              다시 시도
-            </button>
-          )}
-        </div>
         <div className={styles.account}>
           <button
             ref={channelMenuButtonRef}
@@ -323,6 +332,8 @@ export function AppShell({
                 닫기
               </button>
             </div>
+            {workspaceSelector}
+            {workspaceNavigation}
             {channelNavigation}
           </aside>
         </div>
