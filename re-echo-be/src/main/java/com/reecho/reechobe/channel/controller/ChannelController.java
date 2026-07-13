@@ -6,6 +6,7 @@ import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
 import com.reecho.reechobe.channel.service.command.ChannelCommandService;
 import com.reecho.reechobe.channel.service.query.ChannelQueryService;
 import com.reecho.reechobe.common.response.ApiResponse;
+import com.reecho.reechobe.member.dto.WorkspaceMemberListResponse;
 import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -36,6 +37,20 @@ public class ChannelController {
     ) {
         ChannelListResponse result = channelQueryService.getChannels(principal.userId(), workspaceId);
         return ApiResponse.success(HttpStatus.OK, "채널 목록을 조회했습니다.", result);
+    }
+
+    @GetMapping("/{channelId}/members")
+    public ApiResponse<WorkspaceMemberListResponse> getChannelMembers(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        WorkspaceMemberListResponse result = channelQueryService.getChannelMembers(
+                principal.userId(),
+                workspaceId,
+                channelId
+        );
+        return ApiResponse.success(HttpStatus.OK, "채널 멤버 목록을 조회했습니다.", result);
     }
 
     @PostMapping
