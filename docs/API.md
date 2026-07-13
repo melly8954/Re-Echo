@@ -765,6 +765,26 @@
 - Authorization
   - 공개 채널: 채널 접근 가능한 워크스페이스 멤버
   - 비공개 채널: 채널 멤버만 가능
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "contents": [
+      {
+        "id": "uuid",
+        "displayName": "홍길동",
+        "profileImageUrl": "https://...",
+        "role": "MEMBER",
+        "status": "ACTIVE"
+      }
+    ]
+  }
+}
+```
 
 ### 11.29 비공개 채널 멤버 추가
 
