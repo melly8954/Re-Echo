@@ -683,6 +683,19 @@
 ```
 
 - Note: 비공개 채널 생성자는 자동 포함되고, 초기 멤버를 추가로 지정할 수 있다.
+- Success Response: `201 Created`
+- Response Body
+
+```json
+{
+  "status": 201,
+  "errorCode": null,
+  "message": "채널이 생성되었습니다.",
+  "result": {
+    "id": "uuid"
+  }
+}
+```
 
 ### 11.22 채널 상세 조회
 
