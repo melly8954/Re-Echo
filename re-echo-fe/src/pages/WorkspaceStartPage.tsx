@@ -3,8 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useCreateWorkspace } from '../features/workspace/useCreateWorkspace'
-import { useWorkspaceList, workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
-import type { WorkspaceMembershipRole } from '../features/workspace/workspaceApi'
+import { workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspaceStartPage.module.css'
 
@@ -25,30 +24,46 @@ function getFieldError(error: unknown, field: string) {
     ?.reason ?? null
 }
 
-function getWorkspaceRoleLabel(role: WorkspaceMembershipRole) {
-  if (role === 'OWNER') {
-    return '소유자'
+function decodeInviteToken(token: string) {
+  try {
+    return decodeURIComponent(token)
+  } catch {
+    return token
   }
-  if (role === 'ADMIN') {
-    return '관리자'
+}
+
+function getInviteToken(input: string) {
+  const trimmedInput = input.trim()
+  const invitePath = '/invite-links/'
+
+  if (!trimmedInput) {
+    return ''
   }
-  return '멤버'
+
+  try {
+    const inviteUrl = new URL(trimmedInput)
+    const pathToken = inviteUrl.pathname.split(invitePath)[1]?.split('/')[0]
+    return decodeInviteToken(pathToken ?? '')
+  } catch {
+    const pathToken = trimmedInput.includes(invitePath)
+      ? trimmedInput.slice(trimmedInput.indexOf(invitePath) + invitePath.length)
+      : trimmedInput
+    return decodeInviteToken(pathToken.split(/[?#]/)[0].replace(/^\/+|\/+$/g, ''))
+  }
 }
 
 export function WorkspaceStartPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const createWorkspace = useCreateWorkspace()
-  const workspaceListQuery = useWorkspaceList()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteCodeError, setInviteCodeError] = useState<string | null>(null)
   const [clientError, setClientError] = useState<string | null>(null)
   const trimmedName = name.trim()
   const trimmedDescription = description.trim()
   const nameError = clientError ?? getFieldError(createWorkspace.error, 'name')
-  const workspaces = workspaceListQuery.data?.contents ?? []
-  const ownedWorkspaces = workspaces.filter((workspace) => workspace.role === 'OWNER')
-  const joinedWorkspaces = workspaces.filter((workspace) => workspace.role !== 'OWNER')
 
   async function handleCreateWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -77,6 +92,19 @@ export function WorkspaceStartPage() {
     }
   }
 
+  function handleInviteSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setInviteCodeError(null)
+
+    const inviteToken = getInviteToken(inviteCode)
+    if (!inviteToken) {
+      setInviteCodeError('초대 코드 또는 초대 링크를 입력해 주세요.')
+      return
+    }
+
+    void navigate(`/invite-links/${encodeURIComponent(inviteToken)}`)
+  }
+
   return (
     <AppShell>
       <section className={styles.page} aria-labelledby="workspace-start-title">
@@ -88,90 +116,6 @@ export function WorkspaceStartPage() {
             있습니다.
           </span>
         </div>
-
-        {workspaceListQuery.isLoading && (
-          <section className={styles.workspaceList} aria-label="워크스페이스 목록을 불러오는 중">
-            <div className={styles.workspaceSkeleton} />
-            <div className={styles.workspaceSkeleton} />
-          </section>
-        )}
-
-        {workspaceListQuery.isError && (
-          <section className={styles.listError} aria-live="polite">
-            <p>워크스페이스 목록을 불러올 수 없습니다.</p>
-            <button type="button" onClick={() => void workspaceListQuery.refetch()}>
-              다시 시도
-            </button>
-          </section>
-        )}
-
-        {!workspaceListQuery.isLoading && !workspaceListQuery.isError && workspaces.length > 0 && (
-          <section className={styles.workspaceList} aria-label="내 워크스페이스">
-            {ownedWorkspaces.length > 0 && (
-              <div className={styles.workspaceSection}>
-                <div className={styles.sectionHeading}>
-                  <h2>내가 만든 워크스페이스</h2>
-                  <span>{ownedWorkspaces.length}</span>
-                </div>
-                <div className={styles.workspaceGrid}>
-                  {ownedWorkspaces.map((workspace) => (
-                    <button
-                      key={workspace.id}
-                      className={styles.workspaceCard}
-                      type="button"
-                      onClick={() => void navigate(`/workspaces/${workspace.id}`)}
-                    >
-                      {workspace.imageUrl ? (
-                        <img src={workspace.imageUrl} alt="" />
-                      ) : (
-                        <span className={styles.workspaceImageFallback} aria-hidden="true">
-                          {workspace.name.slice(0, 1)}
-                        </span>
-                      )}
-                      <span className={styles.workspaceCardContent}>
-                        <strong>{workspace.name}</strong>
-                        <small>{workspace.status === 'ARCHIVED' ? '보관됨' : '활성'}</small>
-                      </span>
-                      <span className={styles.roleBadge}>{getWorkspaceRoleLabel(workspace.role)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {joinedWorkspaces.length > 0 && (
-              <div className={styles.workspaceSection}>
-                <div className={styles.sectionHeading}>
-                  <h2>참여 중인 워크스페이스</h2>
-                  <span>{joinedWorkspaces.length}</span>
-                </div>
-                <div className={styles.workspaceGrid}>
-                  {joinedWorkspaces.map((workspace) => (
-                    <button
-                      key={workspace.id}
-                      className={styles.workspaceCard}
-                      type="button"
-                      onClick={() => void navigate(`/workspaces/${workspace.id}`)}
-                    >
-                      {workspace.imageUrl ? (
-                        <img src={workspace.imageUrl} alt="" />
-                      ) : (
-                        <span className={styles.workspaceImageFallback} aria-hidden="true">
-                          {workspace.name.slice(0, 1)}
-                        </span>
-                      )}
-                      <span className={styles.workspaceCardContent}>
-                        <strong>{workspace.name}</strong>
-                        <small>{workspace.status === 'ARCHIVED' ? '보관됨' : '활성'}</small>
-                      </span>
-                      <span className={styles.roleBadge}>{getWorkspaceRoleLabel(workspace.role)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
 
         <div className={styles.options}>
           <article className={styles.card}>
@@ -248,10 +192,35 @@ export function WorkspaceStartPage() {
             </span>
             <h2>초대 링크로 참여</h2>
             <p>팀에서 전달받은 초대 링크를 확인하고 참여합니다.</p>
-            <button type="button" disabled aria-describedby="join-help">
-              초대 링크 입력하기
-            </button>
-            <small id="join-help">초대 기능 구현 후 연결됩니다.</small>
+            <form className={styles.createForm} onSubmit={handleInviteSubmit}>
+              <div className={styles.field}>
+                <label htmlFor="invite-code">초대 코드 또는 링크</label>
+                <input
+                  id="invite-code"
+                  name="inviteCode"
+                  type="text"
+                  value={inviteCode}
+                  aria-describedby={
+                    inviteCodeError ? 'invite-code-error' : 'invite-code-help'
+                  }
+                  aria-invalid={Boolean(inviteCodeError)}
+                  onChange={(event) => {
+                    setInviteCode(event.target.value)
+                    setInviteCodeError(null)
+                  }}
+                />
+                {inviteCodeError ? (
+                  <small id="invite-code-error" className={styles.fieldError} role="alert">
+                    {inviteCodeError}
+                  </small>
+                ) : (
+                  <small id="invite-code-help">
+                    복사한 초대 링크 전체를 붙여넣어도 됩니다.
+                  </small>
+                )}
+              </div>
+              <button type="submit">초대 확인하기</button>
+            </form>
           </article>
         </div>
       </section>

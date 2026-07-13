@@ -1,7 +1,12 @@
-import type { KeyboardEvent as ReactKeyboardEvent, PropsWithChildren } from 'react'
+import type {
+  ChangeEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  PropsWithChildren,
+} from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
+import { useWorkspaceList } from '../../features/workspace/useWorkspaceList'
 import styles from './AppShell.module.css'
 
 interface ChannelNavigationItem {
@@ -14,6 +19,7 @@ interface ChannelNavigationItem {
 }
 
 interface AppShellProps {
+  workspaceId?: string
   workspaceName?: string
   channels?: ChannelNavigationItem[]
   activeChannelId?: string
@@ -22,17 +28,23 @@ interface AppShellProps {
 
 export function AppShell({
   children,
+  workspaceId,
   workspaceName,
   channels = [],
   activeChannelId,
   isChannelsLoading = false,
 }: PropsWithChildren<AppShellProps>) {
-  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const { user, status, logout } = useAuth()
+  const workspaceListQuery = useWorkspaceList(status === 'authenticated')
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
   const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerRef = useRef<HTMLElement>(null)
   const channelDrawerCloseButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerId = 'mobile-channel-drawer'
+  const workspaces = workspaceListQuery.data?.contents ?? []
+  const ownedWorkspaces = workspaces.filter((workspace) => workspace.role === 'OWNER')
+  const joinedWorkspaces = workspaces.filter((workspace) => workspace.role !== 'OWNER')
 
   useEffect(() => {
     if (!isChannelDrawerOpen) {
@@ -81,6 +93,15 @@ export function AppShell({
       event.preventDefault()
       firstElement.focus()
     }
+  }
+
+  function handleWorkspaceChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextWorkspaceId = event.target.value
+    if (!nextWorkspaceId || nextWorkspaceId === workspaceId) {
+      return
+    }
+
+    void navigate(`/workspaces/${nextWorkspaceId}`)
   }
 
   const channelNavigation = (
@@ -140,9 +161,46 @@ export function AppShell({
           <span aria-hidden="true">R</span>
           Re-Echo
         </Link>
-        <p className={styles.workspaceName}>
-          {workspaceName ?? '워크스페이스를 선택하세요'}
-        </p>
+        <div className={styles.workspaceSelector}>
+          <select
+            value={workspaceId ?? ''}
+            aria-label="워크스페이스 선택"
+            title={workspaceName ?? '워크스페이스를 선택하세요'}
+            disabled={workspaceListQuery.isLoading || workspaceListQuery.isError}
+            onChange={handleWorkspaceChange}
+          >
+            <option value="" disabled>
+              {workspaceListQuery.isLoading
+                ? '워크스페이스 불러오는 중'
+                : workspaceListQuery.isError
+                  ? '워크스페이스 목록 오류'
+                  : '워크스페이스를 선택하세요'}
+            </option>
+            {ownedWorkspaces.length > 0 && (
+              <optgroup label="내가 만든 워크스페이스">
+                {ownedWorkspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>
+                    {workspace.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {joinedWorkspaces.length > 0 && (
+              <optgroup label="참여 중인 워크스페이스">
+                {joinedWorkspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>
+                    {workspace.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          {workspaceListQuery.isError && (
+            <button type="button" onClick={() => void workspaceListQuery.refetch()}>
+              다시 시도
+            </button>
+          )}
+        </div>
         <div className={styles.account}>
           <button
             ref={channelMenuButtonRef}

@@ -67,6 +67,7 @@ export function WorkspacePage() {
 
   return (
     <AppShell
+      workspaceId={workspaceId}
       workspaceName={workspace?.name}
       channels={channels.map((channel) => ({
         ...channel,
