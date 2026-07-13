@@ -276,7 +276,7 @@
   gap: 7px;
 }
 
-.channelCreateForm span {
+.channelCreateFieldLabel {
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 800;
@@ -307,6 +307,111 @@
   color: #b42318;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.channelCreateEmptyText {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.channelCreateMemberFieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+  border: 0;
+}
+
+.channelCreateMemberFieldset legend {
+  width: 100%;
+  margin: 0 0 7px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.channelCreateMemberFieldset legend span {
+  color: #08665f;
+}
+
+.channelCreateMemberList {
+  max-height: 188px;
+  overflow: auto;
+  display: grid;
+  gap: 7px;
+}
+
+.channelCreateMemberItem {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: auto 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.channelCreateMemberItem input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+}
+
+.channelCreateMemberItem img,
+.channelCreateMemberAvatarFallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.channelCreateMemberItem img {
+  object-fit: cover;
+}
+
+.channelCreateMemberAvatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.channelCreateMemberName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.channelCreateMemberItem small {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.channelCreateMemberSkeleton {
+  display: grid;
+  gap: 7px;
+}
+
+.channelCreateMemberSkeleton span {
+  width: 100%;
+  height: 38px;
+  background: var(--color-surface-subtle);
+  border-radius: 7px;
+  animation: member-skeleton-pulse 1.2s ease-in-out infinite alternate;
 }
 
 .channelCreateFooter {

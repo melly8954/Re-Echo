@@ -52,6 +52,9 @@ export function WorkspacePage() {
   const [channelVisibility, setChannelVisibility] =
     useState<ChannelVisibility>('PUBLIC')
   const [channelCreateError, setChannelCreateError] = useState<string | null>(null)
+  const [selectedPrivateMemberIds, setSelectedPrivateMemberIds] = useState<
+    string[]
+  >([])
   const [channelMembershipMessage, setChannelMembershipMessage] = useState<
     string | null
   >(null)
@@ -119,6 +122,10 @@ export function WorkspacePage() {
   const memberPanelErrorMessage = isWorkspaceMemberPanel
     ? '워크스페이스 참여자 목록을 불러올 수 없습니다.'
     : '채널 참여자 목록을 불러올 수 없습니다.'
+  const privateChannelMemberOptions =
+    workspaceMembersQuery.data?.contents.filter(
+      (member) => member.id !== workspace?.myMembership.id,
+    ) ?? []
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
     label: string
@@ -194,7 +201,8 @@ export function WorkspacePage() {
           name: trimmedName,
           description: null,
           visibility: channelVisibility,
-          memberIds: [],
+          memberIds:
+            channelVisibility === 'PRIVATE' ? selectedPrivateMemberIds : [],
         },
       })
       await queryClient.invalidateQueries({
@@ -202,6 +210,7 @@ export function WorkspacePage() {
       })
       setChannelName('')
       setChannelVisibility('PUBLIC')
+      setSelectedPrivateMemberIds([])
       setIsChannelCreateOpen(false)
       void navigate(`/workspaces/${workspaceId}?channelId=${createdChannel.id}`)
     } catch (error) {
@@ -274,6 +283,14 @@ export function WorkspacePage() {
     setIsChannelCreateOpen(false)
   }
 
+  function togglePrivateChannelMember(memberId: string) {
+    setSelectedPrivateMemberIds((currentMemberIds) =>
+      currentMemberIds.includes(memberId)
+        ? currentMemberIds.filter((currentMemberId) => currentMemberId !== memberId)
+        : [...currentMemberIds, memberId],
+    )
+  }
+
   const channelCreateAction = canCreateChannel ? (
     <button
       className={styles.channelCreateActionButton}
@@ -319,7 +336,7 @@ export function WorkspacePage() {
 
         <form className={styles.channelCreateForm} onSubmit={handleCreateChannel}>
           <label>
-            <span>채널 이름</span>
+            <span className={styles.channelCreateFieldLabel}>채널 이름</span>
             <input
               type="text"
               value={channelName}
@@ -333,17 +350,77 @@ export function WorkspacePage() {
             />
           </label>
           <label>
-            <span>공개 범위</span>
+            <span className={styles.channelCreateFieldLabel}>공개 범위</span>
             <select
               value={channelVisibility}
-              onChange={(event) =>
-                setChannelVisibility(event.target.value as ChannelVisibility)
-              }
+              onChange={(event) => {
+                const nextVisibility = event.target.value as ChannelVisibility
+                setChannelVisibility(nextVisibility)
+                if (nextVisibility === 'PUBLIC') {
+                  setSelectedPrivateMemberIds([])
+                }
+              }}
             >
               <option value="PUBLIC">공개</option>
               <option value="PRIVATE">비공개</option>
             </select>
           </label>
+          {channelVisibility === 'PRIVATE' && (
+            <fieldset className={styles.channelCreateMemberFieldset}>
+              <legend>
+                초기 멤버
+                <span>{selectedPrivateMemberIds.length}</span>
+              </legend>
+              {workspaceMembersQuery.isLoading && (
+                <div className={styles.channelCreateMemberSkeleton} aria-label="멤버 목록을 불러오는 중">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              )}
+              {workspaceMembersQuery.isError && (
+                <p className={styles.channelCreateError}>
+                  워크스페이스 멤버 목록을 불러올 수 없습니다.
+                </p>
+              )}
+              {!workspaceMembersQuery.isLoading &&
+                !workspaceMembersQuery.isError &&
+                privateChannelMemberOptions.length === 0 && (
+                  <p className={styles.channelCreateEmptyText}>
+                    추가할 멤버가 없습니다.
+                  </p>
+                )}
+              {!workspaceMembersQuery.isLoading &&
+                !workspaceMembersQuery.isError &&
+                privateChannelMemberOptions.length > 0 && (
+                  <div className={styles.channelCreateMemberList}>
+                    {privateChannelMemberOptions.map((member) => (
+                      <label key={member.id} className={styles.channelCreateMemberItem}>
+                        <input
+                          type="checkbox"
+                          checked={selectedPrivateMemberIds.includes(member.id)}
+                          onChange={() => togglePrivateChannelMember(member.id)}
+                        />
+                        {member.profileImageUrl ? (
+                          <img src={member.profileImageUrl} alt="" />
+                        ) : (
+                          <span
+                            className={styles.channelCreateMemberAvatarFallback}
+                            aria-hidden="true"
+                          >
+                            {member.displayName.slice(0, 1)}
+                          </span>
+                        )}
+                        <span className={styles.channelCreateMemberName}>
+                          {member.displayName}
+                        </span>
+                        <small>{getWorkspaceRoleLabel(member.role)}</small>
+                      </label>
+                    ))}
+                  </div>
+                )}
+            </fieldset>
+          )}
           {channelCreateError && (
             <p className={styles.channelCreateError} role="alert">
               {channelCreateError}
