@@ -9,6 +9,7 @@ import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspace
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
 import { useLeaveWorkspaceChannel } from '../features/workspace/useLeaveWorkspaceChannel'
+import { useLeaveWorkspace } from '../features/workspace/useLeaveWorkspace'
 import {
   useWorkspaceChannelMembers,
   workspaceChannelMembersQueryKey,
@@ -24,6 +25,7 @@ import {
   getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
+import { workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
 import type {
   ChannelVisibility,
   WorkspaceInviteLink,
@@ -44,6 +46,7 @@ export function WorkspacePage() {
   const addPrivateChannelMembers = useAddWorkspacePrivateChannelMembers()
   const joinChannel = useJoinWorkspaceChannel()
   const leaveChannel = useLeaveWorkspaceChannel()
+  const leaveWorkspace = useLeaveWorkspace()
   const getInviteLink = useGetWorkspaceInviteLink()
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(routeWorkspaceId)
@@ -67,12 +70,13 @@ export function WorkspacePage() {
     string | null
   >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
+  const [isWorkspaceLeaveOpen, setIsWorkspaceLeaveOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [memberPanelScope, setMemberPanelScope] =
     useState<MemberPanelScope>('CHANNEL')
 
   useEffect(() => {
-    if (!isChannelCreateOpen) {
+    if (!isChannelCreateOpen && !isWorkspaceLeaveOpen) {
       return undefined
     }
 
@@ -80,7 +84,14 @@ export function WorkspacePage() {
     document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !createChannel.isPending) {
+      if (event.key !== 'Escape') {
+        return
+      }
+      if (isWorkspaceLeaveOpen && !leaveWorkspace.isPending) {
+        setIsWorkspaceLeaveOpen(false)
+        return
+      }
+      if (isChannelCreateOpen && !createChannel.isPending) {
         setIsChannelCreateOpen(false)
       }
     }
@@ -90,7 +101,12 @@ export function WorkspacePage() {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = previousBodyOverflow
     }
-  }, [createChannel.isPending, isChannelCreateOpen])
+  }, [
+    createChannel.isPending,
+    isChannelCreateOpen,
+    isWorkspaceLeaveOpen,
+    leaveWorkspace.isPending,
+  ])
 
   const workspace = workspaceQuery.data
   const channels = channelsQuery.data?.contents ?? []
@@ -118,6 +134,9 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
+  const canLeaveWorkspace = Boolean(
+    workspace && workspace.myMembership.role !== 'OWNER',
+  )
   const canManageActivePrivateChannel =
     canCreateChannel &&
     activeChannel?.visibility === 'PRIVATE' &&
@@ -308,6 +327,24 @@ export function WorkspacePage() {
     }
   }
 
+  async function handleLeaveWorkspace() {
+    if (!workspaceId || !workspace || !canLeaveWorkspace) {
+      return
+    }
+
+    try {
+      await leaveWorkspace.mutateAsync({
+        workspaceId,
+        memberId: workspace.myMembership.id,
+      })
+      await queryClient.invalidateQueries({ queryKey: workspaceListQueryKey })
+      setIsWorkspaceLeaveOpen(false)
+      void navigate('/', { replace: true })
+    } catch {
+      // mutation 상태를 통해 확인 모달에 오류 메시지를 표시한다.
+    }
+  }
+
   async function handleAddPrivateChannelMembers(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!workspaceId || !activeChannel || !canManageActivePrivateChannel) {
@@ -350,6 +387,14 @@ export function WorkspacePage() {
       return
     }
     setIsChannelCreateOpen(false)
+  }
+
+  function closeWorkspaceLeaveDialog() {
+    if (leaveWorkspace.isPending) {
+      return
+    }
+    leaveWorkspace.reset()
+    setIsWorkspaceLeaveOpen(false)
   }
 
   function togglePrivateChannelMember(memberId: string) {
@@ -521,6 +566,55 @@ export function WorkspacePage() {
             </button>
           </div>
         </form>
+      </section>
+    </div>
+  )
+
+  const workspaceLeaveDialog = canLeaveWorkspace && isWorkspaceLeaveOpen && (
+    <div className={styles.workspaceLeaveLayer}>
+      <button
+        className={styles.workspaceLeaveOverlay}
+        type="button"
+        aria-label="워크스페이스 나가기 닫기"
+        onClick={closeWorkspaceLeaveDialog}
+      />
+      <section
+        className={styles.workspaceLeaveDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-leave-title"
+        aria-describedby="workspace-leave-description"
+      >
+        <p className={styles.eyebrow}>워크스페이스 나가기</p>
+        <h2 id="workspace-leave-title">정말 나가시겠습니까?</h2>
+        <p id="workspace-leave-description">
+          나가면 이 워크스페이스의 채널 목록에서 제외됩니다. 다시 참여하려면
+          초대 링크가 필요합니다.
+        </p>
+        {leaveWorkspace.isError && (
+          <p className={styles.workspaceLeaveError} role="alert">
+            {leaveWorkspace.error instanceof ApiError
+              ? leaveWorkspace.error.message
+              : '워크스페이스에서 나가지 못했습니다.'}
+          </p>
+        )}
+        <div className={styles.workspaceLeaveFooter}>
+          <button
+            type="button"
+            className={styles.workspaceLeaveCancelButton}
+            onClick={closeWorkspaceLeaveDialog}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.workspaceLeaveConfirmButton}
+            onClick={() => void handleLeaveWorkspace()}
+            disabled={leaveWorkspace.isPending}
+          >
+            {leaveWorkspace.isPending ? '나가는 중' : '나가기'}
+          </button>
+        </div>
       </section>
     </div>
   )
@@ -797,6 +891,17 @@ export function WorkspacePage() {
                     {leaveChannel.isPending ? '나가는 중' : '채널 나가기'}
                   </button>
                 )}
+                {canLeaveWorkspace && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      leaveWorkspace.reset()
+                      setIsWorkspaceLeaveOpen(true)
+                    }}
+                  >
+                    워크스페이스 나가기
+                  </button>
+                )}
               </div>
             </header>
 
@@ -837,6 +942,7 @@ export function WorkspacePage() {
           </div>
         )}
       </section>
+      {workspaceLeaveDialog}
       {channelCreateDialog}
     </AppShell>
   )

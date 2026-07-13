@@ -195,6 +195,16 @@ export function getWorkspaceMembers(workspaceId: string) {
   )
 }
 
+export function leaveWorkspace(workspaceId: string, memberId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}/leave`,
+    {
+      method: 'POST',
+      authenticated: true,
+    },
+  )
+}
+
 export function getWorkspaceChannelMembers(workspaceId: string, channelId: string) {
   return apiRequest<WorkspaceMemberList>(
     `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members`,
