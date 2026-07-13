@@ -83,6 +83,9 @@ public class ChannelCommandService {
                     if (channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE) {
                         throw new BusinessException(ChannelErrorCode.CHANNEL_ALREADY_JOINED);
                     }
+                    if (channelMembership.getStatus() == ChannelMembershipStatus.REMOVED) {
+                        throw new BusinessException(ChannelErrorCode.CHANNEL_MEMBER_REMOVED);
+                    }
                     channelMembership.rejoin();
                 }, () -> channelMembershipRepository.save(
                         ChannelMembership.join(channelId, membership.getId())
@@ -116,15 +119,15 @@ public class ChannelCommandService {
     }
 
     @Transactional
-    public void leavePublicChannel(UUID userId, UUID workspaceId, UUID channelId) {
+    public void leaveChannel(UUID userId, UUID workspaceId, UUID channelId) {
         validateActiveWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
         Channel channel = getActiveWorkspaceChannel(workspaceId, channelId);
         if (channel.isGeneral()) {
             throw new BusinessException(ChannelErrorCode.CHANNEL_GENERAL_LEAVE_FORBIDDEN);
         }
-        if (channel.getVisibility() != ChannelVisibility.PUBLIC) {
-            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+        if (isPrivateChannelCreator(channel, membership.getId())) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_CREATOR_LEAVE_FORBIDDEN);
         }
 
         ChannelMembership channelMembership = channelMembershipRepository
@@ -132,6 +135,30 @@ public class ChannelCommandService {
                 .filter(foundMembership -> foundMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED));
         channelMembership.leave();
+    }
+
+    @Transactional
+    public void removeChannelMember(UUID userId, UUID workspaceId, UUID channelId, UUID memberId) {
+        validateActiveWorkspace(workspaceId);
+        WorkspaceMembership requesterMembership = getActiveWorkspaceMembership(userId, workspaceId);
+        if (requesterMembership.getRole() == WorkspaceMembershipRole.MEMBER) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+        }
+
+        Channel channel = getActiveWorkspaceChannel(workspaceId, channelId);
+        if (channel.isGeneral()) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_GENERAL_LEAVE_FORBIDDEN);
+        }
+        validateTargetWorkspaceMember(workspaceId, memberId);
+        if (isPrivateChannelCreator(channel, memberId)) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_CREATOR_LEAVE_FORBIDDEN);
+        }
+
+        ChannelMembership channelMembership = channelMembershipRepository
+                .findByChannelIdAndWorkspaceMembershipId(channelId, memberId)
+                .filter(foundMembership -> foundMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED));
+        channelMembership.remove();
     }
 
     private void validateActiveWorkspace(UUID workspaceId) {
@@ -180,14 +207,32 @@ public class ChannelCommandService {
         }
     }
 
+    private void validateTargetWorkspaceMember(UUID workspaceId, UUID memberId) {
+        WorkspaceMembership membership = workspaceMembershipRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+        if (!membership.getWorkspaceId().equals(workspaceId)
+                || membership.getStatus() != WorkspaceMembershipStatus.ACTIVE) {
+            throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
+        }
+    }
+
     private void addOrReactivatePrivateChannelMember(UUID channelId, UUID workspaceMembershipId) {
         channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channelId, workspaceMembershipId)
                 .ifPresentOrElse(channelMembership -> {
                     if (channelMembership.getStatus() == ChannelMembershipStatus.LEFT) {
                         channelMembership.rejoin();
+                        return;
+                    }
+                    if (channelMembership.getStatus() == ChannelMembershipStatus.REMOVED) {
+                        throw new BusinessException(ChannelErrorCode.CHANNEL_MEMBER_REMOVED);
                     }
                 }, () -> channelMembershipRepository.save(
                         ChannelMembership.join(channelId, workspaceMembershipId)
                 ));
+    }
+
+    private boolean isPrivateChannelCreator(Channel channel, UUID workspaceMembershipId) {
+        return channel.getVisibility() == ChannelVisibility.PRIVATE
+                && channel.getCreatedByMembershipId().equals(workspaceMembershipId);
     }
 }

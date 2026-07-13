@@ -72,6 +72,11 @@ public class ChannelMembership {
         this.leftAt = LocalDateTime.now();
     }
 
+    public void remove() {
+        this.status = ChannelMembershipStatus.REMOVED;
+        this.leftAt = LocalDateTime.now();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

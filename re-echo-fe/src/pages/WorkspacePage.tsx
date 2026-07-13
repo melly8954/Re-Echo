@@ -123,9 +123,14 @@ export function WorkspacePage() {
     activeChannel?.visibility === 'PRIVATE' &&
     activeChannel.joined
   const canLeaveActiveChannel =
-    activeChannel?.visibility === 'PUBLIC' &&
-    activeChannel.joined &&
-    !activeChannel.isGeneral
+    Boolean(
+      activeChannel?.joined &&
+        !activeChannel.isGeneral &&
+        !(
+          activeChannel.visibility === 'PRIVATE' &&
+          activeChannel.createdByMe
+        ),
+    )
   const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
   const isWorkspaceMemberPanel = memberPanelScope === 'WORKSPACE'
   const membersQuery = isWorkspaceMemberPanel

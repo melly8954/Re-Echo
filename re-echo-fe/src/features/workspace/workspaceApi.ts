@@ -80,6 +80,7 @@ export interface WorkspaceChannel {
   visibility: ChannelVisibility
   isGeneral: boolean
   joined: boolean
+  createdByMe: boolean
   unreadCount: number
 }
 

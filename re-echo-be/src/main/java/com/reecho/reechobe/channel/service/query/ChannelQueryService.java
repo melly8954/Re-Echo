@@ -53,7 +53,8 @@ public class ChannelQueryService {
                         .stream()
                         .map(channel -> ChannelListItemResponse.from(
                                 channel,
-                                joinedChannelIds.contains(channel.getId())
+                                joinedChannelIds.contains(channel.getId()),
+                                membership.getId()
                         ))
                         .toList()
         );

@@ -12,16 +12,18 @@ public record ChannelListItemResponse(
         ChannelVisibility visibility,
         @JsonProperty("isGeneral") boolean general,
         boolean joined,
+        boolean createdByMe,
         int unreadCount
 ) {
 
-    public static ChannelListItemResponse from(Channel channel, boolean joined) {
+    public static ChannelListItemResponse from(Channel channel, boolean joined, UUID membershipId) {
         return new ChannelListItemResponse(
                 channel.getId(),
                 channel.getName(),
                 channel.getVisibility(),
                 channel.isGeneral(),
                 joined,
+                channel.getCreatedByMembershipId().equals(membershipId),
                 0
         );
     }
