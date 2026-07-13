@@ -645,6 +645,8 @@
 - Authorization: 해당 워크스페이스 멤버
 - Note: 공개 채널은 워크스페이스 멤버에게 표시되며, 비공개 채널은
   참여 중인 채널만 표시된다.
+  `memberCount`는 활성 채널 멤버 수이며, 워크스페이스 홈의 채널 요약과
+  사이드바가 같은 목록 응답을 재사용한다.
 - Response Body
 
 ```json
@@ -661,7 +663,8 @@
         "isGeneral": true,
         "joined": true,
         "createdByMe": false,
-        "unreadCount": 3
+        "unreadCount": 3,
+        "memberCount": 12
       }
     ]
   }
