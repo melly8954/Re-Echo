@@ -67,6 +67,11 @@ public class ChannelMembership {
         this.leftAt = null;
     }
 
+    public void leave() {
+        this.status = ChannelMembershipStatus.LEFT;
+        this.leftAt = LocalDateTime.now();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

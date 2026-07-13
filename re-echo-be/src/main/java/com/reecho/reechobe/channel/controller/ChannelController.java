@@ -52,4 +52,24 @@ public class ChannelController {
         );
         return ApiResponse.success(HttpStatus.CREATED, "채널이 생성되었습니다.", result);
     }
+
+    @PostMapping("/{channelId}/join")
+    public ApiResponse<Void> joinPublicChannel(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        channelCommandService.joinPublicChannel(principal.userId(), workspaceId, channelId);
+        return ApiResponse.success(HttpStatus.OK, "채널에 참여했습니다.", null);
+    }
+
+    @PostMapping("/{channelId}/leave")
+    public ApiResponse<Void> leavePublicChannel(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        channelCommandService.leavePublicChannel(principal.userId(), workspaceId, channelId);
+        return ApiResponse.success(HttpStatus.OK, "채널에서 나갔습니다.", null);
+    }
 }

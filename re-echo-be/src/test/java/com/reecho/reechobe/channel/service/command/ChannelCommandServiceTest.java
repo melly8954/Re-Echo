@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.domain.ChannelMembership;
+import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
@@ -244,6 +245,155 @@ class ChannelCommandServiceTest {
                 .isEqualTo(MemberErrorCode.MEMBER_NOT_FOUND);
 
         verify(channelRepository, never()).save(any(Channel.class));
+        verifyNoInteractions(channelMembershipRepository);
+    }
+
+    @Test
+    void 공개_채널에_처음_참여하면_채널_멤버십을_생성한다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, member.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.empty());
+
+        service.joinPublicChannel(userId, workspace.getId(), channel.getId());
+
+        ArgumentCaptor<ChannelMembership> channelMembershipCaptor =
+                ArgumentCaptor.forClass(ChannelMembership.class);
+        verify(channelMembershipRepository).save(channelMembershipCaptor.capture());
+        assertThat(channelMembershipCaptor.getValue().getChannelId()).isEqualTo(channel.getId());
+        assertThat(channelMembershipCaptor.getValue().getWorkspaceMembershipId()).isEqualTo(member.getId());
+        assertThat(channelMembershipCaptor.getValue().getStatus()).isEqualTo(ChannelMembershipStatus.ACTIVE);
+    }
+
+    @Test
+    void 나간_공개_채널에_재참여하면_기존_멤버십을_복구한다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, member.getId());
+        ChannelMembership channelMembership = ChannelMembership.join(channel.getId(), member.getId());
+        channelMembership.leave();
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.of(channelMembership));
+
+        service.joinPublicChannel(userId, workspace.getId(), channel.getId());
+
+        assertThat(channelMembership.getStatus()).isEqualTo(ChannelMembershipStatus.ACTIVE);
+        assertThat(channelMembership.getLeftAt()).isNull();
+        verify(channelMembershipRepository, never()).save(any(ChannelMembership.class));
+    }
+
+    @Test
+    void 이미_참여_중인_공개_채널에는_다시_참여할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, member.getId());
+        ChannelMembership channelMembership = ChannelMembership.join(channel.getId(), member.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.of(channelMembership));
+
+        assertThatThrownBy(() -> service.joinPublicChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_ALREADY_JOINED);
+
+        verify(channelMembershipRepository, never()).save(any(ChannelMembership.class));
+    }
+
+    @Test
+    void 비공개_채널에는_공개_채널_참여_api로_참여할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.create(
+                workspace.getId(),
+                "secret",
+                null,
+                ChannelVisibility.PRIVATE,
+                member.getId()
+        );
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        assertThatThrownBy(() -> service.joinPublicChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_JOIN_FORBIDDEN);
+
+        verifyNoInteractions(channelMembershipRepository);
+    }
+
+    @Test
+    void 참여_중인_공개_채널에서_나갈_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, member.getId());
+        ChannelMembership channelMembership = ChannelMembership.join(channel.getId(), member.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.of(channelMembership));
+
+        service.leavePublicChannel(userId, workspace.getId(), channel.getId());
+
+        assertThat(channelMembership.getStatus()).isEqualTo(ChannelMembershipStatus.LEFT);
+        assertThat(channelMembership.getLeftAt()).isNotNull();
+    }
+
+    @Test
+    void 기본_채널에서는_나갈_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.createGeneral(workspace.getId(), member.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        assertThatThrownBy(() -> service.leavePublicChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_GENERAL_LEAVE_FORBIDDEN);
+
         verifyNoInteractions(channelMembershipRepository);
     }
 
