@@ -43,6 +43,122 @@
   gap: 18px;
 }
 
+.workspaceSections {
+  width: min(100%, 760px);
+  display: grid;
+  gap: 18px;
+}
+
+.workspaceSection {
+  width: min(100%, 760px);
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.workspaceSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.workspaceSectionHeader p,
+.workspaceError {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.workspaceSectionHeader span {
+  min-width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.workspaceGrid,
+.workspaceSkeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workspaceCard {
+  min-height: 118px;
+  padding: 18px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  text-decoration: none;
+}
+
+.workspaceCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 20px rgb(31 45 42 / 8%);
+}
+
+.workspaceCard strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceCard span,
+.workspaceCard small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.workspaceCard small {
+  font-weight: 700;
+}
+
+.workspaceSkeletonGrid span {
+  height: 118px;
+  background: var(--color-surface-subtle);
+  border-radius: 7px;
+  animation: workspace-skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.workspaceError {
+  color: var(--color-danger);
+}
+
+.workspaceRetryButton {
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@keyframes workspace-skeleton-pulse {
+  from {
+    opacity: 0.48;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .card {
   padding: 28px;
   display: grid;
@@ -171,6 +287,11 @@
 
 @media (max-width: 767px) {
   .options {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceGrid,
+  .workspaceSkeletonGrid {
     grid-template-columns: 1fr;
   }
 

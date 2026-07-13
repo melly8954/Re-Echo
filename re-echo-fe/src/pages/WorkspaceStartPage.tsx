@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useCreateWorkspace } from '../features/workspace/useCreateWorkspace'
-import { workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
+import {
+  useWorkspaceList,
+  workspaceListQueryKey,
+} from '../features/workspace/useWorkspaceList'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspaceStartPage.module.css'
 
@@ -56,6 +59,7 @@ export function WorkspaceStartPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const createWorkspace = useCreateWorkspace()
+  const workspaceListQuery = useWorkspaceList()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -64,6 +68,9 @@ export function WorkspaceStartPage() {
   const trimmedName = name.trim()
   const trimmedDescription = description.trim()
   const nameError = clientError ?? getFieldError(createWorkspace.error, 'name')
+  const workspaces = workspaceListQuery.data?.contents ?? []
+  const ownedWorkspaces = workspaces.filter((workspace) => workspace.role === 'OWNER')
+  const joinedWorkspaces = workspaces.filter((workspace) => workspace.role !== 'OWNER')
 
   async function handleCreateWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -109,13 +116,89 @@ export function WorkspaceStartPage() {
     <AppShell>
       <section className={styles.page} aria-labelledby="workspace-start-title">
         <div className={styles.heading}>
-          <p>시작하기</p>
-          <h1 id="workspace-start-title">함께 대화할 공간을 준비하세요</h1>
+          <p>Re-Echo 홈</p>
+          <h1 id="workspace-start-title">내 워크스페이스</h1>
           <span>
-            새 워크스페이스를 만들거나 전달받은 초대 링크로 참여할 수
-            있습니다.
+            워크스페이스를 선택하거나 새 팀을 만들고 초대 링크로 참여하세요.
           </span>
         </div>
+
+        {workspaceListQuery.isLoading && (
+          <section className={styles.workspaceSection} aria-label="워크스페이스를 불러오는 중">
+            <div className={styles.workspaceSectionHeader}>
+              <p>워크스페이스를 불러오는 중입니다.</p>
+            </div>
+            <div className={styles.workspaceSkeletonGrid}>
+              <span />
+              <span />
+            </div>
+          </section>
+        )}
+
+        {workspaceListQuery.isError && (
+          <section className={styles.workspaceSection}>
+            <p className={styles.workspaceError}>
+              워크스페이스 목록을 불러올 수 없습니다.
+            </p>
+            <button
+              type="button"
+              className={styles.workspaceRetryButton}
+              onClick={() => void workspaceListQuery.refetch()}
+            >
+              다시 시도
+            </button>
+          </section>
+        )}
+
+        {!workspaceListQuery.isLoading &&
+          !workspaceListQuery.isError &&
+          workspaces.length > 0 && (
+            <div className={styles.workspaceSections}>
+              {ownedWorkspaces.length > 0 && (
+                <section className={styles.workspaceSection} aria-labelledby="owned-workspace-title">
+                  <div className={styles.workspaceSectionHeader}>
+                    <p id="owned-workspace-title">내가 만든 워크스페이스</p>
+                    <span>{ownedWorkspaces.length}</span>
+                  </div>
+                  <div className={styles.workspaceGrid}>
+                    {ownedWorkspaces.map((workspace) => (
+                      <Link
+                        key={workspace.id}
+                        className={styles.workspaceCard}
+                        to={`/workspaces/${workspace.id}`}
+                      >
+                        <strong>{workspace.name}</strong>
+                        <span>워크스페이스 홈으로 이동</span>
+                        <small>읽지 않은 채널 {workspace.unreadChannelCount}개</small>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {joinedWorkspaces.length > 0 && (
+                <section className={styles.workspaceSection} aria-labelledby="joined-workspace-title">
+                  <div className={styles.workspaceSectionHeader}>
+                    <p id="joined-workspace-title">참여 중인 워크스페이스</p>
+                    <span>{joinedWorkspaces.length}</span>
+                  </div>
+                  <div className={styles.workspaceGrid}>
+                    {joinedWorkspaces.map((workspace) => (
+                      <Link
+                        key={workspace.id}
+                        className={styles.workspaceCard}
+                        to={`/workspaces/${workspace.id}`}
+                      >
+                        <strong>{workspace.name}</strong>
+                        <span>워크스페이스 홈으로 이동</span>
+                        <small>읽지 않은 채널 {workspace.unreadChannelCount}개</small>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
 
         <div className={styles.options}>
           <article className={styles.card}>
