@@ -1,21 +1,17 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useWorkspaceList } from '../features/workspace/useWorkspaceList'
 import styles from './WorkspaceStartPage.module.css'
 
 // 최종 방문 워크스페이스로 복귀시키고, 없을 때만 온보딩 빈 상태를 표시한다.
 export function WorkspaceStartPage() {
-  const navigate = useNavigate()
   const workspaceListQuery = useWorkspaceList()
   const workspaces = workspaceListQuery.data?.contents ?? []
   const latestActiveWorkspace = workspaces.find((workspace) => workspace.status === 'ACTIVE')
 
-  useEffect(() => {
-    if (latestActiveWorkspace) {
-      void navigate(`/workspaces/${latestActiveWorkspace.id}`, { replace: true })
-    }
-  }, [latestActiveWorkspace, navigate])
+  if (latestActiveWorkspace) {
+    return <Navigate to={`/workspaces/${latestActiveWorkspace.id}`} replace />
+  }
 
   return (
     <AppShell>
