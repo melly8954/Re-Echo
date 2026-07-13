@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspaceInviteLink'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
+import type { WorkspaceInviteLink } from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
 
 export function WorkspacePage() {
   const { workspaceId } = useParams()
   const [searchParams] = useSearchParams()
+  const getInviteLink = useGetWorkspaceInviteLink()
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
   const channelsQuery = useWorkspaceChannels(workspaceId ?? '')
@@ -36,9 +39,17 @@ export function WorkspacePage() {
 
     setInviteMessage(null)
     try {
-      const inviteLink = await issueInviteLink.mutateAsync(workspaceId)
-      const inviteUrl = `${window.location.origin}/invite-links/${inviteLink.token}`
-      await navigator.clipboard.writeText(inviteUrl)
+      let inviteLink: WorkspaceInviteLink
+      try {
+        inviteLink = await getInviteLink.mutateAsync(workspaceId)
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.errorCode !== 'INVITE_NOT_FOUND') {
+          throw error
+        }
+        inviteLink = await issueInviteLink.mutateAsync(workspaceId)
+      }
+
+      await copyInviteLink(inviteLink)
       setInviteMessage('초대 링크를 복사했습니다.')
     } catch (error) {
       if (error instanceof ApiError) {
@@ -47,6 +58,11 @@ export function WorkspacePage() {
       }
       setInviteMessage('초대 링크를 복사하지 못했습니다.')
     }
+  }
+
+  async function copyInviteLink(inviteLink: WorkspaceInviteLink) {
+    const inviteUrl = `${window.location.origin}/invite-links/${inviteLink.token}`
+    await navigator.clipboard.writeText(inviteUrl)
   }
 
   return (
@@ -117,9 +133,11 @@ export function WorkspacePage() {
                   <button
                     type="button"
                     onClick={() => void handleCopyInviteLink()}
-                    disabled={issueInviteLink.isPending}
+                    disabled={getInviteLink.isPending || issueInviteLink.isPending}
                   >
-                    {issueInviteLink.isPending ? '발급 중' : '초대 링크 복사'}
+                    {getInviteLink.isPending || issueInviteLink.isPending
+                      ? '복사 중'
+                      : '초대 링크 복사'}
                   </button>
                 )}
               </div>

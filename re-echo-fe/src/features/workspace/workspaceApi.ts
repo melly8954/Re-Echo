@@ -108,6 +108,16 @@ export function getWorkspaceChannels(workspaceId: string) {
   )
 }
 
+export function getActiveWorkspaceInviteLink(workspaceId: string) {
+  return apiRequest<WorkspaceInviteLink>(
+    `/api/v1/workspaces/${workspaceId}/invite-link`,
+    {
+      method: 'GET',
+      authenticated: true,
+    },
+  )
+}
+
 export function issueWorkspaceInviteLink(workspaceId: string) {
   return apiRequest<WorkspaceInviteLink>(
     `/api/v1/workspaces/${workspaceId}/invite-link`,
