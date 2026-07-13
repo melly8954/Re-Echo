@@ -5,6 +5,12 @@ import { useGetWorkspaceInviteLink } from '../features/workspace/useGetWorkspace
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
+import {
+  getWorkspaceMembershipStatusLabel,
+  getWorkspaceRoleLabel,
+  getWorkspaceStatusLabel,
+} from '../features/workspace/workspaceLabels'
+import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type { WorkspaceInviteLink } from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
@@ -16,6 +22,7 @@ export function WorkspacePage() {
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
   const channelsQuery = useWorkspaceChannels(workspaceId ?? '')
+  const membersQuery = useWorkspaceMembers(workspaceId ?? '')
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
 
   if (!workspaceId) {
@@ -31,6 +38,7 @@ export function WorkspacePage() {
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
+  const members = membersQuery.data?.contents ?? []
 
   async function handleCopyInviteLink() {
     if (!workspaceId) {
@@ -119,7 +127,7 @@ export function WorkspacePage() {
             <header className={styles.header}>
               <div>
                 <p className={styles.eyebrow}>
-                  {activeChannel?.visibility === 'PRIVATE' ? 'private' : '#'}{' '}
+                  {activeChannel?.visibility === 'PRIVATE' ? '비공개' : '#'}{' '}
                   {activeChannel?.name ?? '채널'}
                 </p>
                 <h1 id="workspace-page-title">{workspace.name}</h1>
@@ -128,8 +136,8 @@ export function WorkspacePage() {
                 </p>
               </div>
               <div className={styles.status}>
-                <span>{workspace.myMembership.role}</span>
-                <span>{workspace.status}</span>
+                <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
+                <span>{getWorkspaceStatusLabel(workspace.status)}</span>
                 {canIssueInvite && (
                   <button
                     type="button"
@@ -150,12 +158,67 @@ export function WorkspacePage() {
               </p>
             )}
 
-            <section className={styles.messagePanel} aria-label="메시지 영역">
-              <div>
-                <strong>{activeChannel?.name ?? '채널'}</strong>
-                <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
-              </div>
-            </section>
+            <div className={styles.workspaceMain}>
+              <section className={styles.messagePanel} aria-label="메시지 영역">
+                <div>
+                  <strong>{activeChannel?.name ?? '채널'}</strong>
+                  <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
+                </div>
+              </section>
+
+              <aside className={styles.memberPanel} aria-labelledby="workspace-member-title">
+                <div className={styles.memberPanelHeader}>
+                  <div>
+                    <p className={styles.eyebrow}>멤버</p>
+                    <h2 id="workspace-member-title">현재 워크스페이스 멤버</h2>
+                  </div>
+                  <span>{members.length}</span>
+                </div>
+
+                {membersQuery.isLoading && (
+                  <div className={styles.memberSkeletonList} aria-label="멤버 목록을 불러오는 중">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                )}
+
+                {membersQuery.isError && (
+                  <div className={styles.memberError}>
+                    <p>멤버 목록을 불러올 수 없습니다.</p>
+                    <button type="button" onClick={() => void membersQuery.refetch()}>
+                      다시 시도
+                    </button>
+                  </div>
+                )}
+
+                {!membersQuery.isLoading && !membersQuery.isError && (
+                  <div className={styles.memberList}>
+                    {members.map((member) => (
+                      <div key={member.id} className={styles.memberItem}>
+                        {member.profileImageUrl ? (
+                          <img src={member.profileImageUrl} alt="" />
+                        ) : (
+                          <span className={styles.memberAvatarFallback} aria-hidden="true">
+                            {member.displayName.slice(0, 1)}
+                          </span>
+                        )}
+                        <div className={styles.memberContent}>
+                          <div>
+                            <strong>{member.displayName}</strong>
+                            {member.id === workspace.myMembership.id && <em>나</em>}
+                          </div>
+                          <small>
+                            {getWorkspaceRoleLabel(member.role)} ·{' '}
+                            {getWorkspaceMembershipStatusLabel(member.status)}
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </aside>
+            </div>
           </div>
         )}
       </section>

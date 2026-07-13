@@ -47,6 +47,18 @@ export interface WorkspaceList {
   contents: WorkspaceListItem[]
 }
 
+export interface WorkspaceMember {
+  id: string
+  displayName: string
+  profileImageUrl: string | null
+  role: WorkspaceMembershipRole
+  status: WorkspaceMembershipStatus
+}
+
+export interface WorkspaceMemberList {
+  contents: WorkspaceMember[]
+}
+
 export interface WorkspaceChannel {
   id: string
   name: string
@@ -101,6 +113,16 @@ export function getWorkspaceDetail(workspaceId: string) {
 export function getWorkspaceChannels(workspaceId: string) {
   return apiRequest<WorkspaceChannelList>(
     `/api/v1/workspaces/${workspaceId}/channels`,
+    {
+      method: 'GET',
+      authenticated: true,
+    },
+  )
+}
+
+export function getWorkspaceMembers(workspaceId: string) {
+  return apiRequest<WorkspaceMemberList>(
+    `/api/v1/workspaces/${workspaceId}/members`,
     {
       method: 'GET',
       authenticated: true,
