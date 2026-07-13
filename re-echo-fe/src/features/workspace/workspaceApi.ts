@@ -175,6 +175,16 @@ export function getWorkspaceMembers(workspaceId: string) {
   )
 }
 
+export function getWorkspaceChannelMembers(workspaceId: string, channelId: string) {
+  return apiRequest<WorkspaceMemberList>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/members`,
+    {
+      method: 'GET',
+      authenticated: true,
+    },
+  )
+}
+
 export function getActiveWorkspaceInviteLink(workspaceId: string) {
   return apiRequest<WorkspaceInviteLink>(
     `/api/v1/workspaces/${workspaceId}/invite-link`,

@@ -9,6 +9,10 @@ import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorks
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
 import { useLeaveWorkspaceChannel } from '../features/workspace/useLeaveWorkspaceChannel'
 import {
+  useWorkspaceChannelMembers,
+  workspaceChannelMembersQueryKey,
+} from '../features/workspace/useWorkspaceChannelMembers'
+import {
   useWorkspaceChannels,
   workspaceChannelsQueryKey,
 } from '../features/workspace/useWorkspaceChannels'
@@ -18,7 +22,6 @@ import {
   getWorkspaceRoleLabel,
   getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
-import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type {
   ChannelVisibility,
   WorkspaceInviteLink,
@@ -29,6 +32,7 @@ import styles from './WorkspacePage.module.css'
 
 export function WorkspacePage() {
   const { workspaceId } = useParams()
+  const routeWorkspaceId = workspaceId ?? ''
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
@@ -37,9 +41,8 @@ export function WorkspacePage() {
   const leaveChannel = useLeaveWorkspaceChannel()
   const getInviteLink = useGetWorkspaceInviteLink()
   const issueInviteLink = useIssueWorkspaceInviteLink()
-  const workspaceQuery = useWorkspaceDetail(workspaceId ?? '')
-  const channelsQuery = useWorkspaceChannels(workspaceId ?? '')
-  const membersQuery = useWorkspaceMembers(workspaceId ?? '')
+  const workspaceQuery = useWorkspaceDetail(routeWorkspaceId)
+  const channelsQuery = useWorkspaceChannels(routeWorkspaceId)
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [channelName, setChannelName] = useState('')
   const [channelVisibility, setChannelVisibility] =
@@ -71,16 +74,24 @@ export function WorkspacePage() {
     }
   }, [createChannel.isPending, isChannelCreateOpen])
 
-  if (!workspaceId) {
-    return <Navigate to="/" replace />
-  }
-
   const workspace = workspaceQuery.data
   const channels = channelsQuery.data?.contents ?? []
   const requestedChannelId = searchParams.get('channelId')
   const activeChannel =
     channels.find((channel) => channel.id === requestedChannelId) ??
     channels.find((channel) => channel.id === workspace?.defaultChannelId)
+  const channelMembersQuery = useWorkspaceChannelMembers(
+    routeWorkspaceId,
+    activeChannel?.id ?? '',
+  )
+
+  useEffect(() => {
+    setChannelMembershipMessage(null)
+  }, [activeChannel?.id])
+
+  if (!workspaceId) {
+    return <Navigate to="/" replace />
+  }
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
@@ -90,7 +101,7 @@ export function WorkspacePage() {
     activeChannel.joined &&
     !activeChannel.isGeneral
   const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
-  const members = membersQuery.data?.contents ?? []
+  const members = channelMembersQuery.data?.contents ?? []
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
     label: string
@@ -199,6 +210,9 @@ export function WorkspacePage() {
       await queryClient.invalidateQueries({
         queryKey: workspaceChannelsQueryKey(workspaceId),
       })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelMembersQueryKey(workspaceId, activeChannel.id),
+      })
       setChannelMembershipMessage('채널에 참여했습니다.')
     } catch (error) {
       if (error instanceof ApiError) {
@@ -222,6 +236,9 @@ export function WorkspacePage() {
       })
       await queryClient.invalidateQueries({
         queryKey: workspaceChannelsQueryKey(workspaceId),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelMembersQueryKey(workspaceId, activeChannel.id),
       })
       setChannelMembershipMessage('채널에서 나갔습니다.')
     } catch (error) {
@@ -341,12 +358,12 @@ export function WorkspacePage() {
       <div className={styles.memberPanelHeader}>
         <div>
           <p className={styles.eyebrow}>참여자</p>
-          <h2 id="workspace-member-title">워크스페이스 참여자</h2>
+          <h2 id="workspace-member-title">채널 참여자</h2>
         </div>
         <span>{members.length}</span>
       </div>
 
-      {membersQuery.isLoading && (
+      {channelMembersQuery.isLoading && (
         <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
           <span />
           <span />
@@ -354,16 +371,16 @@ export function WorkspacePage() {
         </div>
       )}
 
-      {membersQuery.isError && (
+      {channelMembersQuery.isError && (
         <div className={styles.memberError}>
-          <p>참여자 목록을 불러올 수 없습니다.</p>
-          <button type="button" onClick={() => void membersQuery.refetch()}>
+          <p>채널 참여자 목록을 불러올 수 없습니다.</p>
+          <button type="button" onClick={() => void channelMembersQuery.refetch()}>
             다시 시도
           </button>
         </div>
       )}
 
-      {!membersQuery.isLoading && !membersQuery.isError && (
+      {!channelMembersQuery.isLoading && !channelMembersQuery.isError && (
         <div className={styles.memberGroups}>
           {memberGroups
             .filter((group) => group.members.length > 0)
@@ -411,8 +428,8 @@ export function WorkspacePage() {
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
       channelHeaderAction={channelCreateAction}
-      rightSidebar={workspace ? memberPanel : undefined}
-      rightSidebarLabel="워크스페이스 참여자"
+      rightSidebar={workspace && activeChannel ? memberPanel : undefined}
+      rightSidebarLabel="채널 참여자"
     >
       <section className={styles.page} aria-labelledby="workspace-page-title">
         {workspaceQuery.isLoading && (
