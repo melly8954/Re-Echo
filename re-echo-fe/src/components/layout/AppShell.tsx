@@ -136,7 +136,17 @@ export function AppShell({
             >
               <span className={styles.channelPrefix} aria-hidden="true">
                 {channel.visibility === 'PRIVATE' ? (
-                  <span className={styles.lockIcon} />
+                  <svg
+                    className={styles.lockIcon}
+                    viewBox="0 0 32 32"
+                    focusable="false"
+                  >
+                    <path
+                      fill="currentColor"
+                      fillRule="evenodd"
+                      d="M16 1.5c5.05 0 9.15 4.08 9.15 9.1v2.35h1.7c.91 0 1.65.74 1.65 1.65v11.45a4.45 4.45 0 0 1-4.45 4.45H7.95a4.45 4.45 0 0 1-4.45-4.45V14.6c0-.91.74-1.65 1.65-1.65h1.7V10.6c0-5.02 4.1-9.1 9.15-9.1Zm-6.1 11.45h2.65V10.6a3.45 3.45 0 0 1 6.9 0v2.35h2.65V10.6a6.1 6.1 0 0 0-12.2 0v2.35Zm-3.1 3.1v10c0 .64.51 1.15 1.15 1.15h16.1c.64 0 1.15-.51 1.15-1.15v-10H6.8Zm10.85 7.55.4-3.15a3 3 0 1 0-4.1 0l.4 3.15h3.3Z"
+                    />
+                  </svg>
                 ) : (
                   '#'
                 )}
