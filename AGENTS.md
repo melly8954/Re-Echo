@@ -108,6 +108,9 @@ feat, fix, refactor, docs, style, test, perf, chore, ci, build
 
 문서 작업의 기본 type은 `docs`를 사용한다.
 
+커밋 제안, staging, commit 작업을 수행할 때는
+`docs/coding-convention.md`의 커밋 분리 원칙을 따른다.
+
 # 6. 부칙
 
 1. AI 처리 과정 메시지와 최종 응답은 한국어로 작성한다.
