@@ -615,6 +615,9 @@
 }
 ```
 
+- `role`에는 `ADMIN` 또는 `MEMBER`만 지정할 수 있다. 소유자 권한 이전은
+  MVP 범위에 포함하지 않는다.
+
 - Error Responses
   - `409 MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 
