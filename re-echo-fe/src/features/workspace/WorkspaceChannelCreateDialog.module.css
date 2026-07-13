@@ -1,0 +1,17 @@
+.layer { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; }
+.overlay { position: absolute; inset: 0; background: rgb(31 45 42 / 42%); border: 0; cursor: pointer; }
+.dialog { position: relative; z-index: 1; width: min(100%, 440px); padding: 22px; display: grid; gap: 18px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 24px 70px rgb(31 45 42 / 22%); }
+.dialog header, .dialog footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.dialog h2, .dialog p { margin: 0; }
+.dialog header p { color: var(--color-primary); font-size: 13px; font-weight: 800; }
+.dialog h2 { margin-top: 4px; font-size: 22px; }
+.dialog form, .dialog fieldset { display: grid; gap: 14px; }
+.dialog label { display: grid; gap: 7px; }
+.dialog label > span, .dialog legend { color: var(--color-muted); font-size: 13px; font-weight: 700; }
+.dialog input:not([type='checkbox']), .dialog select { min-height: 40px; padding: 0 11px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 6px; font: inherit; }
+.dialog fieldset { max-height: 180px; overflow: auto; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; }
+.member { grid-template-columns: auto 1fr auto; align-items: center; }
+.member small { color: var(--color-muted); }
+.dialog button { min-height: 36px; padding: 0 12px; color: var(--color-muted); background: transparent; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; font-weight: 800; }
+.dialog footer button:last-child { color: #fff; background: var(--color-primary); border-color: var(--color-primary); }
+.error { color: var(--color-danger); font-size: 13px; font-weight: 700; }

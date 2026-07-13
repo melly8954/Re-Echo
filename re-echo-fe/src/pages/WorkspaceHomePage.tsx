@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useLeaveWorkspace } from '../features/workspace/useLeaveWorkspace'
+import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
 import {
@@ -33,6 +34,7 @@ export function WorkspaceHomePage() {
   const leaveWorkspace = useLeaveWorkspace()
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [isWorkspaceLeaveOpen, setIsWorkspaceLeaveOpen] = useState(false)
+  const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const workspace = workspaceQuery.data
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
@@ -40,6 +42,7 @@ export function WorkspaceHomePage() {
   const canLeaveWorkspace = Boolean(
     workspace && workspace.myMembership.role !== 'OWNER',
   )
+  const canCreateChannel = canIssueInvite
   const inviteLinkQuery = useWorkspaceInviteLink(routeWorkspaceId, canIssueInvite)
   const channels = channelsQuery.data?.contents ?? []
   const members = workspaceMembersQuery.data?.contents ?? []
@@ -182,11 +185,24 @@ export function WorkspaceHomePage() {
     </div>
   )
 
+  const channelCreateAction = canCreateChannel ? (
+    <button
+      className={styles.channelCreateActionButton}
+      type="button"
+      aria-label="채널 생성"
+      title="채널 생성"
+      onClick={() => setIsChannelCreateOpen(true)}
+    >
+      +
+    </button>
+  ) : undefined
+
   return (
     <AppShell
       workspaceId={workspaceId}
       workspaceName={workspace?.name}
       isWorkspaceHome
+      channelHeaderAction={channelCreateAction}
       channels={channels.map((channel) => ({
         ...channel,
         href: `/workspaces/${workspaceId}/channels/${channel.id}`,
@@ -333,6 +349,17 @@ export function WorkspaceHomePage() {
         )}
       </section>
       {workspaceLeaveDialog}
+      {canCreateChannel && (
+        <WorkspaceChannelCreateDialog
+          workspaceId={workspaceId}
+          isOpen={isChannelCreateOpen}
+          onClose={() => setIsChannelCreateOpen(false)}
+          onCreated={(channelId) => {
+            setIsChannelCreateOpen(false)
+            void navigate(`/workspaces/${workspaceId}/channels/${channelId}`)
+          }}
+        />
+      )}
     </AppShell>
   )
 }

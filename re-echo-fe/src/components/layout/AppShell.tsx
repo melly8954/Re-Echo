@@ -244,6 +244,7 @@ export function AppShell({
       {channelNavigation}
     </div>
   )
+  const hasWorkspaceNavigation = Boolean(workspaceId)
 
   return (
     <div className={styles.shell}>
@@ -286,12 +287,18 @@ export function AppShell({
 
       <div
         className={
-          rightSidebar ? `${styles.body} ${styles.bodyWithRightSidebar}` : styles.body
+          rightSidebar
+            ? `${styles.body} ${styles.bodyWithRightSidebar}`
+            : hasWorkspaceNavigation
+              ? styles.body
+              : `${styles.body} ${styles.bodyWithoutSidebar}`
         }
       >
-        <aside className={styles.sidebar} aria-label="채널 목록">
-          {channelList}
-        </aside>
+        {hasWorkspaceNavigation && (
+          <aside className={styles.sidebar} aria-label="채널 목록">
+            {channelList}
+          </aside>
+        )}
         <main className={styles.content}>{children}</main>
         {rightSidebar && (
           <aside

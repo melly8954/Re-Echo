@@ -147,6 +147,10 @@
   grid-template-columns: 240px minmax(0, 1fr) 300px;
 }
 
+.bodyWithoutSidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .sidebar {
   padding: 24px 18px;
   background: #f0f5f3;
