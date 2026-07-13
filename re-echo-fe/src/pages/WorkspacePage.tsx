@@ -22,6 +22,7 @@ import {
   getWorkspaceRoleLabel,
   getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
+import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type {
   ChannelVisibility,
   WorkspaceInviteLink,
@@ -29,6 +30,8 @@ import type {
 } from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
+
+type MemberPanelScope = 'CHANNEL' | 'WORKSPACE'
 
 export function WorkspacePage() {
   const { workspaceId } = useParams()
@@ -43,6 +46,7 @@ export function WorkspacePage() {
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const workspaceQuery = useWorkspaceDetail(routeWorkspaceId)
   const channelsQuery = useWorkspaceChannels(routeWorkspaceId)
+  const workspaceMembersQuery = useWorkspaceMembers(routeWorkspaceId)
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [channelName, setChannelName] = useState('')
   const [channelVisibility, setChannelVisibility] =
@@ -52,6 +56,8 @@ export function WorkspacePage() {
     string | null
   >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
+  const [memberPanelScope, setMemberPanelScope] =
+    useState<MemberPanelScope>('CHANNEL')
 
   useEffect(() => {
     if (!isChannelCreateOpen) {
@@ -87,6 +93,7 @@ export function WorkspacePage() {
 
   useEffect(() => {
     setChannelMembershipMessage(null)
+    setMemberPanelScope('CHANNEL')
   }, [activeChannel?.id])
 
   if (!workspaceId) {
@@ -101,7 +108,17 @@ export function WorkspacePage() {
     activeChannel.joined &&
     !activeChannel.isGeneral
   const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
-  const members = channelMembersQuery.data?.contents ?? []
+  const isWorkspaceMemberPanel = memberPanelScope === 'WORKSPACE'
+  const membersQuery = isWorkspaceMemberPanel
+    ? workspaceMembersQuery
+    : channelMembersQuery
+  const members = membersQuery.data?.contents ?? []
+  const memberPanelTitle = isWorkspaceMemberPanel
+    ? '워크스페이스 참여자'
+    : '채널 참여자'
+  const memberPanelErrorMessage = isWorkspaceMemberPanel
+    ? '워크스페이스 참여자 목록을 불러올 수 없습니다.'
+    : '채널 참여자 목록을 불러올 수 없습니다.'
   const memberGroups: Array<{
     role: WorkspaceMembershipRole
     label: string
@@ -358,12 +375,40 @@ export function WorkspacePage() {
       <div className={styles.memberPanelHeader}>
         <div>
           <p className={styles.eyebrow}>참여자</p>
-          <h2 id="workspace-member-title">채널 참여자</h2>
+          <h2 id="workspace-member-title">{memberPanelTitle}</h2>
         </div>
         <span>{members.length}</span>
       </div>
 
-      {channelMembersQuery.isLoading && (
+      <div className={styles.memberPanelTabs} aria-label="참여자 범위">
+        <button
+          type="button"
+          className={
+            memberPanelScope === 'CHANNEL'
+              ? `${styles.memberPanelTab} ${styles.memberPanelTabActive}`
+              : styles.memberPanelTab
+          }
+          aria-pressed={memberPanelScope === 'CHANNEL'}
+          disabled={!activeChannel}
+          onClick={() => setMemberPanelScope('CHANNEL')}
+        >
+          채널
+        </button>
+        <button
+          type="button"
+          className={
+            memberPanelScope === 'WORKSPACE'
+              ? `${styles.memberPanelTab} ${styles.memberPanelTabActive}`
+              : styles.memberPanelTab
+          }
+          aria-pressed={memberPanelScope === 'WORKSPACE'}
+          onClick={() => setMemberPanelScope('WORKSPACE')}
+        >
+          워크스페이스
+        </button>
+      </div>
+
+      {membersQuery.isLoading && (
         <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
           <span />
           <span />
@@ -371,16 +416,16 @@ export function WorkspacePage() {
         </div>
       )}
 
-      {channelMembersQuery.isError && (
+      {membersQuery.isError && (
         <div className={styles.memberError}>
-          <p>채널 참여자 목록을 불러올 수 없습니다.</p>
-          <button type="button" onClick={() => void channelMembersQuery.refetch()}>
+          <p>{memberPanelErrorMessage}</p>
+          <button type="button" onClick={() => void membersQuery.refetch()}>
             다시 시도
           </button>
         </div>
       )}
 
-      {!channelMembersQuery.isLoading && !channelMembersQuery.isError && (
+      {!membersQuery.isLoading && !membersQuery.isError && (
         <div className={styles.memberGroups}>
           {memberGroups
             .filter((group) => group.members.length > 0)
@@ -428,8 +473,8 @@ export function WorkspacePage() {
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
       channelHeaderAction={channelCreateAction}
-      rightSidebar={workspace && activeChannel ? memberPanel : undefined}
-      rightSidebarLabel="채널 참여자"
+      rightSidebar={workspace ? memberPanel : undefined}
+      rightSidebarLabel={memberPanelTitle}
     >
       <section className={styles.page} aria-labelledby="workspace-page-title">
         {workspaceQuery.isLoading && (

@@ -375,6 +375,51 @@
   font-weight: 800;
 }
 
+.memberPanelTabs {
+  height: 36px;
+  padding: 3px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.memberPanelTab {
+  min-width: 0;
+  padding: 0 8px;
+  color: var(--color-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberPanelTab:hover:not(:disabled) {
+  color: var(--color-text);
+  background: rgb(255 255 255 / 62%);
+}
+
+.memberPanelTab:disabled {
+  color: #9aa5a2;
+  cursor: not-allowed;
+}
+
+.memberPanelTabActive {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.memberPanelTab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .memberGroups,
 .memberSkeletonList {
   display: grid;
