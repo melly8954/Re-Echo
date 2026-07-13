@@ -15,6 +15,8 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
 
     List<Channel> findByWorkspaceIdInAndGeneralTrue(Iterable<UUID> workspaceIds);
 
+    boolean existsByWorkspaceIdAndName(UUID workspaceId, String name);
+
     @Query(
             value = """
                     SELECT c.*

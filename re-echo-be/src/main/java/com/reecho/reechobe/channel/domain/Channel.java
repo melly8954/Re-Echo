@@ -1,5 +1,7 @@
 package com.reecho.reechobe.channel.domain;
 
+import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.common.exception.CommonErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -82,6 +84,25 @@ public class Channel {
                 .build();
     }
 
+    public static Channel create(
+            UUID workspaceId,
+            String name,
+            String description,
+            ChannelVisibility visibility,
+            UUID createdByMembershipId
+    ) {
+        return Channel.builder()
+                .id(UUID.randomUUID())
+                .workspaceId(workspaceId)
+                .name(normalizeName(name))
+                .description(normalizeNullable(description))
+                .visibility(visibility)
+                .general(false)
+                .createdByMembershipId(createdByMembershipId)
+                .status(ChannelStatus.ACTIVE)
+                .build();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
@@ -92,5 +113,23 @@ public class Channel {
     @PreUpdate
     void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private static String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR);
+        }
+        String normalizedName = name.trim();
+        if (normalizedName.length() > 80) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR);
+        }
+        return normalizedName;
+    }
+
+    private static String normalizeNullable(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }
