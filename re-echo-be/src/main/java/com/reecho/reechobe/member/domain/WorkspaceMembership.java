@@ -115,6 +115,12 @@ public class WorkspaceMembership {
         this.lastVisitedAt = LocalDateTime.now();
     }
 
+    // 워크스페이스 접근 권한을 해제하고 재참여 가능한 탈퇴 상태로 전환한다.
+    public void leave() {
+        this.status = WorkspaceMembershipStatus.LEFT;
+        this.leftAt = LocalDateTime.now();
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

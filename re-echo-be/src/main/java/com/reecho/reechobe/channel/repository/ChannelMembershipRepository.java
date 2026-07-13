@@ -17,6 +17,11 @@ public interface ChannelMembershipRepository extends JpaRepository<ChannelMember
             UUID workspaceMembershipId
     );
 
+    List<ChannelMembership> findByWorkspaceMembershipIdAndStatus(
+            UUID workspaceMembershipId,
+            ChannelMembershipStatus status
+    );
+
     @Query("""
             select channelMembership.channelId
             from ChannelMembership channelMembership

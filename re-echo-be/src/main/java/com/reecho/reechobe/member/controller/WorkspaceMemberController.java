@@ -2,6 +2,7 @@ package com.reecho.reechobe.member.controller;
 
 import com.reecho.reechobe.common.response.ApiResponse;
 import com.reecho.reechobe.member.dto.WorkspaceMemberListResponse;
+import com.reecho.reechobe.member.service.command.WorkspaceMemberCommandService;
 import com.reecho.reechobe.member.service.query.WorkspaceMemberQueryService;
 import com.reecho.reechobe.security.AuthenticatedUserPrincipal;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/workspaces/{workspaceId}/members")
 public class WorkspaceMemberController {
 
+    private final WorkspaceMemberCommandService workspaceMemberCommandService;
     private final WorkspaceMemberQueryService workspaceMemberQueryService;
 
     @GetMapping
@@ -31,5 +34,15 @@ public class WorkspaceMemberController {
                 workspaceId
         );
         return ApiResponse.success(HttpStatus.OK, "워크스페이스 멤버 목록을 조회했습니다.", result);
+    }
+
+    @PostMapping("/{memberId}/leave")
+    public ApiResponse<Void> leaveWorkspace(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID memberId
+    ) {
+        workspaceMemberCommandService.leaveWorkspace(principal.userId(), workspaceId, memberId);
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스에서 나갔습니다.", null);
     }
 }
