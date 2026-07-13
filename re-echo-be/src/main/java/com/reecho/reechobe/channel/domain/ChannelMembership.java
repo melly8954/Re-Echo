@@ -61,6 +61,12 @@ public class ChannelMembership {
                 .build();
     }
 
+    public void rejoin() {
+        this.status = ChannelMembershipStatus.ACTIVE;
+        this.joinedAt = LocalDateTime.now();
+        this.leftAt = null;
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

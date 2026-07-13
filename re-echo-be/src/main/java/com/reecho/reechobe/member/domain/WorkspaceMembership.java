@@ -85,6 +85,31 @@ public class WorkspaceMembership {
                 .build();
     }
 
+    public static WorkspaceMembership createMember(UUID workspaceId, User user) {
+        return WorkspaceMembership.builder()
+                .id(UUID.randomUUID())
+                .workspaceId(workspaceId)
+                .userId(user.getId())
+                .role(WorkspaceMembershipRole.MEMBER)
+                .displayName(user.getDisplayName())
+                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageFileId(user.getProfileImageFileId())
+                .status(WorkspaceMembershipStatus.ACTIVE)
+                .build();
+    }
+
+    // 재참여 시 현재 계정 기본 프로필을 새 멤버십 초기값처럼 다시 복사한다.
+    public void rejoinAsMember(User user) {
+        this.role = WorkspaceMembershipRole.MEMBER;
+        this.displayName = user.getDisplayName();
+        this.profileImageUrl = user.getProfileImageUrl();
+        this.profileImageFileId = user.getProfileImageFileId();
+        this.status = WorkspaceMembershipStatus.ACTIVE;
+        this.joinedAt = LocalDateTime.now();
+        this.lastVisitedAt = this.joinedAt;
+        this.leftAt = null;
+    }
+
     // 워크스페이스 재진입 순서와 복귀 기준을 위한 방문 시각을 갱신한다.
     public void visit() {
         this.lastVisitedAt = LocalDateTime.now();
