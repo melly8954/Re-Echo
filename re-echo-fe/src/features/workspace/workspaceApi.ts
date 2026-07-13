@@ -82,6 +82,7 @@ export interface WorkspaceChannel {
   joined: boolean
   createdByMe: boolean
   unreadCount: number
+  memberCount: number
 }
 
 export interface WorkspaceChannelList {

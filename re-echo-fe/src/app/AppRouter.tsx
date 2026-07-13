@@ -4,6 +4,7 @@ import { LoginPage } from '../pages/LoginPage'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
 import { InviteLinkPage } from '../pages/InviteLinkPage'
 import { ProfileSettingsPage } from '../pages/ProfileSettingsPage'
+import { WorkspaceHomePage } from '../pages/WorkspaceHomePage'
 import { WorkspacePage } from '../pages/WorkspacePage'
 import { WorkspaceStartPage } from '../pages/WorkspaceStartPage'
 
@@ -16,7 +17,11 @@ export function AppRouter() {
       <Route path="/invite-links/:token" element={<InviteLinkPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<WorkspaceStartPage />} />
-        <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
+        <Route path="/workspaces/:workspaceId" element={<WorkspaceHomePage />} />
+        <Route
+          path="/workspaces/:workspaceId/channels/:channelId"
+          element={<WorkspacePage />}
+        />
         <Route path="/settings/profile" element={<ProfileSettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,0 +1,346 @@
+.page {
+  min-height: calc(100svh - 64px);
+  padding: 24px;
+}
+
+.panel,
+.workspace {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.panel,
+.header,
+.summaryGrid article,
+.invitePanel,
+.channelPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.panel {
+  padding: 28px;
+  display: grid;
+  gap: 12px;
+}
+
+.panel h1,
+.panel p,
+.header h1,
+.header p,
+.invitePanel h2,
+.invitePanel p,
+.channelPanel h2 {
+  margin: 0;
+}
+
+.panel button,
+.invitePanel button,
+.inviteLinkField button {
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.panel button:hover,
+.invitePanel button:hover:not(:disabled),
+.inviteLinkField button:hover {
+  background: var(--color-primary-hover);
+}
+
+.invitePanel button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.header h1 {
+  margin: 4px 0 6px;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.description,
+.invitePanel p,
+.emptyText,
+.errorText {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: start;
+  justify-content: flex-end;
+}
+
+.actions span {
+  min-height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.workspaceLeaveButton {
+  min-height: 32px;
+  padding: 0 11px;
+  color: #b3261e;
+  background: #fff;
+  border: 1px solid #e7b2ad;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryGrid article {
+  min-height: 110px;
+  padding: 20px;
+  display: grid;
+  align-content: space-between;
+}
+
+.summaryGrid span,
+.channelCard span,
+.channelCard dt {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summaryGrid strong {
+  font-size: 30px;
+}
+
+.invitePanel,
+.channelPanel {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.invitePanel h2,
+.channelPanel h2 {
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+.inviteLinkField {
+  display: flex;
+  gap: 8px;
+}
+
+.inviteLinkField input {
+  min-width: 0;
+  flex: 1;
+  height: 38px;
+  padding: 0 11px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.inviteMessage {
+  color: #08665f !important;
+  font-weight: 700;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.channelCard {
+  padding: 18px;
+  display: grid;
+  gap: 18px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  text-decoration: none;
+}
+
+.channelCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 20px rgb(31 45 42 / 8%);
+}
+
+.channelCard > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channelCard strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channelCard dl {
+  margin: 0;
+  display: flex;
+  gap: 20px;
+}
+
+.channelCard dl div {
+  display: grid;
+  gap: 3px;
+}
+
+.channelCard dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.workspaceLeaveLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.workspaceLeaveOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.workspaceLeaveDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.workspaceLeaveDialog h2,
+.workspaceLeaveDialog p {
+  margin: 0;
+}
+
+.workspaceLeaveDialog > p:not(.eyebrow):not(.workspaceLeaveError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.workspaceLeaveError {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workspaceLeaveFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workspaceLeaveCancelButton,
+.workspaceLeaveConfirmButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspaceLeaveCancelButton {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+.workspaceLeaveConfirmButton {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header,
+  .channelCard > div {
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .summaryGrid,
+  .channelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inviteLinkField {
+    flex-direction: column;
+  }
+
+  .inviteLinkField button {
+    width: 100%;
+  }
+}
