@@ -168,6 +168,42 @@
   gap: 10px;
 }
 
+.workspaceNavigation {
+  margin-bottom: 22px;
+}
+
+.workspaceHomeLink {
+  min-height: 36px;
+  padding: 0 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-muted);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.workspaceHomeLink span {
+  width: 18px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.workspaceHomeLink:hover {
+  color: var(--color-text);
+  background: rgb(255 255 255 / 66%);
+}
+
+.workspaceHomeLinkActive {
+  color: var(--color-text);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
 .sidebarLabel {
   margin: 0;
   color: var(--color-muted);
@@ -260,6 +296,12 @@
 .channelLink:hover {
   color: var(--color-text);
   background: rgb(255 255 255 / 66%);
+}
+
+.workspaceHomeLink:focus-visible,
+.channelLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .channelLinkActive {

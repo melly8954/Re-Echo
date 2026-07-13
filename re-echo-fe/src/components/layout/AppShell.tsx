@@ -23,6 +23,7 @@ interface AppShellProps {
   workspaceId?: string
   workspaceName?: string
   channels?: ChannelNavigationItem[]
+  isWorkspaceHome?: boolean
   activeChannelId?: string
   isChannelsLoading?: boolean
   channelHeaderAction?: ReactNode
@@ -35,6 +36,7 @@ export function AppShell({
   workspaceId,
   workspaceName,
   channels = [],
+  isWorkspaceHome = false,
   activeChannelId,
   isChannelsLoading = false,
   channelHeaderAction,
@@ -170,6 +172,22 @@ export function AppShell({
 
   const channelList = (
     <div>
+      {workspaceId && (
+        <nav className={styles.workspaceNavigation} aria-label="워크스페이스 탐색">
+          <Link
+            className={
+              isWorkspaceHome
+                ? `${styles.workspaceHomeLink} ${styles.workspaceHomeLinkActive}`
+                : styles.workspaceHomeLink
+            }
+            to={`/workspaces/${workspaceId}`}
+            onClick={() => setIsChannelDrawerOpen(false)}
+          >
+            <span aria-hidden="true">⌂</span>
+            홈
+          </Link>
+        </nav>
+      )}
       <div className={styles.channelHeader}>
         <p className={styles.sidebarLabel}>채널</p>
         {channelHeaderAction}

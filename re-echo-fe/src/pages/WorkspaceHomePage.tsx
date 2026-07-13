@@ -186,6 +186,7 @@ export function WorkspaceHomePage() {
     <AppShell
       workspaceId={workspaceId}
       workspaceName={workspace?.name}
+      isWorkspaceHome
       channels={channels.map((channel) => ({
         ...channel,
         href: `/workspaces/${workspaceId}/channels/${channel.id}`,
