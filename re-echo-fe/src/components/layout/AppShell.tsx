@@ -159,10 +159,12 @@ export function AppShell({
                   '#'
                 )}
               </span>
-              <span className={styles.channelName}>{channel.name}</span>
+              <span className={`${styles.channelName} ${channel.unreadCount > 0 ? styles.channelNameUnread : ''}`}>
+                {channel.name}
+              </span>
               {channel.unreadCount > 0 && (
                 <span className={styles.unreadBadge} aria-label={`읽지 않은 메시지 ${channel.unreadCount}개`}>
-                  {channel.unreadCount}
+                  {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
                 </span>
               )}
             </Link>

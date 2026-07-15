@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent, KeyboardEvent, PointerEvent } from 'react'
+import type { ChangeEvent, DragEvent, FormEvent, KeyboardEvent, PointerEvent } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../shared/api/apiTypes'
@@ -64,6 +64,7 @@ export function ChannelMessagePanel({
   const [content, setContent] = useState('')
   const [attachments, setAttachments] = useState<PendingMessageAttachment[]>([])
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
+  const [isComposerDragOver, setIsComposerDragOver] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -291,9 +292,7 @@ export function ChannelMessagePanel({
     }
   }
 
-  async function handleAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFiles = Array.from(event.target.files ?? [])
-    event.target.value = ''
+  async function handleAttachmentFiles(selectedFiles: File[]) {
     setIsAttachmentMenuOpen(false)
     if (selectedFiles.length === 0) {
       return
@@ -347,6 +346,43 @@ export function ChannelMessagePanel({
         })
       }
     }))
+  }
+
+  async function handleAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    await handleAttachmentFiles(selectedFiles)
+  }
+
+  function handleComposerDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!event.dataTransfer.types.includes('Files')) {
+      return
+    }
+    event.preventDefault()
+    if (readOnly || createMessage.isPending) {
+      return
+    }
+    event.dataTransfer.dropEffect = 'copy'
+    setIsComposerDragOver(true)
+  }
+
+  function handleComposerDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+      return
+    }
+    setIsComposerDragOver(false)
+  }
+
+  function handleComposerDrop(event: DragEvent<HTMLDivElement>) {
+    if (!event.dataTransfer.types.includes('Files')) {
+      return
+    }
+    event.preventDefault()
+    setIsComposerDragOver(false)
+    if (readOnly || createMessage.isPending) {
+      return
+    }
+    void handleAttachmentFiles(Array.from(event.dataTransfer.files))
   }
 
   function updateAttachment(localId: string, patch: Partial<PendingMessageAttachment>) {
@@ -668,7 +704,12 @@ export function ChannelMessagePanel({
         <label className={styles.composerLabel} htmlFor="channel-message-content">
           {readOnly ? '보관된 채널에서는 메시지를 작성할 수 없습니다.' : `${channelName}에 메시지 보내기`}
         </label>
-        <div className={styles.composerSurface}>
+        <div
+          className={`${styles.composerSurface} ${isComposerDragOver ? styles.composerSurfaceDragOver : ''}`}
+          onDragOver={handleComposerDragOver}
+          onDragLeave={handleComposerDragLeave}
+          onDrop={handleComposerDrop}
+        >
           {attachments.length > 0 && (
             <ul className={styles.attachmentPreviewList} aria-label="선택한 첨부 파일">
               {attachments.map((attachment) => (

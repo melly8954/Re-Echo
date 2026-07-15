@@ -415,6 +415,12 @@
   box-shadow: 0 0 0 3px rgb(64 163 148 / 14%);
 }
 
+.composerSurfaceDragOver {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgb(64 163 148 / 14%);
+}
+
 .composerField {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

@@ -365,6 +365,10 @@
   white-space: nowrap;
 }
 
+.channelNameUnread {
+  font-weight: 800;
+}
+
 .unreadBadge {
   min-width: 19px;
   height: 19px;
