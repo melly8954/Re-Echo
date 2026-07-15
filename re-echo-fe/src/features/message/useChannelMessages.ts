@@ -3,11 +3,13 @@ import {
   createChannelMessage,
   deleteChannelMessage,
   getChannelMessages,
+  updateChannelReadState,
   updateChannelMessage,
   type CreateChannelMessageRequest,
   type MessageCursor,
   type UpdateChannelMessageRequest,
 } from './messageApi'
+import { workspaceChannelsQueryKey } from '../workspace/useWorkspaceChannels'
 
 export const channelMessagesQueryKey = (workspaceId: string, channelId: string) => [
   'workspace',
@@ -81,6 +83,25 @@ export function useDeleteChannelMessage() {
     onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({
         queryKey: channelMessagesQueryKey(variables.workspaceId, variables.channelId),
+      })
+    },
+  })
+}
+
+interface UpdateChannelReadStateVariables {
+  workspaceId: string
+  channelId: string
+  lastReadMessageId: string
+}
+
+export function useUpdateChannelReadState() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ workspaceId, channelId, lastReadMessageId }: UpdateChannelReadStateVariables) =>
+      updateChannelReadState(workspaceId, channelId, { lastReadMessageId }),
+    onSuccess: async (_result, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: workspaceChannelsQueryKey(variables.workspaceId),
       })
     },
   })

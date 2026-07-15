@@ -51,6 +51,10 @@ export interface UpdateChannelMessageRequest {
   fileIds: string[]
 }
 
+export interface UpdateChannelReadStateRequest {
+  lastReadMessageId: string
+}
+
 export function getChannelMessages(
   workspaceId: string,
   channelId: string,
@@ -111,6 +115,21 @@ export function deleteChannelMessage(
     {
       method: 'DELETE',
       authenticated: true,
+    },
+  )
+}
+
+export function updateChannelReadState(
+  workspaceId: string,
+  channelId: string,
+  request: UpdateChannelReadStateRequest,
+) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/read-state`,
+    {
+      method: 'PUT',
+      authenticated: true,
+      body: JSON.stringify(request),
     },
   )
 }

@@ -8,6 +8,7 @@ import {
   useChannelMessages,
   useCreateChannelMessage,
   useDeleteChannelMessage,
+  useUpdateChannelReadState,
   useUpdateChannelMessage,
 } from './useChannelMessages'
 import {
@@ -59,6 +60,7 @@ export function ChannelMessagePanel({
   const typingTimeoutRef = useRef<number | null>(null)
   const messageLongPressTimeoutRef = useRef<number | null>(null)
   const attachmentPreviewUrlsRef = useRef(new Set<string>())
+  const lastReadMessageIdRef = useRef<string | null>(null)
   const [content, setContent] = useState('')
   const [attachments, setAttachments] = useState<PendingMessageAttachment[]>([])
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
@@ -77,6 +79,7 @@ export function ChannelMessagePanel({
   const createMessage = useCreateChannelMessage()
   const updateMessage = useUpdateChannelMessage()
   const deleteMessage = useDeleteChannelMessage()
+  const { mutate: updateChannelReadState } = useUpdateChannelReadState()
   const { publishTyping } = useChannelRealtime({
     workspaceId,
     channelId,
@@ -110,6 +113,24 @@ export function ChannelMessagePanel({
     return () => window.cancelAnimationFrame(animationFrame)
   }, [channelId, latestMessageId, messages.length, workspaceId])
 
+  useEffect(() => {
+    if (readOnly || !latestMessageId || lastReadMessageIdRef.current === latestMessageId) {
+      return
+    }
+
+    lastReadMessageIdRef.current = latestMessageId
+    updateChannelReadState(
+      { workspaceId, channelId, lastReadMessageId: latestMessageId },
+      {
+        onError: () => {
+          if (lastReadMessageIdRef.current === latestMessageId) {
+            lastReadMessageIdRef.current = null
+          }
+        },
+      },
+    )
+  }, [channelId, latestMessageId, readOnly, updateChannelReadState, workspaceId])
+
   useEffect(() => () => {
     if (typingTimeoutRef.current !== null) {
       window.clearTimeout(typingTimeoutRef.current)
@@ -121,6 +142,7 @@ export function ChannelMessagePanel({
   }, [])
 
   useEffect(() => {
+    lastReadMessageIdRef.current = null
     setEditingMessageId(null)
     setEditingContent('')
     setOpenMenuId(null)
