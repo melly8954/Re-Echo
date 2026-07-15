@@ -124,12 +124,6 @@
   overflow-wrap: anywhere;
 }
 
-.attachmentOnlyMessage .messageContent {
-  padding: 0;
-  background: transparent;
-  border: 0;
-}
-
 .attachmentOnlyMessage .messageAttachments {
   margin-top: 0;
 }
