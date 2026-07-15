@@ -1,4 +1,4 @@
-import type { FormEvent, KeyboardEvent } from 'react'
+import type { FormEvent, KeyboardEvent, PointerEvent } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../shared/api/apiTypes'
@@ -34,6 +34,7 @@ export function ChannelMessagePanel({
   const messageListRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<number | null>(null)
+  const messageLongPressTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
@@ -84,6 +85,9 @@ export function ChannelMessagePanel({
   useEffect(() => () => {
     if (typingTimeoutRef.current !== null) {
       window.clearTimeout(typingTimeoutRef.current)
+    }
+    if (messageLongPressTimeoutRef.current !== null) {
+      window.clearTimeout(messageLongPressTimeoutRef.current)
     }
   }, [])
 
@@ -223,6 +227,24 @@ export function ChannelMessagePanel({
     setDeleteTarget(message)
   }
 
+  function startMessageLongPress(event: PointerEvent<HTMLElement>, messageId: string) {
+    if (event.pointerType !== 'touch') {
+      return
+    }
+    clearMessageLongPress()
+    messageLongPressTimeoutRef.current = window.setTimeout(() => {
+      setOpenMenuId(messageId)
+      messageLongPressTimeoutRef.current = null
+    }, 500)
+  }
+
+  function clearMessageLongPress() {
+    if (messageLongPressTimeoutRef.current !== null) {
+      window.clearTimeout(messageLongPressTimeoutRef.current)
+      messageLongPressTimeoutRef.current = null
+    }
+  }
+
   function closeDeleteDialog() {
     if (deleteMessage.isPending) {
       return
@@ -287,7 +309,37 @@ export function ChannelMessagePanel({
           const isEditing = editingMessageId === message.id
           const canDeleteMessage = isMine || canManageMessages
           return (
-            <article key={message.id} className={`${styles.message} ${isMine ? styles.myMessage : ''}`}>
+            <article
+              key={message.id}
+              className={`${styles.message} ${isMine ? styles.myMessage : ''}`}
+              tabIndex={!message.deleted && !isEditing && !readOnly && canDeleteMessage ? 0 : undefined}
+              onContextMenu={(event) => {
+                if (!message.deleted && !isEditing && !readOnly && canDeleteMessage) {
+                  event.preventDefault()
+                  setOpenMenuId(message.id)
+                }
+              }}
+              onPointerDown={(event) => {
+                if (!message.deleted && !isEditing && !readOnly && canDeleteMessage) {
+                  startMessageLongPress(event, message.id)
+                }
+              }}
+              onPointerUp={clearMessageLongPress}
+              onPointerCancel={clearMessageLongPress}
+              onPointerMove={clearMessageLongPress}
+              onKeyDown={(event) => {
+                if (
+                  !message.deleted &&
+                  !isEditing &&
+                  !readOnly &&
+                  canDeleteMessage &&
+                  (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
+                ) {
+                  event.preventDefault()
+                  setOpenMenuId(message.id)
+                }
+              }}
+            >
               {!isMine && message.author.profileImageUrl ? (
                 <img src={message.author.profileImageUrl} alt="" className={styles.avatar} />
               ) : !isMine ? (
@@ -295,12 +347,12 @@ export function ChannelMessagePanel({
                   {message.author.displayName.slice(0, 1)}
                 </span>
               ) : null}
-              <div className={styles.messageContent}>
-                <div className={styles.messageMeta}>
-                  <strong>{isMine ? '(나)' : message.author.displayName}</strong>
-                  <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
-                  {message.edited && !message.deleted && <span>수정됨</span>}
-                </div>
+              <div className={styles.messageBody}>
+                <div className={styles.messageContent}>
+                  <div className={styles.messageMeta}>
+                    <strong>{isMine ? '(나)' : message.author.displayName}</strong>
+                    {message.edited && !message.deleted && <span>수정됨</span>}
+                  </div>
                 {isEditing ? (
                   <form className={styles.messageEditForm} onSubmit={(event) => void handleMessageUpdate(event, message)}>
                     <textarea
@@ -324,37 +376,27 @@ export function ChannelMessagePanel({
                     {message.deleted ? '삭제된 메시지입니다.' : message.content}
                   </p>
                 )}
-                {!message.deleted && !isEditing && !readOnly && canDeleteMessage && (
-                  <div className={styles.messageActionMenu}>
-                    <button
-                      type="button"
-                      className={styles.menuTrigger}
-                      aria-label="메시지 작업 메뉴"
-                      aria-haspopup="menu"
-                      aria-expanded={openMenuId === message.id}
-                      onClick={() => setOpenMenuId((menuId) => menuId === message.id ? null : message.id)}
-                    >
-                      …
-                    </button>
-                    {openMenuId === message.id && (
-                      <div className={styles.messageActionPopup} role="menu">
-                        {isMine && (
-                          <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
-                            수정
-                          </button>
-                        )}
-                        <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
-                          삭제
+                  {!message.deleted && !isEditing && !readOnly && canDeleteMessage && openMenuId === message.id && (
+                    <div className={styles.messageActionPopup} role="menu" aria-label="메시지 작업 메뉴">
+                      {isMine && (
+                        <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
+                          수정
                         </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {messageActionError?.messageId === message.id && (
-                  <p className={styles.messageActionError} role="alert">
-                    {messageActionError.message}
-                  </p>
-                )}
+                      )}
+                      <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                  {messageActionError?.messageId === message.id && (
+                    <p className={styles.messageActionError} role="alert">
+                      {messageActionError.message}
+                    </p>
+                  )}
+                </div>
+                <time className={styles.messageTime} dateTime={message.createdAt}>
+                  {formatMessageTime(message.createdAt)}
+                </time>
               </div>
             </article>
           )

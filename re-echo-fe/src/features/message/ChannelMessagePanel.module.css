@@ -35,6 +35,10 @@
   justify-content: flex-end;
 }
 
+.myMessage .messageBody {
+  flex-direction: row-reverse;
+}
+
 .myMessage .messageContent p {
   text-align: left;
 }
@@ -66,6 +70,13 @@
   border-radius: 7px;
 }
 
+.messageBody {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 .messageMeta {
   display: flex;
   flex-wrap: wrap;
@@ -80,6 +91,7 @@
 
 .messageMeta time,
 .messageMeta span,
+.messageTime,
 .historyLoading,
 .historyEnd {
   color: var(--color-muted);
@@ -101,24 +113,6 @@
   margin-top: 7px;
 }
 
-.messageActionMenu {
-  position: absolute;
-  top: 0;
-  right: calc(100% + 4px);
-  width: max-content;
-  visibility: hidden;
-}
-
-.myMessage .messageActionMenu {
-  right: auto;
-  left: calc(100% + 4px);
-}
-
-.message:hover .messageActionMenu,
-.message:focus-within .messageActionMenu {
-  visibility: visible;
-}
-
 .messageEditActions button,
 .deleteDialogActions button {
   min-height: 30px;
@@ -132,25 +126,11 @@
   font-weight: 700;
 }
 
-.menuTrigger {
-  width: 30px;
-  min-height: 30px;
-  padding: 0;
-  color: var(--color-muted);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1;
-}
-
 .messageActionPopup {
   position: absolute;
   z-index: 2;
   right: 0;
-  top: calc(100% + 4px);
+  bottom: calc(100% + 4px);
   min-width: 84px;
   padding: 4px;
   display: grid;
