@@ -16,6 +16,7 @@
 
 .message {
   min-width: 0;
+  max-width: min(78%, 640px);
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   gap: 9px;
@@ -23,6 +24,19 @@
 
 .myMessage .messageContent {
   background: #edf9f7;
+}
+
+.myMessage {
+  grid-template-columns: minmax(0, 1fr);
+  justify-self: end;
+}
+
+.myMessage .messageMeta {
+  justify-content: flex-end;
+}
+
+.myMessage .messageContent p {
+  text-align: left;
 }
 
 .avatar,

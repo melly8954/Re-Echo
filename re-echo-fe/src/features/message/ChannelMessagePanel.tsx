@@ -163,16 +163,16 @@ export function ChannelMessagePanel({
           const isMine = message.author.memberId === currentMembershipId
           return (
             <article key={message.id} className={`${styles.message} ${isMine ? styles.myMessage : ''}`}>
-              {message.author.profileImageUrl ? (
+              {!isMine && message.author.profileImageUrl ? (
                 <img src={message.author.profileImageUrl} alt="" className={styles.avatar} />
-              ) : (
+              ) : !isMine ? (
                 <span className={styles.avatarFallback} aria-hidden="true">
                   {message.author.displayName.slice(0, 1)}
                 </span>
-              )}
+              ) : null}
               <div className={styles.messageContent}>
                 <div className={styles.messageMeta}>
-                  <strong>{message.author.displayName}</strong>
+                  {!isMine && <strong>{message.author.displayName}</strong>}
                   <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
                   {message.edited && !message.deleted && <span>수정됨</span>}
                 </div>
