@@ -223,6 +223,7 @@
 | Workspaces | POST | `/workspaces` | 워크스페이스 생성 |
 | Workspaces | GET | `/workspaces/{workspaceId}` | 워크스페이스 상세 조회 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}` | 워크스페이스 정보 수정 |
+| Workspaces | POST | `/workspaces/{workspaceId}/image/presign-upload` | 대표 이미지 업로드 Presigned URL 발급 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}/archive` | 워크스페이스 보관 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}/restore` | 워크스페이스 복원 |
 | Invites | GET | `/workspaces/{workspaceId}/invite-link` | 활성 초대 링크 조회 |
@@ -420,10 +421,12 @@
 ```json
 {
   "name": "Re-Echo Team",
-  "description": "팀 워크스페이스",
-  "imageUrl": "https://..."
+  "description": "팀 워크스페이스"
 }
 ```
+
+- 대표 이미지는 생성 후 `11.9.1`의 Presigned URL 업로드와 워크스페이스
+  정보 수정 흐름으로 설정한다.
 
 - Success Response: `201 Created`
 - Response Body
@@ -463,6 +466,7 @@
     "name": "Re-Echo Team",
     "description": "팀 워크스페이스",
     "imageUrl": "https://...",
+    "imageFileId": "uuid",
     "status": "ACTIVE",
     "myMembership": {
       "id": "uuid",
@@ -490,9 +494,28 @@
 {
   "name": "Re-Echo Team",
   "description": "새 설명",
-  "imageUrl": "https://..."
+  "imageFileId": "uuid"
 }
 ```
+
+- `imageFileId`에 `null`을 전달하면 대표 이미지를 제거한다.
+- Response Body: `11.8 워크스페이스 상세 조회`와 동일
+
+### 11.9.1 워크스페이스 대표 이미지 업로드 Presigned URL 발급
+
+- Description: 워크스페이스 대표 이미지 1건에 대한 업로드 URL을 발급하고
+  대표 이미지 용도의 임시 파일 메타데이터를 생성한다.
+- Method: `POST`
+- URL: `/api/v1/workspaces/{workspaceId}/image/presign-upload`
+- Authentication: 필요
+- Authorization: `OWNER`, `ADMIN`
+- Request Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Response Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Constraints
+  - 허용 MIME 타입: `image/jpeg`, `image/png`, `image/webp`
+  - 최대 크기: 10MB
+  - 서버는 파일 메타데이터에 `workspaceId`와 현재 사용자의 `membershipId`를
+    함께 저장해 워크스페이스 대표 이미지 문맥을 고정한다.
 
 ### 11.10 워크스페이스 보관
 
@@ -1189,6 +1212,10 @@
 4. 클라이언트가 프로필 수정 API에 `profileImageFileId`를 전달한다.
 5. 서버가 파일을 검증한 뒤 프로필 이미지로 연결한다.
 
+워크스페이스 대표 이미지 업로드 흐름도 동일하다. `OWNER`, `ADMIN`이
+대표 이미지 Presign API로 업로드한 뒤 워크스페이스 수정 API에
+`imageFileId`를 전달한다.
+
 ### 13.2 파일 정책
 
 - 파일 메타데이터는 PostgreSQL에서 관리한다.
@@ -1196,7 +1223,7 @@
 - 메시지에 연결되지 않은 업로드 완료 파일은 임시 파일 상태로 남을 수 있다.
 - 프로필에 연결되지 않은 프로필 이미지 업로드 파일도 임시 파일 상태로
   남을 수 있다.
-- 프로필에서 제거되거나 교체된 이미지는 `ORPHANED` 상태로 표시한 뒤
+- 프로필 또는 워크스페이스 대표 이미지에서 제거되거나 교체된 이미지는 `ORPHANED` 상태로 표시한 뒤
   정리 스케줄러가 지연 삭제한다.
 - orphan 파일은 배치로 정리한다.
 - 파일 정리 스케줄러의 기본 실행 주기는 하루 1회 새벽 3시다.

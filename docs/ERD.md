@@ -82,6 +82,7 @@ MVP 범위 밖인 DM, 메시지 검색, 멘션, AI 기능은 포함하지 않는
 ### 4.2 워크스페이스 및 멤버십 도메인
 
 - 워크스페이스 생성, 보관, 복원, 삭제
+- 워크스페이스 대표 이미지 관리
 - 워크스페이스별 멤버 역할과 상태 관리
 - 워크스페이스별 닉네임과 프로필 이미지 관리
 - 초대 링크 기반 참여 관리
@@ -191,6 +192,7 @@ Re-Echo 사용자 기본 계정이다.
 | slug | varchar(100) |  |  | Y |  | URL 또는 표시용 식별자 |
 | description | varchar(500) |  |  | Y |  | 소개 문구 |
 | image_url | text |  |  | Y |  | 워크스페이스 대표 이미지 |
+| image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 대표 이미지 참조 |
 | created_by_user_id | uuid |  | users.id | N |  | 생성자 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ARCHIVED`, `DELETED` |
 | archived_at | timestamptz |  |  | Y |  | 보관 시각 |
@@ -355,12 +357,12 @@ Re-Echo 사용자 기본 계정이다.
 | workspace_id | uuid |  | workspaces.id | Y |  | 워크스페이스 참조 |
 | uploaded_by_user_id | uuid |  | users.id | N |  | 업로더 사용자 |
 | uploaded_by_membership_id | uuid |  | workspace_memberships.id | Y |  | 워크스페이스 문맥 업로더 |
-| purpose | varchar(30) |  |  | N |  | `MESSAGE_ATTACHMENT`, `PROFILE_IMAGE` |
+| purpose | varchar(30) |  |  | N |  | `MESSAGE_ATTACHMENT`, `PROFILE_IMAGE`, `WORKSPACE_IMAGE` |
 | storage_provider | varchar(30) |  |  | N |  | 기본값 `R2` |
 | storage_key | varchar(255) |  |  | N |  | 저장소 내부 키 |
 | original_filename | varchar(255) |  |  | N |  | 원본 파일명 |
 | content_type | varchar(120) |  |  | N |  | MIME 타입 |
-| file_size_bytes | bigint |  |  | N |  | 메시지 첨부 최대 20MB, 프로필 이미지 최대 10MB |
+| file_size_bytes | bigint |  |  | N |  | 메시지 첨부 최대 20MB, 프로필·대표 이미지는 최대 10MB |
 | image_width | integer |  |  | Y |  | 이미지 가로 크기 |
 | image_height | integer |  |  | Y |  | 이미지 세로 크기 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ORPHANED`, `DELETED` |
@@ -380,8 +382,12 @@ Re-Echo 사용자 기본 계정이다.
   워크스페이스 프로필 이미지 문맥을 구분한다.
   - 계정 기본 프로필 이미지는 `workspace_id`와
     `uploaded_by_membership_id`가 모두 `null`이다.
-  - 워크스페이스 프로필 이미지는 `workspace_id`와
-    `uploaded_by_membership_id`가 모두 필요하다.
+   - 워크스페이스 프로필 이미지는 `workspace_id`와
+     `uploaded_by_membership_id`가 모두 필요하다.
+- `purpose = 'WORKSPACE_IMAGE'`이면 이미지 MIME 타입만 허용하고
+  `file_size_bytes <= 10485760`이어야 한다. `workspace_id`와
+  `uploaded_by_membership_id`가 모두 필요하며, 해당 워크스페이스의
+  `image_file_id`로만 최종 연결할 수 있다.
 - `purpose = 'MESSAGE_ATTACHMENT'`이면 `file_size_bytes <= 20971520`
 
 ### 7.11 `message_attachments`
