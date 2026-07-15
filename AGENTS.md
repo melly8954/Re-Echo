@@ -68,6 +68,12 @@
   추가하지 않는다.
 - API 구현은 `docs/API.md`의 공통 응답 envelope, `contents` 목록 필드,
   Error Code prefix, WebSocket event envelope을 기준으로 한다.
+- 화면 흐름, 레이아웃과 상호작용, 권한별 UI, 상태 표현, 접근성 또는
+  반응형 정책을 변경하는 프런트엔드 작업은 `docs/app-design.md`를 먼저
+  갱신한 뒤 구현한다.
+- UI 정책 변경이 제품 정책에도 영향을 주면 `docs/prd.md`를 먼저
+  갱신하고, `docs/app-design.md`와 구현을 함께 동기화한다. 단순 스타일
+  조정이나 내부 버그 수정처럼 UI 정책이 바뀌지 않는 변경은 제외한다.
 - 인증/인가 정책을 임의로 완화하지 않는다.
 - WebSocket 이벤트는 문서에 정의된 메시지와 입력 중 표시 범위를
   임의로 넘기지 않는다.
