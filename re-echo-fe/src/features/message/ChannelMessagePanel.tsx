@@ -633,26 +633,41 @@ export function ChannelMessagePanel({
         {attachments.length > 0 && (
           <ul className={styles.attachmentPreviewList} aria-label="선택한 첨부 파일">
             {attachments.map((attachment) => (
-              <li key={attachment.localId} className={styles.attachmentPreviewItem}>
+              <li
+                key={attachment.localId}
+                className={`${styles.attachmentPreviewItem} ${
+                  attachment.previewUrl ? styles.imageAttachmentPreview : styles.fileAttachmentPreview
+                }`}
+              >
                 {attachment.previewUrl ? (
-                  <img src={attachment.previewUrl} alt="" className={styles.attachmentThumbnail} />
+                  <img src={attachment.previewUrl} alt={attachment.file.name} className={styles.attachmentThumbnail} />
                 ) : (
                   <span className={styles.attachmentFileIcon} aria-hidden="true">파일</span>
                 )}
-                <div className={styles.attachmentPreviewInfo}>
-                  <strong>{attachment.file.name}</strong>
-                  <span>{formatFileSize(attachment.file.size)}</span>
-                  {attachment.status === 'UPLOADING' && <span>업로드 중 {attachment.progress}%</span>}
-                  {attachment.status === 'UPLOADED' && <span>업로드 완료</span>}
-                  {attachment.status === 'FAILED' && <span className={styles.attachmentError}>{attachment.errorMessage}</span>}
-                </div>
+                {!attachment.previewUrl && (
+                  <div className={styles.attachmentPreviewInfo}>
+                    <strong title={attachment.file.name}>{attachment.file.name}</strong>
+                    <span>{formatFileSize(attachment.file.size)}</span>
+                    {attachment.status === 'UPLOADING' && <span>업로드 중 {attachment.progress}%</span>}
+                    {attachment.status === 'FAILED' && <span className={styles.attachmentError}>{attachment.errorMessage}</span>}
+                  </div>
+                )}
+                {attachment.previewUrl && attachment.status === 'UPLOADING' && (
+                  <span className={styles.attachmentPreviewStatus}>업로드 중 {attachment.progress}%</span>
+                )}
+                {attachment.previewUrl && attachment.status === 'FAILED' && (
+                  <span className={`${styles.attachmentPreviewStatus} ${styles.attachmentError}`}>
+                    업로드 실패
+                  </span>
+                )}
                 <button
                   type="button"
                   className={styles.attachmentRemoveButton}
                   onClick={() => removeAttachment(attachment.localId)}
                   disabled={createMessage.isPending}
+                  aria-label={`${attachment.file.name} 제거`}
                 >
-                  제거
+                  ×
                 </button>
               </li>
             ))}

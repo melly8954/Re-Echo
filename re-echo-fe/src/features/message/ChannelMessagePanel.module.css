@@ -128,12 +128,20 @@
   margin-top: 0;
 }
 
-.messageAttachments,
-.attachmentPreviewList {
+.messageAttachments {
   margin: 8px 0 0;
   padding: 0;
   display: grid;
   gap: 6px;
+  list-style: none;
+}
+
+.attachmentPreviewList {
+  margin: 8px 0 0;
+  padding: 0 0 2px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
   list-style: none;
 }
 
@@ -449,22 +457,32 @@
 }
 
 .attachmentPreviewItem {
-  min-width: 0;
-  padding: 7px;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.imageAttachmentPreview {
+  width: 64px;
+  height: 64px;
+}
+
+.fileAttachmentPreview {
+  max-width: 190px;
+  padding: 7px 30px 7px 7px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 7px;
   align-items: center;
   background: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 7px;
 }
 
 .attachmentThumbnail,
 .attachmentFileIcon {
-  width: 42px;
-  height: 42px;
-  border-radius: 5px;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
 }
 
 .attachmentThumbnail {
@@ -472,6 +490,8 @@
 }
 
 .attachmentFileIcon {
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   color: var(--color-muted);
@@ -508,8 +528,48 @@
 }
 
 .attachmentRemoveButton {
-  min-height: 30px !important;
-  padding: 0 9px !important;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 1;
+  width: 20px;
+  min-height: 20px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  color: #fff !important;
+  background: rgb(31 45 42 / 72%) !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.fileAttachmentPreview .attachmentRemoveButton {
+  top: 50%;
+  right: 7px;
+  color: var(--color-muted) !important;
+  background: transparent !important;
+  transform: translateY(-50%);
+}
+
+.attachmentPreviewStatus {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 4px;
+  overflow: hidden;
+  color: #fff;
+  background: rgb(31 45 42 / 72%);
+  border-radius: 0 0 7px 7px;
+  font-size: 10px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imageAttachmentPreview .attachmentError {
+  color: #fff;
+  background: rgb(189 63 63 / 88%);
 }
 
 .submitError,
