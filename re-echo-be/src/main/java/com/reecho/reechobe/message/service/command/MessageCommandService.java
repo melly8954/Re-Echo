@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 // 채널 멤버의 메시지 작성·수정·삭제와 첨부 연결을 트랜잭션으로 처리한다.
 @Service
@@ -71,7 +73,7 @@ public class MessageCommandService {
         Message message = messageRepository.save(Message.create(channelId, membership.getId(), content));
         saveAttachments(message.getId(), fileIds);
         ChannelMessageResponse response = messageResponseAssembler.assemble(message);
-        realtimeEventPublisher.publishMessage(workspaceId, RealtimeEventType.MESSAGE_CREATED, response);
+        publishMessageAfterCommit(workspaceId, RealtimeEventType.MESSAGE_CREATED, response);
         return response;
     }
 
@@ -98,7 +100,7 @@ public class MessageCommandService {
         );
         saveAttachments(message.getId(), fileIds);
         ChannelMessageResponse response = messageResponseAssembler.assemble(message);
-        realtimeEventPublisher.publishMessage(workspaceId, RealtimeEventType.MESSAGE_UPDATED, response);
+        publishMessageAfterCommit(workspaceId, RealtimeEventType.MESSAGE_UPDATED, response);
         return response;
     }
 
@@ -113,7 +115,7 @@ public class MessageCommandService {
             throw new BusinessException(MessageErrorCode.MESSAGE_DELETE_FORBIDDEN);
         }
         message.delete(membership.getId());
-        realtimeEventPublisher.publishMessage(
+        publishMessageAfterCommit(
                 workspaceId,
                 RealtimeEventType.MESSAGE_DELETED,
                 messageResponseAssembler.assemble(message)
@@ -191,5 +193,19 @@ public class MessageCommandService {
         for (int index = 0; index < fileIds.size(); index++) {
             messageAttachmentRepository.save(MessageAttachment.create(messageId, fileIds.get(index), index));
         }
+    }
+
+    // 수신자가 커밋 전 데이터를 다시 읽지 않도록 완료 후에만 event를 전파한다.
+    private void publishMessageAfterCommit(
+            UUID workspaceId,
+            RealtimeEventType type,
+            ChannelMessageResponse response
+    ) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                realtimeEventPublisher.publishMessage(workspaceId, type, response);
+            }
+        });
     }
 }
