@@ -6,6 +6,7 @@ import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorks
 import { useLeaveWorkspace } from '../features/workspace/useLeaveWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
+import { WorkspaceSettingsDialog } from '../features/workspace/WorkspaceSettingsDialog'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
 import {
@@ -41,6 +42,7 @@ export function WorkspaceHomePage() {
   const [isWorkspaceLeaveOpen, setIsWorkspaceLeaveOpen] = useState(false)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isMemberManagementOpen, setIsMemberManagementOpen] = useState(false)
+  const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false)
   const workspace = workspaceQuery.data
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
@@ -344,6 +346,15 @@ export function WorkspaceHomePage() {
                   <button
                     type="button"
                     className={styles.memberManageButton}
+                    onClick={() => setIsWorkspaceSettingsOpen(true)}
+                  >
+                    워크스페이스 설정
+                  </button>
+                )}
+                {canIssueInvite && (
+                  <button
+                    type="button"
+                    className={styles.memberManageButton}
                     onClick={() => setIsMemberManagementOpen(true)}
                   >
                     멤버 관리
@@ -453,6 +464,13 @@ export function WorkspaceHomePage() {
         )}
       </section>
       {workspaceLeaveDialog}
+      {workspace && canIssueInvite && (
+        <WorkspaceSettingsDialog
+          workspace={workspace}
+          isOpen={isWorkspaceSettingsOpen}
+          onClose={() => setIsWorkspaceSettingsOpen(false)}
+        />
+      )}
       {workspace && canIssueInvite && (
         <WorkspaceMemberManagementDialog
           workspaceId={workspaceId}

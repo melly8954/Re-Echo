@@ -283,7 +283,7 @@ export function AppShell({
     <div className={styles.shell}>
       <header className={styles.topBar}>
         <div className={styles.brand} aria-label="Re-Echo">
-          <span aria-hidden="true">R</span>
+          <img src="/logo.png" alt="" aria-hidden="true" />
           Re-Echo
         </div>
         <div className={styles.account}>

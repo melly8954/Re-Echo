@@ -5,6 +5,24 @@ export interface CreateWorkspaceRequest {
   description?: string | null
 }
 
+export interface UpdateWorkspaceRequest {
+  name: string
+  description: string | null
+  imageFileId: string | null
+}
+
+export interface WorkspaceImagePresignRequest {
+  fileName: string
+  contentType: string
+  size: number
+}
+
+export interface PresignedUploadResponse {
+  fileId: string
+  uploadUrl: string
+  expiresAt: string
+}
+
 export interface CreatedWorkspace {
   id: string
   defaultChannelId: string
@@ -35,6 +53,7 @@ export interface WorkspaceDetail {
   name: string
   description: string | null
   imageUrl: string | null
+  imageFileId: string | null
   status: WorkspaceStatus
   myMembership: {
     id: string
@@ -129,6 +148,45 @@ export function getWorkspaceDetail(workspaceId: string) {
     method: 'GET',
     authenticated: true,
   })
+}
+
+export function updateWorkspace(
+  workspaceId: string,
+  request: UpdateWorkspaceRequest,
+) {
+  return apiRequest<WorkspaceDetail>(`/api/v1/workspaces/${workspaceId}`, {
+    method: 'PATCH',
+    authenticated: true,
+    body: JSON.stringify(request),
+  })
+}
+
+export function createWorkspaceImageUploadUrl(
+  workspaceId: string,
+  request: WorkspaceImagePresignRequest,
+) {
+  return apiRequest<PresignedUploadResponse>(
+    `/api/v1/workspaces/${workspaceId}/image/presign-upload`,
+    {
+      method: 'POST',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export async function uploadWorkspaceImageToStorage(uploadUrl: string, file: File) {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+  })
+
+  if (!response.ok) {
+    throw new Error('워크스페이스 대표 이미지 업로드에 실패했습니다.')
+  }
 }
 
 export function getWorkspaceChannels(workspaceId: string) {
