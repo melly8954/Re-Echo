@@ -910,6 +910,8 @@
 - Validation
   - `content`와 `fileIds`가 모두 비어 있으면 안 된다.
   - 보관된 채널에서는 생성할 수 없다.
+- Success Response: `201 Created`, `result`에는 11.31의 메시지 항목과 같은
+  전체 메시지 snapshot을 반환한다.
 
 ### 11.33 메시지 수정
 
@@ -930,6 +932,8 @@
 ```
 
 - Note: 시간 제한 없이 수정 가능하다.
+- Success Response: `200 OK`, `result`에는 11.31의 메시지 항목과 같은
+  전체 메시지 snapshot을 반환한다.
 
 ### 11.34 메시지 삭제
 
@@ -1222,10 +1226,17 @@
   "message": {
     "id": "uuid",
     "channelId": "uuid",
+    "author": {
+      "memberId": "uuid",
+      "displayName": "홍길동",
+      "profileImageUrl": "https://..."
+    },
     "content": "안녕하세요",
     "attachments": [],
     "createdAt": "2026-07-06T12:00:00",
-    "updatedAt": "2026-07-06T12:00:00"
+    "updatedAt": "2026-07-06T12:00:00",
+    "edited": false,
+    "deleted": false
   }
 }
 ```
