@@ -38,7 +38,7 @@ public class WorkspaceCreateCommandService {
         Workspace workspace = Workspace.create(
                 request.name(),
                 request.description(),
-                request.imageUrl(),
+                null,
                 creator.getId()
         );
         workspaceRepository.save(workspace);

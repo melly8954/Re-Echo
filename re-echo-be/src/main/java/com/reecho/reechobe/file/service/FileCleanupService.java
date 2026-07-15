@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 최종 연결되지 않은 프로필 이미지와 메시지 첨부를 외부 스토리지와 DB에서 정리한다.
+// 최종 연결되지 않은 이미지와 메시지 첨부를 외부 스토리지와 DB에서 정리한다.
 @Service
 @RequiredArgsConstructor
 public class FileCleanupService {
@@ -66,7 +66,7 @@ public class FileCleanupService {
             return true;
         } catch (RuntimeException exception) {
             log.warn(
-                    "고아 프로필 이미지 삭제에 실패했습니다. fileObjectId={}, storageKey={}",
+                    "고아 이미지 삭제에 실패했습니다. fileObjectId={}, storageKey={}",
                     fileObject.getId(),
                     fileObject.getStorageKey(),
                     exception

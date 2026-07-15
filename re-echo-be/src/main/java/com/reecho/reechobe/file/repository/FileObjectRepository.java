@@ -15,7 +15,7 @@ public interface FileObjectRepository extends JpaRepository<FileObject, UUID> {
             value = """
                     SELECT fo.*
                     FROM file_objects fo
-                    WHERE fo.purpose = 'PROFILE_IMAGE'
+                    WHERE fo.purpose IN ('PROFILE_IMAGE', 'WORKSPACE_IMAGE')
                       AND fo.status IN ('ACTIVE', 'ORPHANED')
                       AND (
                           (fo.status = 'ORPHANED'
@@ -33,6 +33,11 @@ public interface FileObjectRepository extends JpaRepository<FileObject, UUID> {
                           SELECT 1
                           FROM workspace_memberships wm
                           WHERE wm.profile_image_file_id = fo.id
+                      )
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM workspaces w
+                          WHERE w.image_file_id = fo.id
                       )
                     ORDER BY fo.created_at ASC
                     """,
@@ -53,6 +58,10 @@ public interface FileObjectRepository extends JpaRepository<FileObject, UUID> {
                         SELECT 1
                         FROM workspace_memberships wm
                         WHERE wm.profile_image_file_id = :fileId
+                        UNION ALL
+                        SELECT 1
+                        FROM workspaces w
+                        WHERE w.image_file_id = :fileId
                     )
                     """,
             nativeQuery = true

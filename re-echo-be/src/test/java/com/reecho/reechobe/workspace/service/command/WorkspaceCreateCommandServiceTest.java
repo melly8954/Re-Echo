@@ -77,8 +77,7 @@ class WorkspaceCreateCommandServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         CreateWorkspaceRequest request = new CreateWorkspaceRequest(
                 " Re-Echo Team ",
-                " 팀 워크스페이스 ",
-                " https://example.com/workspace.png "
+                " 팀 워크스페이스 "
         );
 
         CreatedWorkspaceResponse result = service.createWorkspace(userId, request);
@@ -101,7 +100,7 @@ class WorkspaceCreateCommandServiceTest {
 
         assertThat(workspace.getName()).isEqualTo("Re-Echo Team");
         assertThat(workspace.getDescription()).isEqualTo("팀 워크스페이스");
-        assertThat(workspace.getImageUrl()).isEqualTo("https://example.com/workspace.png");
+        assertThat(workspace.getImageUrl()).isNull();
         assertThat(workspace.getCreatedByUserId()).isEqualTo(userId);
         assertThat(workspace.getStatus()).isEqualTo(WorkspaceStatus.ACTIVE);
 
@@ -131,7 +130,7 @@ class WorkspaceCreateCommandServiceTest {
     void 인증_사용자가_없으면_워크스페이스를_생성하지_않는다() {
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        CreateWorkspaceRequest request = new CreateWorkspaceRequest("Re-Echo Team", null, null);
+        CreateWorkspaceRequest request = new CreateWorkspaceRequest("Re-Echo Team", null);
 
         assertThatThrownBy(() -> service.createWorkspace(userId, request))
                 .isInstanceOf(BusinessException.class)

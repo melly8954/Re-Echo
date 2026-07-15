@@ -125,6 +125,31 @@ public class FileObject {
                 .build();
     }
 
+    public static FileObject createWorkspaceImage(
+            UUID fileId,
+            UUID workspaceId,
+            UUID uploadedByUserId,
+            UUID uploadedByMembershipId,
+            String storageKey,
+            String originalFilename,
+            String contentType,
+            long fileSizeBytes
+    ) {
+        return FileObject.builder()
+                .id(fileId)
+                .workspaceId(workspaceId)
+                .uploadedByUserId(uploadedByUserId)
+                .uploadedByMembershipId(uploadedByMembershipId)
+                .purpose(FilePurpose.WORKSPACE_IMAGE)
+                .storageProvider(StorageProvider.R2)
+                .storageKey(storageKey)
+                .originalFilename(originalFilename)
+                .contentType(contentType)
+                .fileSizeBytes(fileSizeBytes)
+                .status(FileStatus.ACTIVE)
+                .build();
+    }
+
     public boolean isOwnedBy(UUID userId) {
         return uploadedByUserId.equals(userId);
     }
@@ -135,6 +160,10 @@ public class FileObject {
 
     public boolean isMessageAttachment() {
         return purpose == FilePurpose.MESSAGE_ATTACHMENT;
+    }
+
+    public boolean isWorkspaceImage() {
+        return purpose == FilePurpose.WORKSPACE_IMAGE;
     }
 
     public boolean isActive() {

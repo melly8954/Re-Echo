@@ -43,6 +43,9 @@ public class Workspace {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "image_file_id")
+    private UUID imageFileId;
+
     @Column(name = "created_by_user_id")
     private UUID createdByUserId;
 
@@ -80,6 +83,14 @@ public class Workspace {
                 .createdByUserId(createdByUserId)
                 .status(WorkspaceStatus.ACTIVE)
                 .build();
+    }
+
+    // 대표 이미지 교체 전에는 서비스가 파일 소유권과 업로드 완료를 검증한다.
+    public void update(String name, String description, UUID imageFileId, String imageUrl) {
+        this.name = normalizeName(name);
+        this.description = normalizeNullable(description);
+        this.imageFileId = imageFileId;
+        this.imageUrl = normalizeNullable(imageUrl);
     }
 
     @PrePersist
