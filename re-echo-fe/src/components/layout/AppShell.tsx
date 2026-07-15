@@ -31,6 +31,7 @@ interface AppShellProps {
 export function AppShell({
   children,
   workspaceId,
+  workspaceName,
   channels = [],
   isWorkspaceHome = false,
   activeChannelId,
@@ -43,6 +44,7 @@ export function AppShell({
   const { user, status, logout } = useAuth()
   const workspaceListQuery = useWorkspaceList(status === 'authenticated')
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
+  const [isWorkspaceActionMenuOpen, setIsWorkspaceActionMenuOpen] = useState(false)
   const [isWorkspaceCreateOpen, setIsWorkspaceCreateOpen] = useState(false)
   const [isWorkspaceInviteOpen, setIsWorkspaceInviteOpen] = useState(false)
   const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
@@ -50,6 +52,8 @@ export function AppShell({
   const channelDrawerCloseButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerId = 'mobile-channel-drawer'
   const workspaces = workspaceListQuery.data?.contents ?? []
+  const selectedWorkspace = workspaces.find((workspace) => workspace.id === workspaceId)
+  const currentWorkspaceName = workspaceName ?? selectedWorkspace?.name ?? '워크스페이스'
 
   useEffect(() => {
     if (!isChannelDrawerOpen) {
@@ -101,13 +105,18 @@ export function AppShell({
   }
 
   function openWorkspaceCreateDialog() {
-    setIsChannelDrawerOpen(false)
+    closeNavigationSurfaces()
     setIsWorkspaceCreateOpen(true)
   }
 
   function openWorkspaceInviteDialog() {
-    setIsChannelDrawerOpen(false)
+    closeNavigationSurfaces()
     setIsWorkspaceInviteOpen(true)
+  }
+
+  function closeNavigationSurfaces() {
+    setIsChannelDrawerOpen(false)
+    setIsWorkspaceActionMenuOpen(false)
   }
 
   const channelNavigation = (
@@ -131,7 +140,7 @@ export function AppShell({
                     }`
               }
               to={channel.href}
-              onClick={() => setIsChannelDrawerOpen(false)}
+              onClick={closeNavigationSurfaces}
             >
               <span className={styles.channelPrefix} aria-hidden="true">
                 {channel.visibility === 'PRIVATE' ? (
@@ -167,84 +176,92 @@ export function AppShell({
     </>
   )
 
-  const workspaceList = (
-    <section className={styles.workspaceListSection} aria-labelledby="workspace-list-title">
-      <p id="workspace-list-title" className={styles.sidebarLabel}>
-        워크스페이스
-      </p>
+  const workspaceRailContent = (
+    <div className={styles.workspaceRailContent}>
       {workspaceListQuery.isLoading ? (
-        <div className={styles.workspaceListSkeleton} aria-label="워크스페이스 목록을 불러오는 중">
+        <div className={styles.workspaceRailSkeleton} aria-label="워크스페이스 목록을 불러오는 중">
           <span />
           <span />
         </div>
       ) : workspaces.length > 0 ? (
-        <nav className={styles.workspaceList} aria-label="워크스페이스 목록">
+        <nav className={styles.workspaceRailList} aria-label="워크스페이스 목록">
           {workspaces.map((workspace) => (
             <Link
               key={workspace.id}
               className={
                 workspace.id === workspaceId
-                  ? `${styles.workspaceLink} ${styles.workspaceLinkActive}`
-                  : styles.workspaceLink
+                  ? `${styles.workspaceRailLink} ${styles.workspaceRailLinkActive}`
+                  : styles.workspaceRailLink
               }
               to={`/workspaces/${workspace.id}`}
               title={workspace.name}
-              onClick={() => setIsChannelDrawerOpen(false)}
+              aria-label={workspace.name}
+              onClick={closeNavigationSurfaces}
             >
-              <span>{workspace.name}</span>
-              {workspace.status === 'ARCHIVED' ? (
-                <small>보관됨</small>
-              ) : workspace.unreadChannelCount > 0 ? (
-                <small aria-label={`읽지 않은 채널 ${workspace.unreadChannelCount}개`}>
-                  {workspace.unreadChannelCount}
-                </small>
-              ) : null}
+              {workspace.imageUrl ? (
+                <img src={workspace.imageUrl} alt="" />
+              ) : (
+                <span aria-hidden="true">{workspace.name.slice(0, 1)}</span>
+              )}
             </Link>
           ))}
         </nav>
       ) : (
-        <p className={styles.emptyText}>참여 중인 워크스페이스가 없습니다.</p>
+        <span className={styles.workspaceRailEmpty} aria-label="참여 중인 워크스페이스가 없습니다.">
+          —
+        </span>
       )}
       {workspaceListQuery.isError && (
-        <button type="button" onClick={() => void workspaceListQuery.refetch()}>
+        <button
+          className={styles.workspaceRailRetryButton}
+          type="button"
+          onClick={() => void workspaceListQuery.refetch()}
+        >
           다시 시도
         </button>
       )}
-    </section>
-  )
-
-  const workspaceActions = (
-    <div className={styles.workspaceActions}>
-      <button type="button" onClick={openWorkspaceCreateDialog}>
-        새 워크스페이스 만들기
-      </button>
-      <button type="button" onClick={openWorkspaceInviteDialog}>
-        초대 링크로 참여
-      </button>
+      <div className={styles.workspaceActionArea}>
+        <button
+          className={styles.workspaceActionButton}
+          type="button"
+          aria-expanded={isWorkspaceActionMenuOpen}
+          aria-label="워크스페이스 메뉴"
+          title="워크스페이스 메뉴"
+          onClick={() => setIsWorkspaceActionMenuOpen((isOpen) => !isOpen)}
+        >
+          +
+        </button>
+        {isWorkspaceActionMenuOpen && (
+          <div className={styles.workspaceActionMenu}>
+            <button type="button" onClick={openWorkspaceCreateDialog}>
+              새 워크스페이스 만들기
+            </button>
+            <button type="button" onClick={openWorkspaceInviteDialog}>
+              초대 링크로 참여
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 
   const workspaceNavigation = workspaceId && (
-    <nav className={styles.workspaceNavigation} aria-label="워크스페이스 탐색">
-      <Link
-        className={
-          isWorkspaceHome
-            ? `${styles.workspaceHomeLink} ${styles.workspaceHomeLinkActive}`
-            : styles.workspaceHomeLink
-        }
-        to={`/workspaces/${workspaceId}`}
-        onClick={() => setIsChannelDrawerOpen(false)}
-      >
-        <span aria-hidden="true">⌂</span>
-        홈
-      </Link>
-    </nav>
+    <Link
+      className={
+        isWorkspaceHome
+          ? `${styles.workspaceHeaderLink} ${styles.workspaceHeaderLinkActive}`
+          : styles.workspaceHeaderLink
+      }
+      to={`/workspaces/${workspaceId}`}
+      onClick={closeNavigationSurfaces}
+    >
+      <span>{currentWorkspaceName}</span>
+      <span aria-hidden="true">⌂</span>
+    </Link>
   )
 
-  const channelList = (
-    <div>
-      {workspaceList}
-      {workspaceActions}
+  const channelSidebarContent = (
+    <div className={styles.channelSidebarContent}>
       {workspaceNavigation}
       {workspaceId && (
         <>
@@ -257,7 +274,8 @@ export function AppShell({
       )}
     </div>
   )
-  const hasWorkspaceNavigation = status === 'authenticated'
+  const hasWorkspaceRail = status === 'authenticated'
+  const hasChannelSidebar = Boolean(workspaceId)
 
   return (
     <div className={styles.shell}>
@@ -302,14 +320,21 @@ export function AppShell({
         className={
           rightSidebar
             ? `${styles.body} ${styles.bodyWithRightSidebar}`
-            : hasWorkspaceNavigation
+            : hasWorkspaceRail && hasChannelSidebar
               ? styles.body
-              : `${styles.body} ${styles.bodyWithoutSidebar}`
+              : hasWorkspaceRail
+                ? `${styles.body} ${styles.bodyWithoutChannelSidebar}`
+                : `${styles.body} ${styles.bodyWithoutSidebar}`
         }
       >
-        {hasWorkspaceNavigation && (
-          <aside className={styles.sidebar} aria-label="워크스페이스 및 채널 탐색">
-            {channelList}
+        {hasWorkspaceRail && (
+          <aside className={styles.workspaceRail} aria-label="워크스페이스 탐색">
+            {workspaceRailContent}
+          </aside>
+        )}
+        {hasChannelSidebar && (
+          <aside className={styles.channelSidebar} aria-label="현재 워크스페이스 채널 탐색">
+            {channelSidebarContent}
           </aside>
         )}
         <main className={styles.content}>{children}</main>
@@ -339,10 +364,7 @@ export function AppShell({
             onKeyDown={handleChannelDrawerKeyDown}
           >
             <div className={styles.mobileChannelHeader}>
-              <div className={styles.mobileChannelTitle}>
-                <p className={styles.sidebarLabel}>메뉴</p>
-                {workspaceId && channelHeaderAction}
-              </div>
+              <p className={styles.sidebarLabel}>메뉴</p>
               <button
                 ref={channelDrawerCloseButtonRef}
                 className={styles.drawerCloseButton}
@@ -352,8 +374,7 @@ export function AppShell({
                 닫기
               </button>
             </div>
-            {workspaceList}
-            {workspaceActions}
+            <div className={styles.mobileWorkspaceRail}>{workspaceRailContent}</div>
             {workspaceNavigation}
             {workspaceId && channelNavigation}
           </aside>

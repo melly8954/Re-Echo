@@ -37,82 +37,121 @@
   border-radius: 7px;
 }
 
-.workspaceListSection {
-  min-width: 0;
-  display: grid;
-  gap: 8px;
+.workspaceRailContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.workspaceList,
-.workspaceListSkeleton {
-  display: grid;
-  gap: 4px;
-}
-
-.workspaceListSkeleton span {
+.workspaceRailList,
+.workspaceRailSkeleton {
   width: 100%;
-  height: 34px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.workspaceRailSkeleton span,
+.workspaceRailLink,
+.workspaceActionButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.workspaceRailSkeleton span {
   background: rgb(255 255 255 / 72%);
-  border-radius: 6px;
   animation: channel-skeleton-pulse 1.2s ease-in-out infinite alternate;
 }
 
-.workspaceLink,
-.workspaceActions button {
+.workspaceRailLink,
+.workspaceActionButton {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-radius 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.workspaceRailLink img {
   width: 100%;
-  min-height: 36px;
-  padding: 0 10px;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
+  height: 100%;
+  object-fit: cover;
+}
+
+.workspaceRailLink:hover,
+.workspaceActionButton:hover {
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 11px;
+}
+
+.workspaceRailLinkActive {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: 11px;
+}
+
+.workspaceRailEmpty {
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+}
+
+.workspaceRailRetryButton {
+  max-width: 52px;
+  padding: 4px;
   color: var(--color-muted);
   background: transparent;
-  border: 1px solid transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.workspaceActionArea {
+  position: relative;
+  margin-top: auto;
+}
+
+.workspaceActionMenu {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 10px);
+  z-index: 3;
+  width: 184px;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-panel);
+}
+
+.workspaceActionMenu button {
+  padding: 9px 10px;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
-  text-decoration: none;
   text-align: left;
 }
 
-.workspaceLink > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workspaceLink small {
-  color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.workspaceLink:hover,
-.workspaceActions button:hover {
-  color: var(--color-text);
-  background: rgb(255 255 255 / 66%);
-}
-
-.workspaceLinkActive {
-  color: var(--color-text);
-  background: #fff;
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.workspaceActions {
-  margin: 14px 0 22px;
-  display: grid;
-  gap: 4px;
-}
-
-.workspaceActions button {
-  color: var(--color-primary);
-  border-color: var(--color-border);
-  background: var(--color-surface);
+.workspaceActionMenu button:hover {
+  background: var(--color-primary-soft);
 }
 
 .account {
@@ -169,8 +208,9 @@
 .accountButton:focus-visible,
 .channelMenuButton:focus-visible,
 .drawerCloseButton:focus-visible,
-.workspaceLink:focus-visible,
-.workspaceActions button:focus-visible,
+.workspaceRailLink:focus-visible,
+.workspaceActionButton:focus-visible,
+.workspaceActionMenu button:focus-visible,
 .mobileChannelOverlay:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -179,19 +219,29 @@
 .body {
   min-height: calc(100svh - 64px);
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 72px 240px minmax(0, 1fr);
 }
 
 .bodyWithRightSidebar {
-  grid-template-columns: 240px minmax(0, 1fr) 300px;
+  grid-template-columns: 72px 240px minmax(0, 1fr) 300px;
+}
+
+.bodyWithoutChannelSidebar {
+  grid-template-columns: 72px minmax(0, 1fr);
 }
 
 .bodyWithoutSidebar {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.sidebar {
-  padding: 24px 18px;
+.workspaceRail {
+  padding: 16px 14px;
+  background: #e4ece9;
+  border-right: 1px solid var(--color-border);
+}
+
+.channelSidebar {
+  padding: 18px 14px;
   background: #f0f5f3;
   border-right: 1px solid var(--color-border);
 }
@@ -204,47 +254,40 @@
 }
 
 .channelHeader {
-  margin-bottom: 14px;
+  margin: 20px 0 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
 }
 
-.workspaceNavigation {
-  margin-bottom: 22px;
-}
-
-.workspaceHomeLink {
-  min-height: 36px;
-  padding: 0 10px;
+.workspaceHeaderLink {
+  min-height: 46px;
+  padding: 0 8px 12px;
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
   align-items: center;
-  color: var(--color-muted);
-  border-radius: 6px;
+  gap: 10px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
   text-decoration: none;
   font-size: 14px;
   font-weight: 800;
 }
 
-.workspaceHomeLink span {
-  width: 18px;
-  display: inline-grid;
-  place-items: center;
-  font-size: 18px;
-  line-height: 1;
+.workspaceHeaderLink span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.workspaceHomeLink:hover {
-  color: var(--color-text);
-  background: rgb(255 255 255 / 66%);
+.workspaceHeaderLink:hover {
+  color: var(--color-primary);
 }
 
-.workspaceHomeLinkActive {
-  color: var(--color-text);
-  background: #fff;
-  box-shadow: inset 0 0 0 1px var(--color-border);
+.workspaceHeaderLinkActive {
+  color: var(--color-primary);
 }
 
 .sidebarLabel {
@@ -341,7 +384,7 @@
   background: rgb(255 255 255 / 66%);
 }
 
-.workspaceHomeLink:focus-visible,
+.workspaceHeaderLink:focus-visible,
 .channelLink:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -374,7 +417,7 @@
 
 @media (max-width: 1100px) {
   .bodyWithRightSidebar {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 72px 240px minmax(0, 1fr);
   }
 
   .rightSidebar {
@@ -388,7 +431,8 @@
     grid-template-columns: 1fr auto;
   }
 
-  .sidebar,
+  .workspaceRail,
+  .channelSidebar,
   .userName {
     display: none;
   }
@@ -430,6 +474,7 @@
     background: #f0f5f3;
     border-right: 1px solid var(--color-border);
     box-shadow: 12px 0 32px rgb(31 45 42 / 18%);
+    overflow-y: auto;
   }
 
   .mobileChannelHeader {
@@ -440,10 +485,35 @@
     gap: 12px;
   }
 
-  .mobileChannelTitle {
-    min-width: 0;
-    display: flex;
-    gap: 10px;
+  .mobileWorkspaceRail {
+    margin: 0 -2px 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mobileWorkspaceRail .workspaceRailContent {
+    height: auto;
+    flex-direction: row;
     align-items: center;
+    overflow-x: auto;
+  }
+
+  .mobileWorkspaceRail .workspaceRailList,
+  .mobileWorkspaceRail .workspaceRailSkeleton {
+    width: auto;
+    display: flex;
+    gap: 8px;
+  }
+
+  .mobileWorkspaceRail .workspaceActionArea {
+    margin-top: 0;
+    flex: 0 0 auto;
+  }
+
+  .mobileWorkspaceRail .workspaceActionMenu {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    left: auto;
   }
 }
