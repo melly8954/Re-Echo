@@ -15,7 +15,7 @@ import {
   createMessageAttachmentUploadUrl,
   uploadMessageAttachmentToStorage,
 } from './messageAttachmentApi'
-import type { ChannelMessage } from './messageApi'
+import type { ChannelMessage, ChannelMessageAttachment } from './messageApi'
 import styles from './ChannelMessagePanel.module.css'
 
 const MESSAGE_GROUP_INTERVAL_MILLISECONDS = 5 * 60 * 1000
@@ -581,17 +581,12 @@ export function ChannelMessagePanel({
                   {!message.deleted && message.attachments.length > 0 && (
                     <ul className={styles.messageAttachments} aria-label="첨부 파일">
                       {message.attachments.map((attachment) => (
-                        <li key={attachment.fileId}>
-                          <button
-                            type="button"
-                            className={styles.messageAttachmentButton}
-                            onClick={() => void openMessageAttachment(message.id, attachment.fileId)}
-                          >
-                            <span>{attachment.previewImage ? '이미지' : '파일'}</span>
-                            <strong>{attachment.fileName}</strong>
-                            <small>{formatFileSize(attachment.size)}</small>
-                          </button>
-                        </li>
+                        <MessageAttachmentItem
+                          key={attachment.fileId}
+                          workspaceId={workspaceId}
+                          attachment={attachment}
+                          onOpen={() => void openMessageAttachment(message.id, attachment.fileId)}
+                        />
                       ))}
                     </ul>
                   )}
@@ -762,6 +757,63 @@ export function ChannelMessagePanel({
         </div>
       )}
     </div>
+  )
+}
+
+interface MessageAttachmentItemProps {
+  workspaceId: string
+  attachment: ChannelMessageAttachment
+  onOpen: () => void
+}
+
+// 목록 조회 시에는 파일 메타데이터만 받고, 이미지에 한해 짧은 다운로드 URL을 추가로 발급받는다.
+function MessageAttachmentItem({
+  workspaceId,
+  attachment,
+  onOpen,
+}: MessageAttachmentItemProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!attachment.previewImage) {
+      setPreviewUrl(null)
+      return undefined
+    }
+
+    let active = true
+    void createMessageAttachmentDownloadUrl(workspaceId, attachment.fileId)
+      .then(({ downloadUrl }) => {
+        if (active) {
+          setPreviewUrl(downloadUrl)
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPreviewUrl(null)
+        }
+      })
+    return () => {
+      active = false
+    }
+  }, [attachment.fileId, attachment.previewImage, workspaceId])
+
+  return (
+    <li>
+      <button
+        type="button"
+        className={styles.messageAttachmentButton}
+        onClick={onOpen}
+        aria-label={`${attachment.fileName} 열기`}
+      >
+        {previewUrl ? (
+          <img src={previewUrl} alt="" className={styles.messageAttachmentThumbnail} />
+        ) : (
+          <span>{attachment.previewImage ? '이미지' : '파일'}</span>
+        )}
+        <strong>{attachment.fileName}</strong>
+        <small>{formatFileSize(attachment.size)}</small>
+      </button>
+    </li>
   )
 }
 
