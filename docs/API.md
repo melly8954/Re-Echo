@@ -74,7 +74,9 @@
 
 ### 4.3 시간과 ID
 
-- 시간 필드는 ISO-8601 `LocalDateTime` 문자열을 사용한다.
+- 도메인 데이터의 시간 필드는 ISO-8601 `LocalDateTime` 문자열을 사용한다.
+- Access Token·Presigned URL의 만료 시각과 WebSocket event의 `occurredAt`은
+  ISO-8601 UTC `Instant` 문자열을 사용한다.
 - 리소스 ID는 UUID 문자열을 사용한다.
 
 ### 4.4 공통 정렬 규칙
@@ -311,7 +313,7 @@
   "message": "토큰이 재발급되었습니다.",
   "result": {
     "accessToken": "jwt",
-    "accessTokenExpiresAt": "2026-07-06T14:00:00"
+    "accessTokenExpiresAt": "2026-07-06T14:00:00Z"
   }
 }
 ```
@@ -990,7 +992,7 @@
   "result": {
     "fileId": "uuid",
     "uploadUrl": "https://r2-presigned-url",
-    "expiresAt": "2026-07-06T12:10:00"
+    "expiresAt": "2026-07-06T12:10:00Z"
   }
 }
 ```
@@ -1035,7 +1037,7 @@
   "result": {
     "fileId": "uuid",
     "uploadUrl": "https://r2-presigned-url",
-    "expiresAt": "2026-07-06T12:10:00"
+    "expiresAt": "2026-07-06T12:10:00Z"
   }
 }
 ```
@@ -1214,7 +1216,7 @@
 {
   "eventId": "uuid",
   "type": "MESSAGE_CREATED",
-  "occurredAt": "2026-07-06T12:00:00",
+  "occurredAt": "2026-07-06T12:00:00Z",
   "payload": {}
 }
 ```
