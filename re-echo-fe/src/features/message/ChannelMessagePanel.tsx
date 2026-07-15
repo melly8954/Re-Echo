@@ -1,4 +1,4 @@
-import type { FormEvent, KeyboardEvent, PointerEvent } from 'react'
+import type { ChangeEvent, FormEvent, KeyboardEvent, PointerEvent } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../shared/api/apiTypes'
@@ -10,10 +10,28 @@ import {
   useDeleteChannelMessage,
   useUpdateChannelMessage,
 } from './useChannelMessages'
+import {
+  createMessageAttachmentDownloadUrl,
+  createMessageAttachmentUploadUrl,
+  uploadMessageAttachmentToStorage,
+} from './messageAttachmentApi'
 import type { ChannelMessage } from './messageApi'
 import styles from './ChannelMessagePanel.module.css'
 
 const MESSAGE_GROUP_INTERVAL_MILLISECONDS = 5 * 60 * 1000
+const MESSAGE_ATTACHMENT_MAX_SIZE_BYTES = 20 * 1024 * 1024
+
+type AttachmentUploadStatus = 'UPLOADING' | 'UPLOADED' | 'FAILED'
+
+interface PendingMessageAttachment {
+  localId: string
+  file: File
+  previewUrl: string | null
+  status: AttachmentUploadStatus
+  progress: number
+  fileId: string | null
+  errorMessage: string | null
+}
 
 interface ChannelMessagePanelProps {
   workspaceId: string
@@ -35,10 +53,13 @@ export function ChannelMessagePanel({
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
+  const attachmentInputRef = useRef<HTMLInputElement>(null)
   const messageActionPopupRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<number | null>(null)
   const messageLongPressTimeoutRef = useRef<number | null>(null)
+  const attachmentPreviewUrlsRef = useRef(new Set<string>())
   const [content, setContent] = useState('')
+  const [attachments, setAttachments] = useState<PendingMessageAttachment[]>([])
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -73,6 +94,8 @@ export function ChannelMessagePanel({
     [messagesQuery.data],
   )
   const latestMessageId = messages[messages.length - 1]?.id
+  const isAttachmentUploading = attachments.some((attachment) => attachment.status === 'UPLOADING')
+  const hasFailedAttachment = attachments.some((attachment) => attachment.status === 'FAILED')
 
   useLayoutEffect(() => {
     const messageList = messageListRef.current
@@ -92,6 +115,7 @@ export function ChannelMessagePanel({
     if (messageLongPressTimeoutRef.current !== null) {
       window.clearTimeout(messageLongPressTimeoutRef.current)
     }
+    attachmentPreviewUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl))
   }, [])
 
   useEffect(() => {
@@ -100,6 +124,7 @@ export function ChannelMessagePanel({
     setOpenMenuId(null)
     setDeleteTarget(null)
     setMessageActionError(null)
+    clearSelectedAttachments()
   }, [channelId, workspaceId])
 
   useEffect(() => {
@@ -167,7 +192,17 @@ export function ChannelMessagePanel({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const trimmedContent = content.trim()
-    if (!trimmedContent || readOnly || createMessage.isPending) {
+    const uploadedFileIds = attachments
+      .flatMap((attachment) => (
+        attachment.status === 'UPLOADED' && attachment.fileId ? [attachment.fileId] : []
+      ))
+    if (
+      (!trimmedContent && uploadedFileIds.length === 0)
+      || readOnly
+      || createMessage.isPending
+      || isAttachmentUploading
+      || hasFailedAttachment
+    ) {
       return
     }
     setSubmitError(null)
@@ -175,9 +210,10 @@ export function ChannelMessagePanel({
       await createMessage.mutateAsync({
         workspaceId,
         channelId,
-        request: { content: trimmedContent },
+        request: { content: trimmedContent, fileIds: uploadedFileIds },
       })
       setContent('')
+      clearSelectedAttachments()
       window.requestAnimationFrame(() => composerInputRef.current?.focus())
     } catch (error) {
       setSubmitError(
@@ -202,6 +238,105 @@ export function ChannelMessagePanel({
     }
     if (nextContent.trim()) {
       typingTimeoutRef.current = window.setTimeout(() => publishTyping(false), 1000)
+    }
+  }
+
+  async function handleAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    if (selectedFiles.length === 0) {
+      return
+    }
+
+    const selectedAttachments = selectedFiles.map((file, index) => {
+      const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+      if (previewUrl) {
+        attachmentPreviewUrlsRef.current.add(previewUrl)
+      }
+      return {
+        localId: `${Date.now()}-${index}-${file.name}-${file.lastModified}`,
+        file,
+        previewUrl,
+        status: 'UPLOADING' as const,
+        progress: 0,
+        fileId: null,
+        errorMessage: null,
+      }
+    })
+    setAttachments((current) => [...current, ...selectedAttachments])
+
+    await Promise.all(selectedAttachments.map(async (attachment) => {
+      if (attachment.file.size > MESSAGE_ATTACHMENT_MAX_SIZE_BYTES) {
+        updateAttachment(attachment.localId, {
+          status: 'FAILED',
+          errorMessage: '파일 크기는 20MB까지 첨부할 수 있습니다.',
+        })
+        return
+      }
+      try {
+        const presignedUpload = await createMessageAttachmentUploadUrl(workspaceId, {
+          fileName: attachment.file.name,
+          contentType: attachment.file.type || 'application/octet-stream',
+          size: attachment.file.size,
+        })
+        await uploadMessageAttachmentToStorage(
+          presignedUpload.uploadUrl,
+          attachment.file,
+          (progress) => updateAttachment(attachment.localId, { progress }),
+        )
+        updateAttachment(attachment.localId, {
+          status: 'UPLOADED',
+          progress: 100,
+          fileId: presignedUpload.fileId,
+        })
+      } catch (error) {
+        updateAttachment(attachment.localId, {
+          status: 'FAILED',
+          errorMessage: error instanceof ApiError ? error.message : '첨부 파일을 업로드하지 못했습니다.',
+        })
+      }
+    }))
+  }
+
+  function updateAttachment(localId: string, patch: Partial<PendingMessageAttachment>) {
+    setAttachments((current) => current.map((attachment) => (
+      attachment.localId === localId ? { ...attachment, ...patch } : attachment
+    )))
+  }
+
+  function removeAttachment(localId: string) {
+    setAttachments((current) => {
+      const attachment = current.find((item) => item.localId === localId)
+      if (attachment?.previewUrl) {
+        URL.revokeObjectURL(attachment.previewUrl)
+        attachmentPreviewUrlsRef.current.delete(attachment.previewUrl)
+      }
+      return current.filter((attachment) => attachment.localId !== localId)
+    })
+  }
+
+  function clearSelectedAttachments() {
+    attachmentPreviewUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl))
+    attachmentPreviewUrlsRef.current.clear()
+    setAttachments([])
+  }
+
+  async function openMessageAttachment(messageId: string, fileId: string) {
+    setMessageActionError(null)
+    const downloadWindow = window.open('', '_blank')
+    try {
+      const { downloadUrl } = await createMessageAttachmentDownloadUrl(workspaceId, fileId)
+      if (!downloadWindow) {
+        throw new Error('첨부 파일 창을 열지 못했습니다.')
+      }
+      downloadWindow.opener = null
+      downloadWindow.location.replace(downloadUrl)
+    } catch (error) {
+      downloadWindow?.close()
+      setMessageActionError({
+        messageId,
+        message: error instanceof ApiError ? error.message : '첨부 파일을 열지 못했습니다.',
+      })
     }
   }
 
@@ -414,6 +549,23 @@ export function ChannelMessagePanel({
                     {message.deleted ? '삭제된 메시지입니다.' : message.content}
                   </p>
                 )}
+                  {!message.deleted && message.attachments.length > 0 && (
+                    <ul className={styles.messageAttachments} aria-label="첨부 파일">
+                      {message.attachments.map((attachment) => (
+                        <li key={attachment.fileId}>
+                          <button
+                            type="button"
+                            className={styles.messageAttachmentButton}
+                            onClick={() => void openMessageAttachment(message.id, attachment.fileId)}
+                          >
+                            <span>{attachment.previewImage ? '이미지' : '파일'}</span>
+                            <strong>{attachment.fileName}</strong>
+                            <small>{formatFileSize(attachment.size)}</small>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {!message.deleted && !isEditing && !readOnly && canDeleteMessage && openMenuId === message.id && (
                     <div
                       ref={messageActionPopupRef}
@@ -450,7 +602,51 @@ export function ChannelMessagePanel({
         <label className={styles.composerLabel} htmlFor="channel-message-content">
           {readOnly ? '보관된 채널에서는 메시지를 작성할 수 없습니다.' : `${channelName}에 메시지 보내기`}
         </label>
+        {attachments.length > 0 && (
+          <ul className={styles.attachmentPreviewList} aria-label="선택한 첨부 파일">
+            {attachments.map((attachment) => (
+              <li key={attachment.localId} className={styles.attachmentPreviewItem}>
+                {attachment.previewUrl ? (
+                  <img src={attachment.previewUrl} alt="" className={styles.attachmentThumbnail} />
+                ) : (
+                  <span className={styles.attachmentFileIcon} aria-hidden="true">파일</span>
+                )}
+                <div className={styles.attachmentPreviewInfo}>
+                  <strong>{attachment.file.name}</strong>
+                  <span>{formatFileSize(attachment.file.size)}</span>
+                  {attachment.status === 'UPLOADING' && <span>업로드 중 {attachment.progress}%</span>}
+                  {attachment.status === 'UPLOADED' && <span>업로드 완료</span>}
+                  {attachment.status === 'FAILED' && <span className={styles.attachmentError}>{attachment.errorMessage}</span>}
+                </div>
+                <button
+                  type="button"
+                  className={styles.attachmentRemoveButton}
+                  onClick={() => removeAttachment(attachment.localId)}
+                  disabled={createMessage.isPending}
+                >
+                  제거
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <div className={styles.composerField}>
+          <input
+            ref={attachmentInputRef}
+            className={styles.attachmentInput}
+            type="file"
+            multiple
+            onChange={(event) => void handleAttachmentSelection(event)}
+            disabled={readOnly || createMessage.isPending}
+          />
+          <button
+            type="button"
+            className={styles.attachmentSelectButton}
+            onClick={() => attachmentInputRef.current?.click()}
+            disabled={readOnly || createMessage.isPending}
+          >
+            파일 첨부
+          </button>
           <textarea
             id="channel-message-content"
             ref={composerInputRef}
@@ -461,10 +657,20 @@ export function ChannelMessagePanel({
             disabled={readOnly || createMessage.isPending}
             rows={1}
           />
-          <button type="submit" disabled={readOnly || createMessage.isPending || !content.trim()}>
+          <button
+            type="submit"
+            disabled={
+              readOnly
+              || createMessage.isPending
+              || isAttachmentUploading
+              || hasFailedAttachment
+              || (!content.trim() && attachments.every((attachment) => attachment.status !== 'UPLOADED'))
+            }
+          >
             {createMessage.isPending ? '전송 중' : '전송'}
           </button>
         </div>
+        {hasFailedAttachment && <p className={styles.submitError}>업로드에 실패한 첨부 파일을 제거해 주세요.</p>}
         {submitError && <p className={styles.submitError} role="alert">{submitError}</p>}
       </form>
       {typingUserIds.filter((userId) => userId !== currentMembershipId).length > 0 && (
@@ -529,4 +735,11 @@ function isWithinMessageGroupInterval(firstValue: string, secondValue: string) {
     && firstDate.getDate() === secondDate.getDate()
   return isSameDate
     && secondDate.getTime() - firstDate.getTime() < MESSAGE_GROUP_INTERVAL_MILLISECONDS
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.ceil(size / 1024))}KB`
+  }
+  return `${(size / (1024 * 1024)).toFixed(1)}MB`
 }
