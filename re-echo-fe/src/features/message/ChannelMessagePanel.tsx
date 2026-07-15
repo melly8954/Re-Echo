@@ -33,6 +33,7 @@ export function ChannelMessagePanel({
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
+  const messageActionPopupRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<number | null>(null)
   const messageLongPressTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
@@ -98,6 +99,31 @@ export function ChannelMessagePanel({
     setDeleteTarget(null)
     setMessageActionError(null)
   }, [channelId, workspaceId])
+
+  useEffect(() => {
+    if (!openMenuId) {
+      return undefined
+    }
+
+    function closeMessageActionMenu(event: globalThis.PointerEvent) {
+      if (!messageActionPopupRef.current?.contains(event.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+
+    function closeMessageActionMenuOnEscape(event: globalThis.KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpenMenuId(null)
+      }
+    }
+
+    document.addEventListener('pointerdown', closeMessageActionMenu)
+    document.addEventListener('keydown', closeMessageActionMenuOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeMessageActionMenu)
+      document.removeEventListener('keydown', closeMessageActionMenuOnEscape)
+    }
+  }, [openMenuId])
 
   useEffect(() => {
     if (!deleteTarget) {
@@ -377,7 +403,12 @@ export function ChannelMessagePanel({
                   </p>
                 )}
                   {!message.deleted && !isEditing && !readOnly && canDeleteMessage && openMenuId === message.id && (
-                    <div className={styles.messageActionPopup} role="menu" aria-label="메시지 작업 메뉴">
+                    <div
+                      ref={messageActionPopupRef}
+                      className={styles.messageActionPopup}
+                      role="menu"
+                      aria-label="메시지 작업 메뉴"
+                    >
                       {isMine && (
                         <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
                           수정
