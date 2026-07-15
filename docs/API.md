@@ -74,7 +74,7 @@
 
 ### 4.3 시간과 ID
 
-- 시간 필드는 ISO-8601 UTC 문자열을 사용한다.
+- 시간 필드는 ISO-8601 `LocalDateTime` 문자열을 사용한다.
 - 리소스 ID는 UUID 문자열을 사용한다.
 
 ### 4.4 공통 정렬 규칙
@@ -120,7 +120,7 @@
     "type": "CURSOR",
     "size": 30,
     "cursor": {
-      "createdAt": "2026-07-06T12:00:00Z",
+      "createdAt": "2026-07-06T12:00:00",
       "messageId": "11111111-1111-1111-1111-111111111111"
     }
   }
@@ -166,7 +166,7 @@
       "size": 30,
       "hasNext": true,
       "nextCursor": {
-        "createdAt": "2026-07-06T12:00:00Z",
+        "createdAt": "2026-07-06T12:00:00",
         "messageId": "11111111-1111-1111-1111-111111111111"
       }
     }
@@ -311,7 +311,7 @@
   "message": "토큰이 재발급되었습니다.",
   "result": {
     "accessToken": "jwt",
-    "accessTokenExpiresAt": "2026-07-06T14:00:00Z"
+    "accessTokenExpiresAt": "2026-07-06T14:00:00"
   }
 }
 ```
@@ -395,7 +395,7 @@
         "imageUrl": "https://...",
         "role": "OWNER",
         "status": "ACTIVE",
-        "lastVisitedAt": "2026-07-06T12:00:00Z",
+        "lastVisitedAt": "2026-07-06T12:00:00",
         "defaultChannelId": "uuid",
         "unreadChannelCount": 2
       }
@@ -549,7 +549,7 @@
   "result": {
     "workspaceName": "Re-Echo Team",
     "workspaceImageUrl": "https://...",
-    "expiresAt": "2026-07-07T12:00:00Z"
+    "expiresAt": "2026-07-07T12:00:00"
   }
 }
 ```
@@ -870,8 +870,8 @@
             "previewImage": true
           }
         ],
-        "createdAt": "2026-07-06T12:00:00Z",
-        "updatedAt": "2026-07-06T12:00:00Z",
+        "createdAt": "2026-07-06T12:00:00",
+        "updatedAt": "2026-07-06T12:00:00",
         "edited": false,
         "deleted": false
       }
@@ -881,7 +881,7 @@
       "size": 30,
       "hasNext": true,
       "nextCursor": {
-        "createdAt": "2026-07-06T11:59:00Z",
+        "createdAt": "2026-07-06T11:59:00",
         "messageId": "uuid"
       }
     }
@@ -986,7 +986,7 @@
   "result": {
     "fileId": "uuid",
     "uploadUrl": "https://r2-presigned-url",
-    "expiresAt": "2026-07-06T12:10:00Z"
+    "expiresAt": "2026-07-06T12:10:00"
   }
 }
 ```
@@ -1031,7 +1031,7 @@
   "result": {
     "fileId": "uuid",
     "uploadUrl": "https://r2-presigned-url",
-    "expiresAt": "2026-07-06T12:10:00Z"
+    "expiresAt": "2026-07-06T12:10:00"
   }
 }
 ```
@@ -1210,7 +1210,7 @@
 {
   "eventId": "uuid",
   "type": "MESSAGE_CREATED",
-  "occurredAt": "2026-07-06T12:00:00Z",
+  "occurredAt": "2026-07-06T12:00:00",
   "payload": {}
 }
 ```
@@ -1224,8 +1224,8 @@
     "channelId": "uuid",
     "content": "안녕하세요",
     "attachments": [],
-    "createdAt": "2026-07-06T12:00:00Z",
-    "updatedAt": "2026-07-06T12:00:00Z"
+    "createdAt": "2026-07-06T12:00:00",
+    "updatedAt": "2026-07-06T12:00:00"
   }
 }
 ```
@@ -1310,6 +1310,9 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 - `CHANNEL_ALREADY_JOINED`
 - `CHANNEL_JOIN_FORBIDDEN`
 - `CHANNEL_GENERAL_LEAVE_FORBIDDEN`
+- `CHANNEL_MEMBER_REMOVED`
+- `CHANNEL_CREATOR_LEAVE_FORBIDDEN`
+- `CHANNEL_ARCHIVED`
 - `CHANNEL_RESTORE_NOT_ALLOWED`
 
 ### 16.7 Message
