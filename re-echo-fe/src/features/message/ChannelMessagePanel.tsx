@@ -13,6 +13,8 @@ import {
 import type { ChannelMessage } from './messageApi'
 import styles from './ChannelMessagePanel.module.css'
 
+const MESSAGE_GROUP_INTERVAL_MILLISECONDS = 5 * 60 * 1000
+
 interface ChannelMessagePanelProps {
   workspaceId: string
   channelId: string
@@ -330,14 +332,21 @@ export function ChannelMessagePanel({
         {messagesQuery.isFetchingNextPage && <p className={styles.historyLoading}>이전 메시지를 불러오는 중입니다.</p>}
         {!messagesQuery.hasNextPage && messages.length > 0 && <p className={styles.historyEnd}>대화의 시작입니다.</p>}
         {messages.length === 0 && <p className={styles.empty}>첫 메시지를 보내 대화를 시작해 보세요.</p>}
-        {messages.map((message) => {
+        {messages.map((message, index) => {
           const isMine = message.author.memberId === currentMembershipId
+          const previousMessage = messages[index - 1]
+          const isContinuation = Boolean(
+            previousMessage &&
+            previousMessage.author.memberId === message.author.memberId &&
+            isWithinMessageGroupInterval(previousMessage.createdAt, message.createdAt),
+          )
+          const showAuthor = !isMine && !isContinuation
           const isEditing = editingMessageId === message.id
           const canDeleteMessage = isMine || canManageMessages
           return (
             <article
               key={message.id}
-              className={`${styles.message} ${isMine ? styles.myMessage : ''}`}
+              className={`${styles.message} ${isMine ? styles.myMessage : ''} ${isContinuation ? styles.continuedMessage : ''}`}
               tabIndex={!message.deleted && !isEditing && !readOnly && canDeleteMessage ? 0 : undefined}
               onContextMenu={(event) => {
                 if (!message.deleted && !isEditing && !readOnly && canDeleteMessage) {
@@ -366,21 +375,22 @@ export function ChannelMessagePanel({
                 }
               }}
             >
-              {!isMine && message.author.profileImageUrl ? (
+              {showAuthor && message.author.profileImageUrl ? (
                 <img src={message.author.profileImageUrl} alt="" className={styles.avatar} />
-              ) : !isMine ? (
+              ) : showAuthor ? (
                 <span className={styles.avatarFallback} aria-hidden="true">
                   {message.author.displayName.slice(0, 1)}
                 </span>
               ) : null}
-              <div className={styles.messageBody}>
-                <div className={styles.messageContent}>
-                  {(!isMine || (message.edited && !message.deleted)) && (
+              <div className={styles.messageGroup}>
+                {showAuthor && <strong className={styles.messageAuthor}>{message.author.displayName}</strong>}
+                <div className={styles.messageBody}>
+                  <div className={styles.messageContent}>
+                    {message.edited && !message.deleted && (
                     <div className={styles.messageMeta}>
-                      {!isMine && <strong>{message.author.displayName}</strong>}
-                      {message.edited && !message.deleted && <span>수정됨</span>}
+                      <span>수정됨</span>
                     </div>
-                  )}
+                    )}
                 {isEditing ? (
                   <form className={styles.messageEditForm} onSubmit={(event) => void handleMessageUpdate(event, message)}>
                     <textarea
@@ -426,10 +436,11 @@ export function ChannelMessagePanel({
                       {messageActionError.message}
                     </p>
                   )}
+                  </div>
+                  <time className={styles.messageTime} dateTime={message.createdAt}>
+                    {formatMessageTime(message.createdAt)}
+                  </time>
                 </div>
-                <time className={styles.messageTime} dateTime={message.createdAt}>
-                  {formatMessageTime(message.createdAt)}
-                </time>
               </div>
             </article>
           )
@@ -508,4 +519,14 @@ function formatMessageTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function isWithinMessageGroupInterval(firstValue: string, secondValue: string) {
+  const firstDate = new Date(firstValue)
+  const secondDate = new Date(secondValue)
+  const isSameDate = firstDate.getFullYear() === secondDate.getFullYear()
+    && firstDate.getMonth() === secondDate.getMonth()
+    && firstDate.getDate() === secondDate.getDate()
+  return isSameDate
+    && secondDate.getTime() - firstDate.getTime() < MESSAGE_GROUP_INTERVAL_MILLISECONDS
 }
