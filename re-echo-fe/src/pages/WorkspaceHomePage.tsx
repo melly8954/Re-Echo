@@ -48,9 +48,10 @@ export function WorkspaceHomePage() {
   const inviteLinkQuery = useWorkspaceInviteLink(routeWorkspaceId, canIssueInvite)
   const channels = channelsQuery.data?.contents ?? []
   const members = workspaceMembersQuery.data?.contents ?? []
-  const hasNoActiveInviteLink =
+  const requiresInviteIssue =
     inviteLinkQuery.error instanceof ApiError &&
-    inviteLinkQuery.error.errorCode === 'INVITE_NOT_FOUND'
+    (inviteLinkQuery.error.errorCode === 'INVITE_NOT_FOUND' ||
+      inviteLinkQuery.error.errorCode === 'INVITE_EXPIRED')
 
   useEffect(() => {
     if (!isWorkspaceLeaveOpen) {
@@ -290,7 +291,7 @@ export function WorkspaceHomePage() {
                   <p>워크스페이스 전체에 참여할 수 있는 링크입니다.</p>
                 </div>
                 {inviteLinkQuery.isLoading && <span>초대 링크를 불러오는 중입니다.</span>}
-                {hasNoActiveInviteLink && (
+                {requiresInviteIssue && (
                   <button
                     type="button"
                     onClick={() => void handleIssueInviteLink()}
@@ -299,7 +300,7 @@ export function WorkspaceHomePage() {
                     {issueInviteLink.isPending ? '발급 중' : '초대 링크 발급'}
                   </button>
                 )}
-                {inviteLinkQuery.isError && !hasNoActiveInviteLink && (
+                {inviteLinkQuery.isError && !requiresInviteIssue && (
                   <button type="button" onClick={() => void inviteLinkQuery.refetch()}>
                     초대 링크 다시 불러오기
                   </button>
