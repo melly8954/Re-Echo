@@ -50,7 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout"
+                                "/api/v1/auth/logout",
+                                "/ws"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/invite-links/*").permitAll()
                         .anyRequest().authenticated()
