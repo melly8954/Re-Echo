@@ -4,6 +4,7 @@ import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.ChannelListResponse;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
+import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
 import com.reecho.reechobe.channel.service.command.ChannelCommandService;
 import com.reecho.reechobe.channel.service.query.ChannelQueryService;
 import com.reecho.reechobe.common.response.ApiResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -99,6 +101,17 @@ public class ChannelController {
     ) {
         channelCommandService.leaveChannel(principal.userId(), workspaceId, channelId);
         return ApiResponse.success(HttpStatus.OK, "채널에서 나갔습니다.", null);
+    }
+
+    @PutMapping("/{channelId}/read-state")
+    public ApiResponse<Void> updateChannelReadState(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId,
+            @Valid @RequestBody UpdateChannelReadStateRequest request
+    ) {
+        channelCommandService.updateChannelReadState(principal.userId(), workspaceId, channelId, request);
+        return ApiResponse.success(HttpStatus.OK, "채널 읽음 상태를 갱신했습니다.", null);
     }
 
     @DeleteMapping("/{channelId}/members/{memberId}")

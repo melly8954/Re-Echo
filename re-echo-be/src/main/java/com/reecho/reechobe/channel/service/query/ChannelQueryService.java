@@ -64,6 +64,15 @@ public class ChannelQueryService {
                         channelMemberCount -> channelMemberCount.getChannelId(),
                         channelMemberCount -> channelMemberCount.getMemberCount()
                 ));
+        List<UUID> channelIds = channels.stream().map(Channel::getId).toList();
+        Map<UUID, Long> unreadCountByChannelId = channelIds.isEmpty()
+                ? Map.of()
+                : channelMembershipRepository.countUnreadActiveMessagesByChannelIds(membership.getId(), channelIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                unreadCount -> unreadCount.getChannelId(),
+                                unreadCount -> unreadCount.getUnreadCount()
+                        ));
 
         return ChannelListResponse.of(
                 channels.stream()
@@ -71,7 +80,8 @@ public class ChannelQueryService {
                                 channel,
                                 joinedChannelIds.contains(channel.getId()),
                                 membership.getId(),
-                                memberCountByChannelId.getOrDefault(channel.getId(), 0L)
+                                memberCountByChannelId.getOrDefault(channel.getId(), 0L),
+                                unreadCountByChannelId.getOrDefault(channel.getId(), 0L)
                         ))
                         .toList()
         );

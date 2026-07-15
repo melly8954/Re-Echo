@@ -3,13 +3,16 @@ package com.reecho.reechobe.channel.service.command;
 import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
+import com.reecho.reechobe.channel.domain.ChannelReadState;
 import com.reecho.reechobe.channel.domain.ChannelStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
+import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
+import com.reecho.reechobe.channel.repository.ChannelReadStateRepository;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.exception.CommonErrorCode;
@@ -18,6 +21,9 @@ import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
 import com.reecho.reechobe.member.exception.MemberErrorCode;
 import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
+import com.reecho.reechobe.message.domain.Message;
+import com.reecho.reechobe.message.exception.MessageErrorCode;
+import com.reecho.reechobe.message.repository.MessageRepository;
 import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
@@ -39,6 +45,8 @@ public class ChannelCommandService {
     private final WorkspaceMembershipRepository workspaceMembershipRepository;
     private final ChannelRepository channelRepository;
     private final ChannelMembershipRepository channelMembershipRepository;
+    private final ChannelReadStateRepository channelReadStateRepository;
+    private final MessageRepository messageRepository;
 
     @Transactional
     public CreatedChannelResponse createChannel(UUID userId, UUID workspaceId, CreateChannelRequest request) {
@@ -161,6 +169,32 @@ public class ChannelCommandService {
         channelMembership.remove();
     }
 
+    @Transactional
+    public void updateChannelReadState(
+            UUID userId,
+            UUID workspaceId,
+            UUID channelId,
+            UpdateChannelReadStateRequest request
+    ) {
+        WorkspaceMembership membership = getReadableWorkspaceMembership(userId, workspaceId);
+        Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        ChannelMembership channelMembership = channelMembershipRepository
+                .findByChannelIdAndWorkspaceMembershipId(channel.getId(), membership.getId())
+                .filter(foundMembership -> foundMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED));
+        Message requestedMessage = messageRepository.findById(request.lastReadMessageId())
+                .filter(message -> message.getChannelId().equals(channelId))
+                .orElseThrow(() -> new BusinessException(MessageErrorCode.MESSAGE_NOT_FOUND));
+
+        channelReadStateRepository.findByChannelMembershipId(channelMembership.getId())
+                .ifPresentOrElse(
+                        readState -> advanceReadState(readState, requestedMessage),
+                        () -> channelReadStateRepository.save(
+                                ChannelReadState.create(channelMembership.getId(), requestedMessage.getId())
+                        )
+                );
+    }
+
     private void validateActiveWorkspace(UUID workspaceId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
@@ -180,11 +214,47 @@ public class ChannelCommandService {
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
     }
 
+    private WorkspaceMembership getReadableWorkspaceMembership(UUID userId, UUID workspaceId) {
+        workspaceRepository.findById(workspaceId)
+                .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
+        return workspaceMembershipRepository
+                .findByWorkspaceIdAndUserIdAndStatus(workspaceId, userId, WorkspaceMembershipStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
+    }
+
     private Channel getActiveWorkspaceChannel(UUID workspaceId, UUID channelId) {
         return channelRepository.findById(channelId)
                 .filter(channel -> channel.getWorkspaceId().equals(workspaceId))
                 .filter(channel -> channel.getStatus() == ChannelStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
+    }
+
+    private Channel getReadableWorkspaceChannel(UUID workspaceId, UUID channelId) {
+        return channelRepository.findById(channelId)
+                .filter(channel -> channel.getWorkspaceId().equals(workspaceId))
+                .filter(channel -> channel.getStatus() != ChannelStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
+    }
+
+    private void advanceReadState(ChannelReadState readState, Message requestedMessage) {
+        UUID currentMessageId = readState.getLastReadMessageId();
+        if (currentMessageId == null || currentMessageId.equals(requestedMessage.getId())) {
+            if (currentMessageId == null) {
+                readState.advanceTo(requestedMessage.getId());
+            }
+            return;
+        }
+
+        messageRepository.findById(currentMessageId)
+                .filter(currentMessage -> isAfter(requestedMessage, currentMessage))
+                .ifPresent(ignored -> readState.advanceTo(requestedMessage.getId()));
+    }
+
+    private boolean isAfter(Message source, Message target) {
+        int createdAtComparison = source.getCreatedAt().compareTo(target.getCreatedAt());
+        return createdAtComparison > 0
+                || (createdAtComparison == 0 && source.getId().compareTo(target.getId()) > 0);
     }
 
     private Set<UUID> initialMemberIds(Set<UUID> requestedMemberIds, UUID creatorMembershipId) {

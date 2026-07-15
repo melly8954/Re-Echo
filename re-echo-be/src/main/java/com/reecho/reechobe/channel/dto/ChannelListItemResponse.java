@@ -21,7 +21,8 @@ public record ChannelListItemResponse(
             Channel channel,
             boolean joined,
             UUID membershipId,
-            long memberCount
+            long memberCount,
+            long unreadCount
     ) {
         return new ChannelListItemResponse(
                 channel.getId(),
@@ -30,7 +31,7 @@ public record ChannelListItemResponse(
                 channel.isGeneral(),
                 joined,
                 channel.getCreatedByMembershipId().equals(membershipId),
-                0,
+                Math.toIntExact(unreadCount),
                 memberCount
         );
     }

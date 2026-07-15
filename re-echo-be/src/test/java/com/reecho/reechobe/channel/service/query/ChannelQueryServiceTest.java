@@ -15,6 +15,7 @@ import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMemberCountProjection;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
+import com.reecho.reechobe.channel.repository.ChannelUnreadCountProjection;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
@@ -86,6 +87,13 @@ class ChannelQueryServiceTest {
                 List.of(generalChannel.getId()),
                 ChannelMembershipStatus.ACTIVE
         )).thenReturn(List.of(memberCount));
+        ChannelUnreadCountProjection unreadCount = mock(ChannelUnreadCountProjection.class);
+        when(unreadCount.getChannelId()).thenReturn(generalChannel.getId());
+        when(unreadCount.getUnreadCount()).thenReturn(3L);
+        when(channelMembershipRepository.countUnreadActiveMessagesByChannelIds(
+                membership.getId(),
+                List.of(generalChannel.getId())
+        )).thenReturn(List.of(unreadCount));
 
         ChannelListResponse result = service.getChannels(userId, workspace.getId());
 
@@ -94,7 +102,7 @@ class ChannelQueryServiceTest {
             assertThat(channel.name()).isEqualTo("general");
             assertThat(channel.general()).isTrue();
             assertThat(channel.joined()).isTrue();
-            assertThat(channel.unreadCount()).isZero();
+            assertThat(channel.unreadCount()).isEqualTo(3);
             assertThat(channel.memberCount()).isEqualTo(2L);
         });
     }

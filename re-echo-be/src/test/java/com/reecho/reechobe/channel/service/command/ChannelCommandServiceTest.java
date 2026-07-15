@@ -11,12 +11,15 @@ import static org.mockito.Mockito.when;
 import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
+import com.reecho.reechobe.channel.domain.ChannelReadState;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
+import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
+import com.reecho.reechobe.channel.repository.ChannelReadStateRepository;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.common.exception.CommonErrorCode;
@@ -25,6 +28,8 @@ import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
 import com.reecho.reechobe.member.exception.MemberErrorCode;
 import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
+import com.reecho.reechobe.message.repository.MessageRepository;
+import com.reecho.reechobe.message.domain.Message;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
@@ -57,6 +62,12 @@ class ChannelCommandServiceTest {
     @Mock
     private ChannelMembershipRepository channelMembershipRepository;
 
+    @Mock
+    private ChannelReadStateRepository channelReadStateRepository;
+
+    @Mock
+    private MessageRepository messageRepository;
+
     private ChannelCommandService service;
 
     @BeforeEach
@@ -65,7 +76,9 @@ class ChannelCommandServiceTest {
                 workspaceRepository,
                 workspaceMembershipRepository,
                 channelRepository,
-                channelMembershipRepository
+                channelMembershipRepository,
+                channelReadStateRepository,
+                messageRepository
         );
     }
 
@@ -775,6 +788,40 @@ class ChannelCommandServiceTest {
                 .isEqualTo(ChannelErrorCode.CHANNEL_GENERAL_LEAVE_FORBIDDEN);
 
         verifyNoInteractions(channelMembershipRepository);
+    }
+
+    @Test
+    void 채널_멤버는_최신_메시지까지_읽음_위치를_갱신할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership member = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.MEMBER);
+        Channel channel = Channel.createGeneral(workspace.getId(), member.getId());
+        ChannelMembership channelMembership = ChannelMembership.join(channel.getId(), member.getId());
+        Message message = Message.create(channel.getId(), member.getId(), "확인했습니다.");
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(),
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(member));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
+                .thenReturn(Optional.of(channelMembership));
+        when(messageRepository.findById(message.getId())).thenReturn(Optional.of(message));
+        when(channelReadStateRepository.findByChannelMembershipId(channelMembership.getId()))
+                .thenReturn(Optional.empty());
+
+        service.updateChannelReadState(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new UpdateChannelReadStateRequest(message.getId())
+        );
+
+        ArgumentCaptor<ChannelReadState> readStateCaptor = ArgumentCaptor.forClass(ChannelReadState.class);
+        verify(channelReadStateRepository).save(readStateCaptor.capture());
+        assertThat(readStateCaptor.getValue().getChannelMembershipId()).isEqualTo(channelMembership.getId());
+        assertThat(readStateCaptor.getValue().getLastReadMessageId()).isEqualTo(message.getId());
     }
 
     private Workspace createWorkspace(UUID createdByUserId) {
