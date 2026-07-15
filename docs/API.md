@@ -1197,6 +1197,11 @@
 /ws
 ```
 
+- 클라이언트는 STOMP `CONNECT` frame의 `Authorization` header에
+  `Bearer {accessToken}`을 전달한다.
+- 서버는 `CONNECT`, `/sub/**` 구독, `/pub/**` 발행마다 인증 사용자와
+  채널 멤버십을 검증한다.
+
 ### 14.2 구독 채널
 
 ```text
