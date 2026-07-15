@@ -23,9 +23,13 @@ public class FileCleanupScheduler {
         if (!fileCleanupProperties.enabled()) {
             return;
         }
-        int deletedCount = fileCleanupService.cleanupOrphanedProfileImages();
-        if (deletedCount > 0) {
-            log.info("Deleted orphaned profile images. count={}", deletedCount);
+        int deletedProfileImageCount = fileCleanupService.cleanupOrphanedProfileImages();
+        int deletedMessageAttachmentCount = fileCleanupService.cleanupUnattachedMessageAttachments();
+        if (deletedProfileImageCount > 0) {
+            log.info("고아 프로필 이미지를 삭제했습니다. count={}", deletedProfileImageCount);
+        }
+        if (deletedMessageAttachmentCount > 0) {
+            log.info("미연결 첨부 파일을 삭제했습니다. count={}", deletedMessageAttachmentCount);
         }
     }
 }

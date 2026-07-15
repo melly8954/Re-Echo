@@ -2,6 +2,7 @@ package com.reecho.reechobe.message.controller;
 
 import com.reecho.reechobe.common.response.ApiResponse;
 import com.reecho.reechobe.common.response.CursorPageResponse;
+import com.reecho.reechobe.file.service.MessageAttachmentFileService;
 import com.reecho.reechobe.message.dto.ChannelMessageResponse;
 import com.reecho.reechobe.message.dto.CreateMessageRequest;
 import com.reecho.reechobe.message.dto.MessageCursorResponse;
@@ -36,6 +37,7 @@ public class MessageController {
 
     private final MessageQueryService messageQueryService;
     private final MessageCommandService messageCommandService;
+    private final MessageAttachmentFileService messageAttachmentFileService;
 
     // 채널 멤버가 최신 메시지 또는 다음 과거 메시지 페이지를 조회한다.
     @GetMapping
@@ -67,6 +69,11 @@ public class MessageController {
             @PathVariable UUID channelId,
             @Valid @RequestBody CreateMessageRequest request
     ) {
+        messageAttachmentFileService.requireUploadedAttachments(
+                principal.userId(),
+                workspaceId,
+                request.fileIds()
+        );
         ChannelMessageResponse result = messageCommandService.createMessage(
                 principal.userId(),
                 workspaceId,
@@ -85,6 +92,11 @@ public class MessageController {
             @PathVariable UUID messageId,
             @Valid @RequestBody UpdateMessageRequest request
     ) {
+        messageAttachmentFileService.requireUploadedAttachments(
+                principal.userId(),
+                workspaceId,
+                request.fileIds()
+        );
         ChannelMessageResponse result = messageCommandService.updateMessage(
                 principal.userId(),
                 workspaceId,

@@ -58,4 +58,37 @@ public interface FileObjectRepository extends JpaRepository<FileObject, UUID> {
             nativeQuery = true
     )
     boolean existsProfileImageReference(@Param("fileId") UUID fileId);
+
+    @Query(
+            value = """
+                    SELECT fo.*
+                    FROM file_objects fo
+                    WHERE fo.purpose = 'MESSAGE_ATTACHMENT'
+                      AND fo.status = 'ACTIVE'
+                      AND fo.created_at < :cutoff
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM message_attachments ma
+                          WHERE ma.file_object_id = fo.id
+                      )
+                    ORDER BY fo.created_at ASC
+                    """,
+            nativeQuery = true
+    )
+    List<FileObject> findUnattachedMessageCleanupCandidates(
+            @Param("cutoff") LocalDateTime cutoff,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM message_attachments ma
+                        WHERE ma.file_object_id = :fileId
+                    )
+                    """,
+            nativeQuery = true
+    )
+    boolean existsMessageAttachmentReference(@Param("fileId") UUID fileId);
 }

@@ -100,12 +100,45 @@ public class FileObject {
                 .build();
     }
 
+    public static FileObject createMessageAttachment(
+            UUID fileId,
+            UUID workspaceId,
+            UUID uploadedByUserId,
+            UUID uploadedByMembershipId,
+            String storageKey,
+            String originalFilename,
+            String contentType,
+            long fileSizeBytes
+    ) {
+        return FileObject.builder()
+                .id(fileId)
+                .workspaceId(workspaceId)
+                .uploadedByUserId(uploadedByUserId)
+                .uploadedByMembershipId(uploadedByMembershipId)
+                .purpose(FilePurpose.MESSAGE_ATTACHMENT)
+                .storageProvider(StorageProvider.R2)
+                .storageKey(storageKey)
+                .originalFilename(originalFilename)
+                .contentType(contentType)
+                .fileSizeBytes(fileSizeBytes)
+                .status(FileStatus.ACTIVE)
+                .build();
+    }
+
     public boolean isOwnedBy(UUID userId) {
         return uploadedByUserId.equals(userId);
     }
 
     public boolean isProfileImage() {
         return purpose == FilePurpose.PROFILE_IMAGE;
+    }
+
+    public boolean isMessageAttachment() {
+        return purpose == FilePurpose.MESSAGE_ATTACHMENT;
+    }
+
+    public boolean isActive() {
+        return status == FileStatus.ACTIVE;
     }
 
     public boolean isDeleted() {

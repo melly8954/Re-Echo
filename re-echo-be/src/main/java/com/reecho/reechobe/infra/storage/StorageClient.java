@@ -8,6 +8,8 @@ public interface StorageClient {
 
     PresignedUpload presignPut(String storageKey, String contentType, Duration ttl);
 
+    PresignedDownload presignGet(String storageKey, Duration ttl);
+
     boolean exists(String storageKey);
 
     void delete(String storageKey);
@@ -16,6 +18,12 @@ public interface StorageClient {
 
     record PresignedUpload(
             String uploadUrl,
+            Instant expiresAt
+    ) {
+    }
+
+    record PresignedDownload(
+            String downloadUrl,
             Instant expiresAt
     ) {
     }

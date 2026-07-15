@@ -10,11 +10,14 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
@@ -41,6 +44,25 @@ public class R2StorageClient implements StorageClient {
                     .build();
             PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(presignRequest);
             return new PresignedUpload(
+                    presignedRequest.url().toString(),
+                    Instant.now().plus(ttl)
+            );
+        }
+    }
+
+    @Override
+    public PresignedDownload presignGet(String storageKey, Duration ttl) {
+        requireConfigured();
+        try (S3Presigner presigner = createPresigner()) {
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(ttl)
+                    .getObjectRequest(GetObjectRequest.builder()
+                            .bucket(properties.bucket())
+                            .key(storageKey)
+                            .build())
+                    .build();
+            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
+            return new PresignedDownload(
                     presignedRequest.url().toString(),
                     Instant.now().plus(ttl)
             );
