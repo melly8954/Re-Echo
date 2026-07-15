@@ -152,8 +152,9 @@ public class MessageCommandService {
                 .orElseThrow(() -> new BusinessException(MessageErrorCode.MESSAGE_NOT_FOUND));
     }
 
-    private String normalizeContent(String content) {
-        return content == null || content.isBlank() ? null : content.trim();
+    static String normalizeContent(String content) {
+        // 첨부 전용 메시지는 DB의 NOT NULL 제약을 지키면서 빈 본문으로 저장한다.
+        return content == null || content.isBlank() ? "" : content.trim();
     }
 
     private List<UUID> normalizeFileIds(List<UUID> fileIds) {
@@ -161,7 +162,7 @@ public class MessageCommandService {
     }
 
     private void validateMessageInput(String content, List<UUID> fileIds) {
-        if (content == null && fileIds.isEmpty()) {
+        if (content.isEmpty() && fileIds.isEmpty()) {
             throw new BusinessException(MessageErrorCode.MESSAGE_EMPTY_CONTENT);
         }
         if (new HashSet<>(fileIds).size() != fileIds.size()) {
