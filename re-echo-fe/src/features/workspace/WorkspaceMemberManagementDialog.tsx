@@ -29,6 +29,8 @@ export function WorkspaceMemberManagementDialog({
   const workspaceMembersQuery = useWorkspaceMembers(workspaceId)
   const changeMemberRole = useChangeWorkspaceMemberRole()
   const removeMember = useRemoveWorkspaceMember()
+  const resetChangeMemberRole = changeMemberRole.reset
+  const resetRemoveMember = removeMember.reset
   const [removalCandidate, setRemovalCandidate] = useState<WorkspaceMember | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const members = workspaceMembersQuery.data?.contents ?? []
@@ -75,10 +77,10 @@ export function WorkspaceMemberManagementDialog({
     if (!isOpen) {
       setRemovalCandidate(null)
       setActionError(null)
-      changeMemberRole.reset()
-      removeMember.reset()
+      resetChangeMemberRole()
+      resetRemoveMember()
     }
-  }, [changeMemberRole, isOpen, removeMember])
+  }, [isOpen, resetChangeMemberRole, resetRemoveMember])
 
   if (!isOpen) {
     return null
