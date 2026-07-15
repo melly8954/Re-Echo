@@ -375,10 +375,12 @@ export function ChannelMessagePanel({
               ) : null}
               <div className={styles.messageBody}>
                 <div className={styles.messageContent}>
-                  <div className={styles.messageMeta}>
-                    <strong>{isMine ? '(나)' : message.author.displayName}</strong>
-                    {message.edited && !message.deleted && <span>수정됨</span>}
-                  </div>
+                  {(!isMine || (message.edited && !message.deleted)) && (
+                    <div className={styles.messageMeta}>
+                      {!isMine && <strong>{message.author.displayName}</strong>}
+                      {message.edited && !message.deleted && <span>수정됨</span>}
+                    </div>
+                  )}
                 {isEditing ? (
                   <form className={styles.messageEditForm} onSubmit={(event) => void handleMessageUpdate(event, message)}>
                     <textarea
