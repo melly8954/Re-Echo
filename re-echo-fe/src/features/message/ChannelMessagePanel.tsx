@@ -1,5 +1,5 @@
 import type { FormEvent, KeyboardEvent } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../shared/api/apiTypes'
 import { useChannelRealtime } from './useChannelRealtime'
@@ -27,7 +27,7 @@ export function ChannelMessagePanel({
   readOnly,
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
-  const previousScrollHeightRef = useRef(0)
+  const initialScrollChannelKeyRef = useRef<string | null>(null)
   const typingTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -54,16 +54,21 @@ export function ChannelMessagePanel({
     [messagesQuery.data],
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const messageList = messageListRef.current
     if (!messageList || messages.length === 0) {
       return
     }
-    if (previousScrollHeightRef.current === 0) {
-      messageList.scrollTop = messageList.scrollHeight
+    const channelKey = `${workspaceId}:${channelId}`
+    if (initialScrollChannelKeyRef.current === channelKey) {
+      return
     }
-    previousScrollHeightRef.current = messageList.scrollHeight
-  }, [messages.length])
+    initialScrollChannelKeyRef.current = channelKey
+    const animationFrame = window.requestAnimationFrame(() => {
+      messageList.scrollTop = messageList.scrollHeight
+    })
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [channelId, messages.length, workspaceId])
 
   useEffect(() => () => {
     if (typingTimeoutRef.current !== null) {
