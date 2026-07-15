@@ -25,6 +25,8 @@ import com.reecho.reechobe.message.exception.MessageErrorCode;
 import com.reecho.reechobe.message.repository.MessageAttachmentRepository;
 import com.reecho.reechobe.message.repository.MessageRepository;
 import com.reecho.reechobe.message.service.MessageResponseAssembler;
+import com.reecho.reechobe.realtime.dto.RealtimeEventType;
+import com.reecho.reechobe.realtime.service.RealtimeEventPublisher;
 import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
@@ -52,6 +54,7 @@ public class MessageCommandService {
     private final MessageAttachmentRepository messageAttachmentRepository;
     private final FileObjectRepository fileObjectRepository;
     private final MessageResponseAssembler messageResponseAssembler;
+    private final RealtimeEventPublisher realtimeEventPublisher;
 
     @Transactional
     public ChannelMessageResponse createMessage(
@@ -67,7 +70,9 @@ public class MessageCommandService {
         validateAttachableFiles(workspaceId, membership.getId(), fileIds);
         Message message = messageRepository.save(Message.create(channelId, membership.getId(), content));
         saveAttachments(message.getId(), fileIds);
-        return messageResponseAssembler.assemble(message);
+        ChannelMessageResponse response = messageResponseAssembler.assemble(message);
+        realtimeEventPublisher.publishMessage(workspaceId, RealtimeEventType.MESSAGE_CREATED, response);
+        return response;
     }
 
     @Transactional
@@ -92,7 +97,9 @@ public class MessageCommandService {
                 messageAttachmentRepository.findByMessageIdInOrderByMessageIdAscSortOrderAsc(List.of(message.getId()))
         );
         saveAttachments(message.getId(), fileIds);
-        return messageResponseAssembler.assemble(message);
+        ChannelMessageResponse response = messageResponseAssembler.assemble(message);
+        realtimeEventPublisher.publishMessage(workspaceId, RealtimeEventType.MESSAGE_UPDATED, response);
+        return response;
     }
 
     @Transactional
@@ -106,6 +113,11 @@ public class MessageCommandService {
             throw new BusinessException(MessageErrorCode.MESSAGE_DELETE_FORBIDDEN);
         }
         message.delete(membership.getId());
+        realtimeEventPublisher.publishMessage(
+                workspaceId,
+                RealtimeEventType.MESSAGE_DELETED,
+                messageResponseAssembler.assemble(message)
+        );
     }
 
     private WorkspaceMembership validateWritableChannel(UUID userId, UUID workspaceId, UUID channelId) {
