@@ -93,7 +93,6 @@
   overflow-wrap: anywhere;
 }
 
-.messageActions,
 .messageEditActions {
   display: flex;
   justify-content: flex-end;
@@ -101,16 +100,19 @@
   margin-top: 7px;
 }
 
-.messageActions {
+.messageActionMenu {
+  position: relative;
+  width: max-content;
+  margin-top: 7px;
+  margin-left: auto;
   visibility: hidden;
 }
 
-.message:hover .messageActions,
-.message:focus-within .messageActions {
+.message:hover .messageActionMenu,
+.message:focus-within .messageActionMenu {
   visibility: visible;
 }
 
-.messageActions button,
 .messageEditActions button,
 .deleteDialogActions button {
   min-height: 30px;
@@ -122,6 +124,52 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+}
+
+.menuTrigger {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.messageActionPopup {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 84px;
+  padding: 4px;
+  display: grid;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(31 45 42 / 16%);
+}
+
+.messageActionPopup button {
+  min-height: 32px;
+  padding: 0 9px;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.messageActionPopup button:hover,
+.messageActionPopup button:focus-visible {
+  background: var(--color-surface-subtle);
 }
 
 .messageEditActions button:last-child {

@@ -39,6 +39,7 @@ export function ChannelMessagePanel({
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState('')
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ChannelMessage | null>(null)
   const [messageActionError, setMessageActionError] = useState<{
     messageId: string
@@ -89,6 +90,7 @@ export function ChannelMessagePanel({
   useEffect(() => {
     setEditingMessageId(null)
     setEditingContent('')
+    setOpenMenuId(null)
     setDeleteTarget(null)
     setMessageActionError(null)
   }, [channelId, workspaceId])
@@ -173,6 +175,7 @@ export function ChannelMessagePanel({
 
   function startMessageEdit(message: ChannelMessage) {
     setMessageActionError(null)
+    setOpenMenuId(null)
     setEditingMessageId(message.id)
     setEditingContent(message.content)
   }
@@ -215,6 +218,7 @@ export function ChannelMessagePanel({
 
   function openDeleteDialog(message: ChannelMessage) {
     setMessageActionError(null)
+    setOpenMenuId(null)
     deleteMessage.reset()
     setDeleteTarget(message)
   }
@@ -293,7 +297,7 @@ export function ChannelMessagePanel({
               ) : null}
               <div className={styles.messageContent}>
                 <div className={styles.messageMeta}>
-                  {!isMine && <strong>{message.author.displayName}</strong>}
+                  <strong>{isMine ? '(나)' : message.author.displayName}</strong>
                   <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
                   {message.edited && !message.deleted && <span>수정됨</span>}
                 </div>
@@ -320,17 +324,29 @@ export function ChannelMessagePanel({
                     {message.deleted ? '삭제된 메시지입니다.' : message.content}
                   </p>
                 )}
-                {!message.deleted && !isEditing && !readOnly && (isMine || canDeleteMessage) && (
-                  <div className={styles.messageActions}>
-                    {isMine && (
-                      <button type="button" onClick={() => startMessageEdit(message)}>
-                        수정
-                      </button>
-                    )}
-                    {canDeleteMessage && (
-                      <button type="button" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
-                        삭제
-                      </button>
+                {!message.deleted && !isEditing && !readOnly && canDeleteMessage && (
+                  <div className={styles.messageActionMenu}>
+                    <button
+                      type="button"
+                      className={styles.menuTrigger}
+                      aria-label="메시지 작업 메뉴"
+                      aria-haspopup="menu"
+                      aria-expanded={openMenuId === message.id}
+                      onClick={() => setOpenMenuId((menuId) => menuId === message.id ? null : message.id)}
+                    >
+                      …
+                    </button>
+                    {openMenuId === message.id && (
+                      <div className={styles.messageActionPopup} role="menu">
+                        {isMine && (
+                          <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
+                            수정
+                          </button>
+                        )}
+                        <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
+                          삭제
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
