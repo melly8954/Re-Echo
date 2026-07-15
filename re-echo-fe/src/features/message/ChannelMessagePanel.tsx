@@ -630,10 +630,11 @@ export function ChannelMessagePanel({
         <label className={styles.composerLabel} htmlFor="channel-message-content">
           {readOnly ? '보관된 채널에서는 메시지를 작성할 수 없습니다.' : `${channelName}에 메시지 보내기`}
         </label>
-        {attachments.length > 0 && (
-          <ul className={styles.attachmentPreviewList} aria-label="선택한 첨부 파일">
-            {attachments.map((attachment) => (
-              <li
+        <div className={styles.composerSurface}>
+          {attachments.length > 0 && (
+            <ul className={styles.attachmentPreviewList} aria-label="선택한 첨부 파일">
+              {attachments.map((attachment) => (
+                <li
                 key={attachment.localId}
                 className={`${styles.attachmentPreviewItem} ${
                   attachment.previewUrl ? styles.imageAttachmentPreview : styles.fileAttachmentPreview
@@ -669,12 +670,12 @@ export function ChannelMessagePanel({
                 >
                   ×
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className={styles.composerField}>
-          <div ref={attachmentMenuRef} className={styles.attachmentMenuArea}>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className={styles.composerField}>
+            <div ref={attachmentMenuRef} className={styles.attachmentMenuArea}>
             <input
               ref={attachmentInputRef}
               className={styles.attachmentInput}
@@ -705,8 +706,8 @@ export function ChannelMessagePanel({
                 </button>
               </div>
             )}
-          </div>
-          <textarea
+            </div>
+            <textarea
             id="channel-message-content"
             ref={composerInputRef}
             value={content}
@@ -715,9 +716,11 @@ export function ChannelMessagePanel({
             placeholder={readOnly ? '보관된 채널입니다.' : '메시지를 입력하세요.'}
             disabled={readOnly || createMessage.isPending}
             rows={1}
-          />
-          <button
+            />
+            <button
             type="submit"
+            className={styles.composerSendButton}
+            aria-label="메시지 전송"
             disabled={
               readOnly
               || createMessage.isPending
@@ -725,9 +728,10 @@ export function ChannelMessagePanel({
               || hasFailedAttachment
               || (!content.trim() && attachments.every((attachment) => attachment.status !== 'UPLOADED'))
             }
-          >
-            {createMessage.isPending ? '전송 중' : '전송'}
-          </button>
+            >
+              {createMessage.isPending ? '…' : '↑'}
+            </button>
+          </div>
         </div>
         {hasFailedAttachment && <p className={styles.submitError}>업로드에 실패한 첨부 파일을 제거해 주세요.</p>}
         {submitError && <p className={styles.submitError} role="alert">{submitError}</p>}
