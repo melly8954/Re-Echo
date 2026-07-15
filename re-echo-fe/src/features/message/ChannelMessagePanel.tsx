@@ -1,7 +1,13 @@
 import type { FormEvent, KeyboardEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../shared/api/apiTypes'
-import { useChannelMessages, useCreateChannelMessage } from './useChannelMessages'
+import { useChannelRealtime } from './useChannelRealtime'
+import {
+  channelMessagesQueryKey,
+  useChannelMessages,
+  useCreateChannelMessage,
+} from './useChannelMessages'
 import styles from './ChannelMessagePanel.module.css'
 
 interface ChannelMessagePanelProps {
@@ -22,10 +28,27 @@ export function ChannelMessagePanel({
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
   const previousScrollHeightRef = useRef(0)
+  const typingTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [typingUserIds, setTypingUserIds] = useState<string[]>([])
+  const queryClient = useQueryClient()
   const messagesQuery = useChannelMessages(workspaceId, channelId, !readOnly)
   const createMessage = useCreateChannelMessage()
+  const { publishTyping } = useChannelRealtime({
+    workspaceId,
+    channelId,
+    enabled: !readOnly,
+    onEvent: (event) => {
+      if (event.type === 'TYPING_UPDATED') {
+        setTypingUserIds(event.payload.typingUserIds)
+        return
+      }
+      void queryClient.invalidateQueries({
+        queryKey: channelMessagesQueryKey(workspaceId, channelId),
+      })
+    },
+  })
   const messages = useMemo(
     () => messagesQuery.data?.pages.flatMap((page) => page.contents).reverse() ?? [],
     [messagesQuery.data],
@@ -41,6 +64,12 @@ export function ChannelMessagePanel({
     }
     previousScrollHeightRef.current = messageList.scrollHeight
   }, [messages.length])
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current !== null) {
+      window.clearTimeout(typingTimeoutRef.current)
+    }
+  }, [])
 
   async function loadOlderMessages() {
     const messageList = messageListRef.current
@@ -87,6 +116,17 @@ export function ChannelMessagePanel({
     }
     event.preventDefault()
     event.currentTarget.form?.requestSubmit()
+  }
+
+  function handleContentChange(nextContent: string) {
+    setContent(nextContent)
+    publishTyping(Boolean(nextContent.trim()))
+    if (typingTimeoutRef.current !== null) {
+      window.clearTimeout(typingTimeoutRef.current)
+    }
+    if (nextContent.trim()) {
+      typingTimeoutRef.current = window.setTimeout(() => publishTyping(false), 1000)
+    }
   }
 
   if (messagesQuery.isLoading) {
@@ -152,7 +192,7 @@ export function ChannelMessagePanel({
           <textarea
             id="channel-message-content"
             value={content}
-            onChange={(event) => setContent(event.target.value)}
+            onChange={(event) => handleContentChange(event.target.value)}
             onKeyDown={handleComposerKeyDown}
             placeholder={readOnly ? '보관된 채널입니다.' : '메시지를 입력하세요.'}
             disabled={readOnly || createMessage.isPending}
@@ -164,6 +204,11 @@ export function ChannelMessagePanel({
         </div>
         {submitError && <p className={styles.submitError} role="alert">{submitError}</p>}
       </form>
+      {typingUserIds.filter((userId) => userId !== currentMembershipId).length > 0 && (
+        <p className={styles.typing} role="status">
+          다른 참여자가 입력 중입니다.
+        </p>
+      )}
     </div>
   )
 }

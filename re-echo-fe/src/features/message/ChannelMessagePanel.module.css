@@ -143,6 +143,14 @@
   font-size: 12px;
 }
 
+.typing {
+  margin: 0;
+  padding: 0 16px 8px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  font-size: 12px;
+}
+
 .error {
   padding: 24px;
 }
