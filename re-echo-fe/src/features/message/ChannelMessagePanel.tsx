@@ -572,7 +572,7 @@ export function ChannelMessagePanel({
               <div className={styles.messageGroup}>
                 {showAuthor && <strong className={styles.messageAuthor}>{message.author.displayName}</strong>}
                 <div className={styles.messageBody}>
-                  <div className={styles.messageContent}>
+                  <div className={`${styles.messageContent} ${!message.deleted && !isEditing && !readOnly && canDeleteMessage ? styles.messageContentWithAction : ''}`}>
                     {message.edited && !message.deleted && (
                     <div className={styles.messageMeta}>
                       <span>수정됨</span>
@@ -616,21 +616,37 @@ export function ChannelMessagePanel({
                       ))}
                     </ul>
                   )}
-                  {!message.deleted && !isEditing && !readOnly && canDeleteMessage && openMenuId === message.id && (
+                  {!message.deleted && !isEditing && !readOnly && canDeleteMessage && (
                     <div
-                      ref={messageActionPopupRef}
-                      className={styles.messageActionPopup}
-                      role="menu"
-                      aria-label="메시지 작업 메뉴"
+                      ref={openMenuId === message.id ? messageActionPopupRef : undefined}
+                      className={styles.messageActionArea}
                     >
-                      {isMine && (
-                        <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
-                          수정
-                        </button>
-                      )}
-                      <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
-                        삭제
+                      <button
+                        type="button"
+                        className={styles.messageActionTrigger}
+                        aria-label="메시지 작업 메뉴"
+                        aria-expanded={openMenuId === message.id}
+                        aria-haspopup="menu"
+                        onClick={() => setOpenMenuId((current) => current === message.id ? null : message.id)}
+                      >
+                        ⋯
                       </button>
+                      {openMenuId === message.id && (
+                        <div
+                          className={styles.messageActionPopup}
+                          role="menu"
+                          aria-label="메시지 작업 메뉴"
+                        >
+                          {isMine && (
+                            <button type="button" role="menuitem" onClick={() => startMessageEdit(message)}>
+                              수정
+                            </button>
+                          )}
+                          <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
+                            삭제
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {messageActionError?.messageId === message.id && (
