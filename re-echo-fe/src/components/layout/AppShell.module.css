@@ -27,7 +27,7 @@
   display: grid;
   place-items: center;
   color: #fff;
-  background: var(--color-primary);
+  background: var(--color-danger);
   font-weight: 800;
 }
 
