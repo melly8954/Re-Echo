@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { ChannelMessagePanel } from '../features/message/ChannelMessagePanel'
 import { useAddWorkspacePrivateChannelMembers } from '../features/workspace/useAddWorkspacePrivateChannelMembers'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
@@ -729,10 +730,15 @@ export function WorkspacePage() {
                   </button>
                 </div>
               ) : (
-                <div>
-                  <strong>{activeChannel?.name ?? '채널'}</strong>
-                  <p>메시지 API가 연결되면 이 영역에 대화가 표시됩니다.</p>
-                </div>
+                activeChannel && (
+                  <ChannelMessagePanel
+                    workspaceId={workspaceId}
+                    channelId={activeChannel.id}
+                    currentMembershipId={workspace.myMembership.id}
+                    channelName={activeChannel.name}
+                    readOnly={workspace.status === 'ARCHIVED'}
+                  />
+                )
               )}
             </section>
           </div>

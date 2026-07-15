@@ -119,10 +119,8 @@
 
 .messagePanel {
   min-height: 360px;
-  padding: 24px;
+  overflow: hidden;
   display: grid;
-  place-items: center;
-  text-align: center;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -139,9 +137,13 @@
 }
 
 .channelJoinPrompt {
+  min-height: 360px;
+  padding: 24px;
   display: grid;
+  place-items: center;
   justify-items: center;
   gap: 12px;
+  text-align: center;
 }
 
 .channelJoinPrompt p {
