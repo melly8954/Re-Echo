@@ -54,12 +54,14 @@ export function ChannelMessagePanel({
   const messageListRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLTextAreaElement>(null)
   const attachmentInputRef = useRef<HTMLInputElement>(null)
+  const attachmentMenuRef = useRef<HTMLDivElement>(null)
   const messageActionPopupRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<number | null>(null)
   const messageLongPressTimeoutRef = useRef<number | null>(null)
   const attachmentPreviewUrlsRef = useRef(new Set<string>())
   const [content, setContent] = useState('')
   const [attachments, setAttachments] = useState<PendingMessageAttachment[]>([])
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -124,8 +126,34 @@ export function ChannelMessagePanel({
     setOpenMenuId(null)
     setDeleteTarget(null)
     setMessageActionError(null)
+    setIsAttachmentMenuOpen(false)
     clearSelectedAttachments()
   }, [channelId, workspaceId])
+
+  useEffect(() => {
+    if (!isAttachmentMenuOpen) {
+      return undefined
+    }
+
+    function closeAttachmentMenu(event: globalThis.PointerEvent) {
+      if (!attachmentMenuRef.current?.contains(event.target as Node)) {
+        setIsAttachmentMenuOpen(false)
+      }
+    }
+
+    function closeAttachmentMenuOnEscape(event: globalThis.KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsAttachmentMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', closeAttachmentMenu)
+    document.addEventListener('keydown', closeAttachmentMenuOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeAttachmentMenu)
+      document.removeEventListener('keydown', closeAttachmentMenuOnEscape)
+    }
+  }, [isAttachmentMenuOpen])
 
   useEffect(() => {
     if (!openMenuId) {
@@ -244,6 +272,7 @@ export function ChannelMessagePanel({
   async function handleAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? [])
     event.target.value = ''
+    setIsAttachmentMenuOpen(false)
     if (selectedFiles.length === 0) {
       return
     }
@@ -631,22 +660,38 @@ export function ChannelMessagePanel({
           </ul>
         )}
         <div className={styles.composerField}>
-          <input
-            ref={attachmentInputRef}
-            className={styles.attachmentInput}
-            type="file"
-            multiple
-            onChange={(event) => void handleAttachmentSelection(event)}
-            disabled={readOnly || createMessage.isPending}
-          />
-          <button
-            type="button"
-            className={styles.attachmentSelectButton}
-            onClick={() => attachmentInputRef.current?.click()}
-            disabled={readOnly || createMessage.isPending}
-          >
-            파일 첨부
-          </button>
+          <div ref={attachmentMenuRef} className={styles.attachmentMenuArea}>
+            <input
+              ref={attachmentInputRef}
+              className={styles.attachmentInput}
+              type="file"
+              multiple
+              onChange={(event) => void handleAttachmentSelection(event)}
+              disabled={readOnly || createMessage.isPending}
+            />
+            <button
+              type="button"
+              className={styles.attachmentMenuTrigger}
+              aria-label="첨부 메뉴"
+              aria-expanded={isAttachmentMenuOpen}
+              aria-haspopup="menu"
+              onClick={() => setIsAttachmentMenuOpen((current) => !current)}
+              disabled={readOnly || createMessage.isPending}
+            >
+              +
+            </button>
+            {isAttachmentMenuOpen && (
+              <div className={styles.attachmentMenu} role="menu" aria-label="첨부 메뉴">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => attachmentInputRef.current?.click()}
+                >
+                  파일 선택
+                </button>
+              </div>
+            )}
+          </div>
           <textarea
             id="channel-message-content"
             ref={composerInputRef}
