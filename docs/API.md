@@ -1215,6 +1215,18 @@
 /pub/workspaces/{workspaceId}/channels/{channelId}/typing
 ```
 
+- `messages` 발행 body는 11.32의 메시지 생성 요청과 같은
+  `content`, `fileIds`를 사용한다.
+- `typing` 발행 body는 아래와 같다.
+
+```json
+{
+  "typing": true
+}
+```
+
+- 입력 중 상태는 마지막 `typing: true` 발행 후 5초가 지나면 자동 해제한다.
+
 ### 14.4 Event Envelope
 
 ```json
