@@ -12,6 +12,15 @@
 .dialog input { min-height: 40px; padding: 0 11px; }
 .dialog textarea { min-height: 76px; padding: 10px 11px; resize: vertical; }
 .dialog input[aria-invalid='true'] { border-color: var(--color-danger); }
+.imageSection { padding-top: 2px; display: flex; gap: 12px; align-items: center; }
+.imageSection img, .imageFallback { width: 56px; height: 56px; flex: 0 0 auto; border-radius: 12px; object-fit: cover; }
+.imageFallback { display: grid; place-items: center; color: #fff; background: var(--color-primary); font-size: 22px; font-weight: 800; }
+.imageControls { display: grid; gap: 5px; }
+.imageControls strong { font-size: 13px; }
+.imageControls strong small { color: var(--color-muted); font-weight: 500; }
+.imageControls p { color: var(--color-muted); font-size: 12px; line-height: 1.4; }
+.imageSelectButton { width: fit-content; min-height: 32px; padding: 0 10px; display: inline-flex !important; align-items: center; color: var(--color-text); background: var(--color-surface-subtle); border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 800; }
+.imageInput { position: absolute; width: 1px !important; min-height: 1px !important; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .dialog button { min-height: 36px; padding: 0 12px; color: var(--color-muted); background: transparent; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; font-weight: 800; }
 .dialog button:disabled { cursor: not-allowed; opacity: 0.6; }
 .dialog footer button:last-child { color: #fff; background: var(--color-primary); border-color: var(--color-primary); }
