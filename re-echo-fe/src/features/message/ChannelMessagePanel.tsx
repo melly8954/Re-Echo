@@ -27,8 +27,6 @@ export function ChannelMessagePanel({
   readOnly,
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
-  const initialScrollChannelKeyRef = useRef<string | null>(null)
-  const shouldScrollToBottomRef = useRef(false)
   const typingTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -54,25 +52,18 @@ export function ChannelMessagePanel({
     () => messagesQuery.data?.pages.flatMap((page) => page.contents).reverse() ?? [],
     [messagesQuery.data],
   )
+  const latestMessageId = messages[messages.length - 1]?.id
 
   useLayoutEffect(() => {
     const messageList = messageListRef.current
     if (!messageList || messages.length === 0) {
       return
     }
-    const channelKey = `${workspaceId}:${channelId}`
-    const shouldScrollToBottom =
-      initialScrollChannelKeyRef.current !== channelKey || shouldScrollToBottomRef.current
-    if (!shouldScrollToBottom) {
-      return
-    }
-    initialScrollChannelKeyRef.current = channelKey
-    shouldScrollToBottomRef.current = false
     const animationFrame = window.requestAnimationFrame(() => {
       messageList.scrollTop = messageList.scrollHeight
     })
     return () => window.cancelAnimationFrame(animationFrame)
-  }, [channelId, messages.length, workspaceId])
+  }, [channelId, latestMessageId, messages.length, workspaceId])
 
   useEffect(() => () => {
     if (typingTimeoutRef.current !== null) {
@@ -105,7 +96,6 @@ export function ChannelMessagePanel({
       return
     }
     setSubmitError(null)
-    shouldScrollToBottomRef.current = true
     try {
       await createMessage.mutateAsync({
         workspaceId,
@@ -114,7 +104,6 @@ export function ChannelMessagePanel({
       })
       setContent('')
     } catch (error) {
-      shouldScrollToBottomRef.current = false
       setSubmitError(
         error instanceof ApiError ? error.message : '메시지를 전송하지 못했습니다.',
       )
