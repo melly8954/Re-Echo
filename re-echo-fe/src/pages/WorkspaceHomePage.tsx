@@ -231,6 +231,7 @@ export function WorkspaceHomePage() {
         <div>
           <p className={styles.eyebrow}>참여자</p>
           <h2 id="workspace-member-title">워크스페이스 참여자</h2>
+          <p className={styles.memberPanelContext}>워크스페이스 전체</p>
         </div>
         <span>{members.length}</span>
       </div>

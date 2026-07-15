@@ -373,7 +373,14 @@
   line-height: 1.3;
 }
 
-.memberPanelHeader > span {
+.memberPanelContext {
+  margin: 5px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.memberPanelHeader span {
   min-width: 26px;
   height: 26px;
   display: inline-grid;
