@@ -124,6 +124,16 @@
   overflow-wrap: anywhere;
 }
 
+.attachmentOnlyMessage .messageContent {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.attachmentOnlyMessage .messageAttachments {
+  margin-top: 0;
+}
+
 .messageAttachments,
 .attachmentPreviewList {
   margin: 8px 0 0;
@@ -168,11 +178,74 @@
   font-size: 12px;
 }
 
-.messageAttachmentThumbnail {
-  width: 32px;
-  height: 32px;
+.messageImageAttachment {
+  width: min(260px, 100%);
+}
+
+.messageImageAttachmentButton {
+  width: 100%;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.messageImageAttachmentButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.messageImagePreview,
+.messageImagePreviewPlaceholder {
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.messageImagePreview {
   object-fit: cover;
-  border-radius: 4px;
+  background: var(--color-surface-subtle);
+}
+
+.messageImagePreviewPlaceholder {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: var(--color-surface-subtle);
+  font-size: 12px;
+}
+
+.messageImageMeta {
+  min-width: 0;
+  padding: 0 2px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.messageImageMeta strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.messageImageMeta small {
+  flex: 0 0 auto;
+  color: var(--color-muted);
+  font-size: 11px;
 }
 
 .messageEditActions {

@@ -387,7 +387,7 @@ export function ChannelMessagePanel({
   async function handleMessageUpdate(event: FormEvent<HTMLFormElement>, message: ChannelMessage) {
     event.preventDefault()
     const trimmedContent = editingContent.trim()
-    if (!trimmedContent || updateMessage.isPending) {
+    if ((!trimmedContent && message.attachments.length === 0) || updateMessage.isPending) {
       return
     }
 
@@ -507,10 +507,11 @@ export function ChannelMessagePanel({
           const showAuthor = !isMine && !isContinuation
           const isEditing = editingMessageId === message.id
           const canDeleteMessage = isMine || canManageMessages
+          const isAttachmentOnly = !message.deleted && !message.content && message.attachments.length > 0
           return (
             <article
               key={message.id}
-              className={`${styles.message} ${isMine ? styles.myMessage : ''} ${isContinuation ? styles.continuedMessage : ''}`}
+              className={`${styles.message} ${isMine ? styles.myMessage : ''} ${isContinuation ? styles.continuedMessage : ''} ${isAttachmentOnly ? styles.attachmentOnlyMessage : ''}`}
               tabIndex={!message.deleted && !isEditing && !readOnly && canDeleteMessage ? 0 : undefined}
               onContextMenu={(event) => {
                 if (!message.deleted && !isEditing && !readOnly && canDeleteMessage) {
@@ -568,16 +569,19 @@ export function ChannelMessagePanel({
                       <button type="button" onClick={cancelMessageEdit} disabled={updateMessage.isPending}>
                         취소
                       </button>
-                      <button type="submit" disabled={updateMessage.isPending || !editingContent.trim()}>
+                      <button
+                        type="submit"
+                        disabled={updateMessage.isPending || (!editingContent.trim() && message.attachments.length === 0)}
+                      >
                         {updateMessage.isPending ? '저장 중' : '저장'}
                       </button>
                     </div>
                   </form>
-                ) : (
+                ) : message.deleted ? (
                   <p className={message.deleted ? styles.deletedContent : undefined}>
-                    {message.deleted ? '삭제된 메시지입니다.' : message.content}
+                    삭제된 메시지입니다.
                   </p>
-                )}
+                ) : message.content ? <p>{message.content}</p> : null}
                   {!message.deleted && message.attachments.length > 0 && (
                     <ul className={styles.messageAttachments} aria-label="첨부 파일">
                       {message.attachments.map((attachment) => (
@@ -797,6 +801,29 @@ function MessageAttachmentItem({
     }
   }, [attachment.fileId, attachment.previewImage, workspaceId])
 
+  if (attachment.previewImage) {
+    return (
+      <li className={styles.messageImageAttachment}>
+        <button
+          type="button"
+          className={styles.messageImageAttachmentButton}
+          onClick={onOpen}
+          aria-label={`${attachment.fileName} 원본 열기`}
+        >
+          {previewUrl ? (
+            <img src={previewUrl} alt={attachment.fileName} className={styles.messageImagePreview} />
+          ) : (
+            <span className={styles.messageImagePreviewPlaceholder}>이미지를 불러오는 중입니다.</span>
+          )}
+          <span className={styles.messageImageMeta}>
+            <strong>{attachment.fileName}</strong>
+            <small>{formatFileSize(attachment.size)}</small>
+          </span>
+        </button>
+      </li>
+    )
+  }
+
   return (
     <li>
       <button
@@ -805,11 +832,7 @@ function MessageAttachmentItem({
         onClick={onOpen}
         aria-label={`${attachment.fileName} 열기`}
       >
-        {previewUrl ? (
-          <img src={previewUrl} alt="" className={styles.messageAttachmentThumbnail} />
-        ) : (
-          <span>{attachment.previewImage ? '이미지' : '파일'}</span>
-        )}
+        <span>파일</span>
         <strong>{attachment.fileName}</strong>
         <small>{formatFileSize(attachment.size)}</small>
       </button>
