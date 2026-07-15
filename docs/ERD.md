@@ -564,8 +564,8 @@ Re-Echo 사용자 기본 계정이다.
 
 ### 11.2 주요 조회 인덱스
 
-- `workspace_memberships(user_id, status, last_visited_at desc)`
-  - 사용자가 속한 워크스페이스 목록의 최근 방문 순 조회
+- `workspace_memberships(user_id, status, joined_at asc, id asc)`
+  - 사용자가 속한 워크스페이스 목록의 등록 순 조회
 - `workspace_memberships(workspace_id, display_name)`
   - 워크스페이스 멤버 목록 및 닉네임 조회
 - `channels(workspace_id, status, visibility)`

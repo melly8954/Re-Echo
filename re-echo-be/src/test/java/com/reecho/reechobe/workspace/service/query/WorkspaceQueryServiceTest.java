@@ -2,6 +2,7 @@ package com.reecho.reechobe.workspace.service.query;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -137,18 +138,20 @@ class WorkspaceQueryServiceTest {
     }
 
     @Test
-    void 소유_워크스페이스와_참여_워크스페이스의_역할을_목록에_반환한다() {
+    void 등록_순으로_소유_워크스페이스와_참여_워크스페이스를_목록에_반환한다() {
         UUID userId = UUID.randomUUID();
         Workspace ownedWorkspace = createWorkspace(userId);
         Workspace joinedWorkspace = createWorkspace(UUID.randomUUID());
         WorkspaceMembership ownerMembership = createOwnerMembership(ownedWorkspace.getId(), userId);
         WorkspaceMembership memberMembership = createOwnerMembership(joinedWorkspace.getId(), userId);
         ReflectionTestUtils.setField(memberMembership, "role", WorkspaceMembershipRole.MEMBER);
-        ReflectionTestUtils.setField(ownerMembership, "lastVisitedAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(memberMembership, "lastVisitedAt", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(ownerMembership, "joinedAt", LocalDateTime.now().minusDays(2));
+        ReflectionTestUtils.setField(memberMembership, "joinedAt", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(ownerMembership, "lastVisitedAt", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(memberMembership, "lastVisitedAt", LocalDateTime.now());
         Channel ownedGeneralChannel = Channel.createGeneral(ownedWorkspace.getId(), ownerMembership.getId());
         Channel joinedGeneralChannel = Channel.createGeneral(joinedWorkspace.getId(), memberMembership.getId());
-        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByLastVisitedAtDesc(
+        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByJoinedAtAscIdAsc(
                 userId,
                 WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(List.of(ownerMembership, memberMembership));
@@ -168,12 +171,16 @@ class WorkspaceQueryServiceTest {
                 .containsExactly(ownedGeneralChannel.getId(), joinedGeneralChannel.getId());
         assertThat(result.contents()).extracting("unreadChannelCount")
                 .containsOnly(0);
+        verify(workspaceMembershipRepository).findByUserIdAndStatusOrderByJoinedAtAscIdAsc(
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        );
     }
 
     @Test
     void 활성_워크스페이스_멤버십이_없으면_빈_목록을_반환한다() {
         UUID userId = UUID.randomUUID();
-        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByLastVisitedAtDesc(
+        when(workspaceMembershipRepository.findByUserIdAndStatusOrderByJoinedAtAscIdAsc(
                 userId,
                 WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(List.of());

@@ -60,7 +60,7 @@ public class WorkspaceQueryService {
     @Transactional(readOnly = true)
     public WorkspaceListResponse getWorkspaceList(UUID userId) {
         List<WorkspaceMembership> memberships = workspaceMembershipRepository
-                .findByUserIdAndStatusOrderByLastVisitedAtDesc(userId, WorkspaceMembershipStatus.ACTIVE);
+                .findByUserIdAndStatusOrderByJoinedAtAscIdAsc(userId, WorkspaceMembershipStatus.ACTIVE);
         if (memberships.isEmpty()) {
             return WorkspaceListResponse.of(List.of());
         }

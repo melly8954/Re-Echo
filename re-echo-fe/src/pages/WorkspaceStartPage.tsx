@@ -7,7 +7,10 @@ import styles from './WorkspaceStartPage.module.css'
 export function WorkspaceStartPage() {
   const workspaceListQuery = useWorkspaceList()
   const workspaces = workspaceListQuery.data?.contents ?? []
-  const latestActiveWorkspace = workspaces.find((workspace) => workspace.status === 'ACTIVE')
+  // 레일의 고정 순서와 로그인 후 복귀 대상을 분리한다.
+  const latestActiveWorkspace = workspaces
+    .filter((workspace) => workspace.status === 'ACTIVE')
+    .sort((left, right) => right.lastVisitedAt.localeCompare(left.lastVisitedAt))[0]
 
   if (latestActiveWorkspace) {
     return <Navigate to={`/workspaces/${latestActiveWorkspace.id}`} replace />
