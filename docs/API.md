@@ -1008,6 +1008,24 @@
 - URL: `/api/v1/workspaces/{workspaceId}/files/{fileId}/download-url`
 - Authentication: 필요
 - Authorization: 파일이 연결된 워크스페이스/채널 접근 가능 사용자
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "downloadUrl": "https://r2-presigned-url",
+    "expiresAt": "2026-07-06T12:10:00Z"
+  }
+}
+```
+
+- Error Responses
+  - `403 FILE_ACCESS_DENIED`
+  - `404 FILE_NOT_FOUND`
+  - `400 FILE_UPLOAD_NOT_COMPLETED`
 
 ### 11.38 계정 프로필 이미지 업로드 Presigned URL 발급
 
@@ -1182,6 +1200,8 @@
   정리 스케줄러가 지연 삭제한다.
 - orphan 파일은 배치로 정리한다.
 - 파일 정리 스케줄러의 기본 실행 주기는 하루 1회 새벽 3시다.
+- 메시지 첨부 정리 배치는 24시간 이상 메시지에 연결되지 않은
+  `MESSAGE_ATTACHMENT` 파일을 한 번에 최대 100개씩 처리한다.
 - 프로필 이미지 정리 배치는 기본적으로 24시간 이상 참조되지 않은
   `PROFILE_IMAGE` 파일을 한 번에 최대 100개씩 처리한다.
 - 정리 후보는 사용자 계정과 워크스페이스 멤버십의 프로필 이미지
