@@ -27,6 +27,7 @@ export function ChannelMessagePanel({
   readOnly,
 }: ChannelMessagePanelProps) {
   const messageListRef = useRef<HTMLDivElement>(null)
+  const composerInputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<number | null>(null)
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -103,6 +104,7 @@ export function ChannelMessagePanel({
         request: { content: trimmedContent },
       })
       setContent('')
+      window.requestAnimationFrame(() => composerInputRef.current?.focus())
     } catch (error) {
       setSubmitError(
         error instanceof ApiError ? error.message : '메시지를 전송하지 못했습니다.',
@@ -191,6 +193,7 @@ export function ChannelMessagePanel({
         <div className={styles.composerField}>
           <textarea
             id="channel-message-content"
+            ref={composerInputRef}
             value={content}
             onChange={(event) => handleContentChange(event.target.value)}
             onKeyDown={handleComposerKeyDown}
