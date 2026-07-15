@@ -15,10 +15,14 @@ import {
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import { workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
 import {
+  getWorkspaceMembershipStatusLabel,
   getWorkspaceRoleLabel,
   getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
-import type { WorkspaceInviteLink } from '../features/workspace/workspaceApi'
+import type {
+  WorkspaceInviteLink,
+  WorkspaceMembershipRole,
+} from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspaceHomePage.module.css'
 
@@ -48,6 +52,27 @@ export function WorkspaceHomePage() {
   const inviteLinkQuery = useWorkspaceInviteLink(routeWorkspaceId, canIssueInvite)
   const channels = channelsQuery.data?.contents ?? []
   const members = workspaceMembersQuery.data?.contents ?? []
+  const memberGroups: Array<{
+    role: WorkspaceMembershipRole
+    label: string
+    members: typeof members
+  }> = [
+    {
+      role: 'OWNER',
+      label: '소유자',
+      members: members.filter((member) => member.role === 'OWNER'),
+    },
+    {
+      role: 'ADMIN',
+      label: '관리자',
+      members: members.filter((member) => member.role === 'ADMIN'),
+    },
+    {
+      role: 'MEMBER',
+      label: '멤버',
+      members: members.filter((member) => member.role === 'MEMBER'),
+    },
+  ]
   const requiresInviteIssue =
     inviteLinkQuery.error instanceof ApiError &&
     (inviteLinkQuery.error.errorCode === 'INVITE_NOT_FOUND' ||
@@ -200,6 +225,70 @@ export function WorkspaceHomePage() {
     </button>
   ) : undefined
 
+  const workspaceMemberPanel = (
+    <section className={styles.memberPanel} aria-labelledby="workspace-member-title">
+      <div className={styles.memberPanelHeader}>
+        <div>
+          <p className={styles.eyebrow}>참여자</p>
+          <h2 id="workspace-member-title">워크스페이스 참여자</h2>
+        </div>
+        <span>{members.length}</span>
+      </div>
+
+      {workspaceMembersQuery.isLoading && (
+        <div className={styles.memberSkeletonList} aria-label="참여자 목록을 불러오는 중">
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
+
+      {workspaceMembersQuery.isError && (
+        <div className={styles.memberError}>
+          <p>워크스페이스 참여자 목록을 불러올 수 없습니다.</p>
+          <button type="button" onClick={() => void workspaceMembersQuery.refetch()}>
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {!workspaceMembersQuery.isLoading && !workspaceMembersQuery.isError && (
+        <div className={styles.memberGroups}>
+          {memberGroups
+            .filter((group) => group.members.length > 0)
+            .map((group) => (
+              <section key={group.role} className={styles.memberGroup}>
+                <h3>
+                  {group.label}
+                  <span>{group.members.length}</span>
+                </h3>
+                <div className={styles.memberList}>
+                  {group.members.map((member) => (
+                    <div key={member.id} className={styles.memberItem}>
+                      {member.profileImageUrl ? (
+                        <img src={member.profileImageUrl} alt="" />
+                      ) : (
+                        <span className={styles.memberAvatarFallback} aria-hidden="true">
+                          {member.displayName.slice(0, 1)}
+                        </span>
+                      )}
+                      <div className={styles.memberContent}>
+                        <div>
+                          <strong>{member.displayName}</strong>
+                          {member.id === workspace?.myMembership.id && <em>나</em>}
+                        </div>
+                        <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+        </div>
+      )}
+    </section>
+  )
+
   return (
     <AppShell
       workspaceId={workspaceId}
@@ -211,6 +300,8 @@ export function WorkspaceHomePage() {
         href: `/workspaces/${workspaceId}/channels/${channel.id}`,
       }))}
       isChannelsLoading={channelsQuery.isLoading}
+      rightSidebar={workspace ? workspaceMemberPanel : undefined}
+      rightSidebarLabel="워크스페이스 참여자"
     >
       <section className={styles.page} aria-labelledby="workspace-home-title">
         {workspaceQuery.isLoading && (
