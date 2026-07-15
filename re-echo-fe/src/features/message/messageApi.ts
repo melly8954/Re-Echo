@@ -46,6 +46,11 @@ export interface CreateChannelMessageRequest {
   fileIds?: string[]
 }
 
+export interface UpdateChannelMessageRequest {
+  content: string
+  fileIds: string[]
+}
+
 export function getChannelMessages(
   workspaceId: string,
   channelId: string,
@@ -76,6 +81,36 @@ export function createChannelMessage(
       method: 'POST',
       authenticated: true,
       body: JSON.stringify(request),
+    },
+  )
+}
+
+export function updateChannelMessage(
+  workspaceId: string,
+  channelId: string,
+  messageId: string,
+  request: UpdateChannelMessageRequest,
+) {
+  return apiRequest<ChannelMessage>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/messages/${messageId}`,
+    {
+      method: 'PATCH',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export function deleteChannelMessage(
+  workspaceId: string,
+  channelId: string,
+  messageId: string,
+) {
+  return apiRequest<void>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/messages/${messageId}`,
+    {
+      method: 'DELETE',
+      authenticated: true,
     },
   )
 }

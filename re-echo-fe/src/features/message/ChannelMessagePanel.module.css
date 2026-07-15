@@ -93,6 +93,65 @@
   overflow-wrap: anywhere;
 }
 
+.messageActions,
+.messageEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.messageActions {
+  visibility: hidden;
+}
+
+.message:hover .messageActions,
+.message:focus-within .messageActions {
+  visibility: visible;
+}
+
+.messageActions button,
+.messageEditActions button,
+.deleteDialogActions button {
+  min-height: 30px;
+  padding: 0 9px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.messageEditActions button:last-child {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.deleteButton {
+  color: var(--color-danger) !important;
+  border-color: #f3c6c2 !important;
+}
+
+.messageEditForm {
+  display: grid;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.messageEditForm textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.messageActionError {
+  margin: 7px 0 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
 .deletedContent {
   color: var(--color-muted) !important;
   font-style: italic;
@@ -172,6 +231,59 @@
 .error p {
   margin-top: 0;
   margin-bottom: 12px;
+}
+
+.deleteDialogLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.deleteDialogOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.deleteDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.deleteDialog h2,
+.deleteDialog p {
+  margin: 0;
+}
+
+.deleteDialog > p:not(.dialogEyebrow):not(.messageActionError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dialogEyebrow {
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.deleteDialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 @media (max-width: 700px) {

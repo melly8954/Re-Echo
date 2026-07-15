@@ -735,6 +735,10 @@ export function WorkspacePage() {
                     workspaceId={workspaceId}
                     channelId={activeChannel.id}
                     currentMembershipId={workspace.myMembership.id}
+                    canManageMessages={
+                      workspace.myMembership.role === 'OWNER' ||
+                      workspace.myMembership.role === 'ADMIN'
+                    }
                     channelName={activeChannel.name}
                     readOnly={workspace.status === 'ARCHIVED'}
                   />

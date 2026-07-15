@@ -7,13 +7,17 @@ import {
   channelMessagesQueryKey,
   useChannelMessages,
   useCreateChannelMessage,
+  useDeleteChannelMessage,
+  useUpdateChannelMessage,
 } from './useChannelMessages'
+import type { ChannelMessage } from './messageApi'
 import styles from './ChannelMessagePanel.module.css'
 
 interface ChannelMessagePanelProps {
   workspaceId: string
   channelId: string
   currentMembershipId: string
+  canManageMessages: boolean
   channelName: string
   readOnly: boolean
 }
@@ -23,6 +27,7 @@ export function ChannelMessagePanel({
   workspaceId,
   channelId,
   currentMembershipId,
+  canManageMessages,
   channelName,
   readOnly,
 }: ChannelMessagePanelProps) {
@@ -32,9 +37,18 @@ export function ChannelMessagePanel({
   const [content, setContent] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ChannelMessage | null>(null)
+  const [messageActionError, setMessageActionError] = useState<{
+    messageId: string
+    message: string
+  } | null>(null)
   const queryClient = useQueryClient()
   const messagesQuery = useChannelMessages(workspaceId, channelId, !readOnly)
   const createMessage = useCreateChannelMessage()
+  const updateMessage = useUpdateChannelMessage()
+  const deleteMessage = useDeleteChannelMessage()
   const { publishTyping } = useChannelRealtime({
     workspaceId,
     channelId,
@@ -71,6 +85,32 @@ export function ChannelMessagePanel({
       window.clearTimeout(typingTimeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    setEditingMessageId(null)
+    setEditingContent('')
+    setDeleteTarget(null)
+    setMessageActionError(null)
+  }, [channelId, workspaceId])
+
+  useEffect(() => {
+    if (!deleteTarget) {
+      return undefined
+    }
+
+    const previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key === 'Escape' && !deleteMessage.isPending) {
+        setDeleteTarget(null)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousBodyOverflow
+    }
+  }, [deleteMessage.isPending, deleteTarget])
 
   async function loadOlderMessages() {
     const messageList = messageListRef.current
@@ -131,6 +171,83 @@ export function ChannelMessagePanel({
     }
   }
 
+  function startMessageEdit(message: ChannelMessage) {
+    setMessageActionError(null)
+    setEditingMessageId(message.id)
+    setEditingContent(message.content)
+  }
+
+  function cancelMessageEdit() {
+    if (updateMessage.isPending) {
+      return
+    }
+    setEditingMessageId(null)
+    setEditingContent('')
+  }
+
+  async function handleMessageUpdate(event: FormEvent<HTMLFormElement>, message: ChannelMessage) {
+    event.preventDefault()
+    const trimmedContent = editingContent.trim()
+    if (!trimmedContent || updateMessage.isPending) {
+      return
+    }
+
+    setMessageActionError(null)
+    try {
+      await updateMessage.mutateAsync({
+        workspaceId,
+        channelId,
+        messageId: message.id,
+        request: {
+          content: trimmedContent,
+          fileIds: message.attachments.map((attachment) => attachment.fileId),
+        },
+      })
+      setEditingMessageId(null)
+      setEditingContent('')
+    } catch (error) {
+      setMessageActionError({
+        messageId: message.id,
+        message: error instanceof ApiError ? error.message : '메시지를 수정하지 못했습니다.',
+      })
+    }
+  }
+
+  function openDeleteDialog(message: ChannelMessage) {
+    setMessageActionError(null)
+    deleteMessage.reset()
+    setDeleteTarget(message)
+  }
+
+  function closeDeleteDialog() {
+    if (deleteMessage.isPending) {
+      return
+    }
+    deleteMessage.reset()
+    setDeleteTarget(null)
+  }
+
+  async function handleMessageDelete() {
+    if (!deleteTarget) {
+      return
+    }
+
+    try {
+      await deleteMessage.mutateAsync({
+        workspaceId,
+        channelId,
+        messageId: deleteTarget.id,
+      })
+      setDeleteTarget(null)
+    } catch (error) {
+      setMessageActionError({
+        messageId: deleteTarget.id,
+        message: error instanceof ApiError ? error.message : '메시지를 삭제하지 못했습니다.',
+      })
+      setDeleteTarget(null)
+    }
+  }
+
   if (messagesQuery.isLoading) {
     return <p className={styles.loading}>메시지를 불러오는 중입니다.</p>
   }
@@ -163,6 +280,8 @@ export function ChannelMessagePanel({
         {messages.length === 0 && <p className={styles.empty}>첫 메시지를 보내 대화를 시작해 보세요.</p>}
         {messages.map((message) => {
           const isMine = message.author.memberId === currentMembershipId
+          const isEditing = editingMessageId === message.id
+          const canDeleteMessage = isMine || canManageMessages
           return (
             <article key={message.id} className={`${styles.message} ${isMine ? styles.myMessage : ''}`}>
               {!isMine && message.author.profileImageUrl ? (
@@ -178,9 +297,48 @@ export function ChannelMessagePanel({
                   <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
                   {message.edited && !message.deleted && <span>수정됨</span>}
                 </div>
-                <p className={message.deleted ? styles.deletedContent : undefined}>
-                  {message.deleted ? '삭제된 메시지입니다.' : message.content}
-                </p>
+                {isEditing ? (
+                  <form className={styles.messageEditForm} onSubmit={(event) => void handleMessageUpdate(event, message)}>
+                    <textarea
+                      aria-label="메시지 수정"
+                      value={editingContent}
+                      onChange={(event) => setEditingContent(event.target.value)}
+                      disabled={updateMessage.isPending}
+                      rows={2}
+                    />
+                    <div className={styles.messageEditActions}>
+                      <button type="button" onClick={cancelMessageEdit} disabled={updateMessage.isPending}>
+                        취소
+                      </button>
+                      <button type="submit" disabled={updateMessage.isPending || !editingContent.trim()}>
+                        {updateMessage.isPending ? '저장 중' : '저장'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <p className={message.deleted ? styles.deletedContent : undefined}>
+                    {message.deleted ? '삭제된 메시지입니다.' : message.content}
+                  </p>
+                )}
+                {!message.deleted && !isEditing && !readOnly && (isMine || canDeleteMessage) && (
+                  <div className={styles.messageActions}>
+                    {isMine && (
+                      <button type="button" onClick={() => startMessageEdit(message)}>
+                        수정
+                      </button>
+                    )}
+                    {canDeleteMessage && (
+                      <button type="button" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                )}
+                {messageActionError?.messageId === message.id && (
+                  <p className={styles.messageActionError} role="alert">
+                    {messageActionError.message}
+                  </p>
+                )}
               </div>
             </article>
           )
@@ -211,6 +369,44 @@ export function ChannelMessagePanel({
         <p className={styles.typing} role="status">
           다른 참여자가 입력 중입니다.
         </p>
+      )}
+      {deleteTarget && (
+        <div className={styles.deleteDialogLayer}>
+          <button
+            className={styles.deleteDialogOverlay}
+            type="button"
+            aria-label="메시지 삭제 닫기"
+            onClick={closeDeleteDialog}
+          />
+          <section
+            className={styles.deleteDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="message-delete-title"
+            aria-describedby="message-delete-description"
+          >
+            <p className={styles.dialogEyebrow}>메시지 삭제</p>
+            <h2 id="message-delete-title">이 메시지를 삭제하시겠습니까?</h2>
+            <p id="message-delete-description">
+              삭제된 메시지는 대화에 삭제 흔적으로 남습니다.
+            </p>
+            {deleteMessage.isError && (
+              <p className={styles.messageActionError} role="alert">
+                {deleteMessage.error instanceof ApiError
+                  ? deleteMessage.error.message
+                  : '메시지를 삭제하지 못했습니다.'}
+              </p>
+            )}
+            <div className={styles.deleteDialogActions}>
+              <button type="button" onClick={closeDeleteDialog} disabled={deleteMessage.isPending}>
+                취소
+              </button>
+              <button type="button" className={styles.deleteButton} onClick={() => void handleMessageDelete()} disabled={deleteMessage.isPending}>
+                {deleteMessage.isPending ? '삭제 중' : '삭제'}
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   )
