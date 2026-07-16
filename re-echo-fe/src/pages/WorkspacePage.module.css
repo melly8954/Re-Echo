@@ -83,18 +83,6 @@
   justify-content: flex-end;
 }
 
-.status span {
-  min-height: 28px;
-  padding: 0 10px;
-  display: inline-flex;
-  align-items: center;
-  color: #08665f;
-  background: var(--color-primary-soft);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
 .status button {
   min-height: 32px;
   padding: 0 11px;

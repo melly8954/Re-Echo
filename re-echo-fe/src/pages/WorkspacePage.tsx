@@ -22,7 +22,6 @@ import { useWorkspaceChannelDetail } from '../features/workspace/useWorkspaceCha
 import {
   getWorkspaceMembershipStatusLabel,
   getWorkspaceRoleLabel,
-  getWorkspaceStatusLabel,
 } from '../features/workspace/workspaceLabels'
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type {
@@ -708,14 +707,6 @@ export function WorkspacePage() {
                 </p>
               </div>
               <div className={styles.status}>
-                <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
-                <span>{getWorkspaceStatusLabel(workspace.status)}</span>
-                {activeChannel?.status === 'ARCHIVED' && <span>보관됨</span>}
-                {activeChannel?.archiveExpiresAt && (
-                  <span>
-                    {new Date(activeChannel.archiveExpiresAt).toLocaleDateString('ko-KR')} 삭제 예정
-                  </span>
-                )}
                 {canManageActiveChannel && (
                   <button type="button" onClick={() => setIsChannelSettingsOpen(true)}>
                     채널 설정
