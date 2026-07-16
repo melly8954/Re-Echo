@@ -5,6 +5,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { ChannelMessagePanel } from '../features/message/ChannelMessagePanel'
 import { WorkspaceChannelSettingsDialog } from '../features/workspace/WorkspaceChannelSettingsDialog'
+import { WorkspaceProfileDialog } from '../features/workspace/WorkspaceProfileDialog'
 import { useAddWorkspacePrivateChannelMembers } from '../features/workspace/useAddWorkspacePrivateChannelMembers'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
@@ -65,6 +66,7 @@ export function WorkspacePage() {
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [isChannelSettingsOpen, setIsChannelSettingsOpen] = useState(false)
+  const [isWorkspaceProfileOpen, setIsWorkspaceProfileOpen] = useState(false)
   const [isChannelLeaveConfirmOpen, setIsChannelLeaveConfirmOpen] = useState(false)
   const [channelSettingsTargetId, setChannelSettingsTargetId] = useState<string | null>(null)
   const [channelLeaveTargetId, setChannelLeaveTargetId] = useState<string | null>(null)
@@ -682,24 +684,54 @@ export function WorkspacePage() {
                   <span>{group.members.length}</span>
                 </h3>
                 <div className={styles.memberList}>
-                  {group.members.map((member) => (
-                    <div key={member.id} className={styles.memberItem}>
-                      {member.profileImageUrl ? (
-                        <img src={member.profileImageUrl} alt="" />
-                      ) : (
-                        <span className={styles.memberAvatarFallback} aria-hidden="true">
-                          {member.displayName.slice(0, 1)}
-                        </span>
-                      )}
-                      <div className={styles.memberContent}>
-                        <div>
-                          <strong>{member.displayName}</strong>
-                          {member.id === workspace?.myMembership.id && <em>나</em>}
+                  {group.members.map((member) => {
+                    const isCurrentMember = member.id === workspace?.myMembership.id
+
+                    return (
+                      <div
+                        key={member.id}
+                        className={
+                          isCurrentMember
+                            ? `${styles.memberItem} ${styles.memberItemSelf}`
+                            : styles.memberItem
+                        }
+                        role={isCurrentMember ? 'button' : undefined}
+                        tabIndex={isCurrentMember ? 0 : undefined}
+                        aria-label={isCurrentMember ? '내 워크스페이스 프로필 편집' : undefined}
+                        title={isCurrentMember ? '우클릭하여 워크스페이스 프로필 편집' : undefined}
+                        onContextMenu={isCurrentMember ? (event) => {
+                          event.preventDefault()
+                          setIsWorkspaceProfileOpen(true)
+                        } : undefined}
+                        onKeyDown={isCurrentMember ? (event) => {
+                          if (
+                            event.key === 'Enter' ||
+                            event.key === ' ' ||
+                            event.key === 'ContextMenu' ||
+                            (event.key === 'F10' && event.shiftKey)
+                          ) {
+                            event.preventDefault()
+                            setIsWorkspaceProfileOpen(true)
+                          }
+                        } : undefined}
+                      >
+                        {member.profileImageUrl ? (
+                          <img src={member.profileImageUrl} alt="" />
+                        ) : (
+                          <span className={styles.memberAvatarFallback} aria-hidden="true">
+                            {member.displayName.slice(0, 1)}
+                          </span>
+                        )}
+                        <div className={styles.memberContent}>
+                          <div>
+                            <strong>{member.displayName}</strong>
+                            {isCurrentMember && <em>나</em>}
+                          </div>
+                          <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
                         </div>
-                        <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             ))}
@@ -724,6 +756,7 @@ export function WorkspacePage() {
       onOpenChannelSettings={openChannelSettings}
       onRequestLeaveChannel={requestLeaveChannel}
       isChannelLeavePending={leaveChannel.isPending}
+      onOpenWorkspaceProfile={workspace ? () => setIsWorkspaceProfileOpen(true) : undefined}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="채널 참여자"
     >
@@ -882,6 +915,13 @@ export function WorkspacePage() {
             setIsChannelSettingsOpen(false)
             setChannelSettingsTargetId(null)
           }}
+        />
+      )}
+      {workspace && (
+        <WorkspaceProfileDialog
+          workspace={workspace}
+          isOpen={isWorkspaceProfileOpen}
+          onClose={() => setIsWorkspaceProfileOpen(false)}
         />
       )}
     </AppShell>

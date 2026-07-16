@@ -436,24 +436,55 @@ export function WorkspaceHomePage() {
                   <span>{group.members.length}</span>
                 </h3>
                 <div className={styles.memberList}>
-                  {group.members.map((member) => (
-                    <div key={member.id} className={styles.memberItem}>
-                      {member.profileImageUrl ? (
-                        <img src={member.profileImageUrl} alt="" />
-                      ) : (
-                        <span className={styles.memberAvatarFallback} aria-hidden="true">
-                          {member.displayName.slice(0, 1)}
-                        </span>
-                      )}
-                      <div className={styles.memberContent}>
-                        <div>
-                          <strong>{member.displayName}</strong>
-                          {member.id === workspace?.myMembership.id && <em>나</em>}
+                  {group.members.map((member) => {
+                    const isCurrentMember = member.id === workspace?.myMembership.id
+                    const canOpenWorkspaceProfile = isCurrentMember && canUpdateWorkspaceProfile
+
+                    return (
+                      <div
+                        key={member.id}
+                        className={
+                          canOpenWorkspaceProfile
+                            ? `${styles.memberItem} ${styles.memberItemSelf}`
+                            : styles.memberItem
+                        }
+                        role={canOpenWorkspaceProfile ? 'button' : undefined}
+                        tabIndex={canOpenWorkspaceProfile ? 0 : undefined}
+                        aria-label={canOpenWorkspaceProfile ? '내 워크스페이스 프로필 편집' : undefined}
+                        title={canOpenWorkspaceProfile ? '우클릭하여 워크스페이스 프로필 편집' : undefined}
+                        onContextMenu={canOpenWorkspaceProfile ? (event) => {
+                          event.preventDefault()
+                          setIsWorkspaceProfileOpen(true)
+                        } : undefined}
+                        onKeyDown={canOpenWorkspaceProfile ? (event) => {
+                          if (
+                            event.key === 'Enter' ||
+                            event.key === ' ' ||
+                            event.key === 'ContextMenu' ||
+                            (event.key === 'F10' && event.shiftKey)
+                          ) {
+                            event.preventDefault()
+                            setIsWorkspaceProfileOpen(true)
+                          }
+                        } : undefined}
+                      >
+                        {member.profileImageUrl ? (
+                          <img src={member.profileImageUrl} alt="" />
+                        ) : (
+                          <span className={styles.memberAvatarFallback} aria-hidden="true">
+                            {member.displayName.slice(0, 1)}
+                          </span>
+                        )}
+                        <div className={styles.memberContent}>
+                          <div>
+                            <strong>{member.displayName}</strong>
+                            {isCurrentMember && <em>나</em>}
+                          </div>
+                          <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
                         </div>
-                        <small>{getWorkspaceMembershipStatusLabel(member.status)}</small>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             ))}
@@ -478,6 +509,9 @@ export function WorkspaceHomePage() {
           : undefined
       }
       isChannelsLoading={channelsQuery.isLoading}
+      onOpenWorkspaceProfile={
+        canUpdateWorkspaceProfile ? () => setIsWorkspaceProfileOpen(true) : undefined
+      }
       rightSidebar={workspace ? workspaceMemberPanel : undefined}
       rightSidebarLabel="워크스페이스 참여자"
     >
@@ -520,15 +554,6 @@ export function WorkspaceHomePage() {
               </div>
               {!isArchivedWorkspace && (
                 <div className={styles.actions}>
-                {canUpdateWorkspaceProfile && (
-                  <button
-                    type="button"
-                    className={styles.memberManageButton}
-                    onClick={() => setIsWorkspaceProfileOpen(true)}
-                  >
-                    내 프로필
-                  </button>
-                )}
                 {canManageWorkspaceSettings && (
                   <button
                     type="button"
