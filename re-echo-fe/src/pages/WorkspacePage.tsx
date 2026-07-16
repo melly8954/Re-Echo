@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { ChannelMessagePanel } from '../features/message/ChannelMessagePanel'
+import { WorkspaceChannelSettingsDialog } from '../features/workspace/WorkspaceChannelSettingsDialog'
 import { useAddWorkspacePrivateChannelMembers } from '../features/workspace/useAddWorkspacePrivateChannelMembers'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
@@ -17,6 +18,7 @@ import {
   workspaceChannelsQueryKey,
 } from '../features/workspace/useWorkspaceChannels'
 import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
+import { useWorkspaceChannelDetail } from '../features/workspace/useWorkspaceChannelDetail'
 import {
   getWorkspaceMembershipStatusLabel,
   getWorkspaceRoleLabel,
@@ -61,6 +63,7 @@ export function WorkspacePage() {
   >(null)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
+  const [isChannelSettingsOpen, setIsChannelSettingsOpen] = useState(false)
 
   useEffect(() => {
     if (!isChannelCreateOpen) {
@@ -92,6 +95,11 @@ export function WorkspacePage() {
   const workspace = workspaceQuery.data
   const channels = channelsQuery.data?.contents ?? []
   const activeChannel = channels.find((channel) => channel.id === channelId)
+  const channelDetailQuery = useWorkspaceChannelDetail(
+    routeWorkspaceId,
+    activeChannel?.id ?? '',
+  )
+  const activeChannelDetail = channelDetailQuery.data
   const channelMembersQuery = useWorkspaceChannelMembers(
     routeWorkspaceId,
     activeChannel?.id ?? '',
@@ -102,6 +110,7 @@ export function WorkspacePage() {
     setChannelMemberAddError(null)
     setSelectedChannelMemberIds([])
     setIsChannelMemberAddOpen(false)
+    setIsChannelSettingsOpen(false)
   }, [activeChannel?.id])
 
   if (!workspaceId) {
@@ -114,6 +123,7 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
+  const canManageActiveChannel = Boolean(canCreateChannel && activeChannelDetail)
   const canManageActivePrivateChannel =
     canCreateChannel &&
     activeChannel?.visibility === 'PRIVATE' &&
@@ -694,12 +704,23 @@ export function WorkspacePage() {
                   {activeChannel?.name ?? '채널'}
                 </h1>
                 <p className={styles.description}>
-                  {workspace.description ?? '기본 채널에서 첫 대화를 시작하세요.'}
+                  {activeChannelDetail?.description ?? '채널 설명이 없습니다.'}
                 </p>
               </div>
               <div className={styles.status}>
                 <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
                 <span>{getWorkspaceStatusLabel(workspace.status)}</span>
+                {activeChannel?.status === 'ARCHIVED' && <span>보관됨</span>}
+                {activeChannel?.archiveExpiresAt && (
+                  <span>
+                    {new Date(activeChannel.archiveExpiresAt).toLocaleDateString('ko-KR')} 삭제 예정
+                  </span>
+                )}
+                {canManageActiveChannel && (
+                  <button type="button" onClick={() => setIsChannelSettingsOpen(true)}>
+                    채널 설정
+                  </button>
+                )}
                 {canLeaveActiveChannel && (
                   <button
                     type="button"
@@ -719,7 +740,12 @@ export function WorkspacePage() {
             )}
 
             <section className={styles.messagePanel} aria-label="메시지 영역">
-              {activeChannel && !activeChannel.joined ? (
+              {activeChannel?.status === 'ARCHIVED' && !activeChannel.joined ? (
+                <div className={styles.channelJoinPrompt}>
+                  <strong>{activeChannel.name}</strong>
+                  <p>보관된 채널입니다. 현재는 읽기 전용이며 새로 참여할 수 없습니다.</p>
+                </div>
+              ) : activeChannel && !activeChannel.joined ? (
                 <div className={styles.channelJoinPrompt}>
                   <strong>{activeChannel.name}</strong>
                   <p>
@@ -744,7 +770,7 @@ export function WorkspacePage() {
                       workspace.myMembership.role === 'ADMIN'
                     }
                     channelName={activeChannel.name}
-                    readOnly={false}
+                    readOnly={activeChannel.status === 'ARCHIVED'}
                   />
                 )
               )}
@@ -753,6 +779,14 @@ export function WorkspacePage() {
         )}
       </section>
       {channelCreateDialog}
+      {activeChannelDetail && canManageActiveChannel && (
+        <WorkspaceChannelSettingsDialog
+          workspaceId={workspaceId}
+          channel={activeChannelDetail}
+          isOpen={isChannelSettingsOpen}
+          onClose={() => setIsChannelSettingsOpen(false)}
+        />
+      )}
     </AppShell>
   )
 }

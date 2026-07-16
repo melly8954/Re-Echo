@@ -39,6 +39,11 @@ export interface AddWorkspaceChannelMembersRequest {
   memberIds: string[]
 }
 
+export interface UpdateWorkspaceChannelRequest {
+  name: string
+  description: string | null
+}
+
 export interface CreatedWorkspaceChannel {
   id: string
 }
@@ -47,6 +52,7 @@ export type WorkspaceStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED'
 export type WorkspaceMembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER'
 export type WorkspaceMembershipStatus = 'ACTIVE' | 'LEFT' | 'REMOVED'
 export type ChannelVisibility = 'PUBLIC' | 'PRIVATE'
+export type ChannelStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED'
 
 export interface WorkspaceDetail {
   id: string
@@ -104,6 +110,8 @@ export interface WorkspaceChannel {
   isGeneral: boolean
   joined: boolean
   createdByMe: boolean
+  status: ChannelStatus
+  archiveExpiresAt: string | null
   unreadCount: number
   memberCount: number
 }
@@ -149,6 +157,18 @@ export function getWorkspaceDetail(workspaceId: string) {
     method: 'GET',
     authenticated: true,
   })
+}
+
+export interface WorkspaceChannelDetail {
+  id: string
+  name: string
+  description: string | null
+  visibility: ChannelVisibility
+  isGeneral: boolean
+  joined: boolean
+  createdByMe: boolean
+  status: ChannelStatus
+  archiveExpiresAt: string | null
 }
 
 export function updateWorkspace(
@@ -224,6 +244,51 @@ export function createWorkspaceChannel(
       method: 'POST',
       authenticated: true,
       body: JSON.stringify(request),
+    },
+  )
+}
+
+export function getWorkspaceChannelDetail(workspaceId: string, channelId: string) {
+  return apiRequest<WorkspaceChannelDetail>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}`,
+    {
+      method: 'GET',
+      authenticated: true,
+    },
+  )
+}
+
+export function updateWorkspaceChannel(
+  workspaceId: string,
+  channelId: string,
+  request: UpdateWorkspaceChannelRequest,
+) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}`,
+    {
+      method: 'PATCH',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export function archiveWorkspaceChannel(workspaceId: string, channelId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/archive`,
+    {
+      method: 'PATCH',
+      authenticated: true,
+    },
+  )
+}
+
+export function restoreWorkspaceChannel(workspaceId: string, channelId: string) {
+  return apiRequest<null>(
+    `/api/v1/workspaces/${workspaceId}/channels/${channelId}/restore`,
+    {
+      method: 'PATCH',
+      authenticated: true,
     },
   )
 }
