@@ -103,6 +103,20 @@ public class Channel {
                 .build();
     }
 
+    // 워크스페이스 보관과 개별 보관 모두 같은 수명주기 상태를 사용한다.
+    public void archive(LocalDateTime archivedAt, LocalDateTime archiveExpiresAt) {
+        this.status = ChannelStatus.ARCHIVED;
+        this.archivedAt = archivedAt;
+        this.archiveExpiresAt = archiveExpiresAt;
+    }
+
+    // 보관을 유발한 워크스페이스가 복원될 때만 서비스가 이 상태를 되돌린다.
+    public void restore() {
+        this.status = ChannelStatus.ACTIVE;
+        this.archivedAt = null;
+        this.archiveExpiresAt = null;
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

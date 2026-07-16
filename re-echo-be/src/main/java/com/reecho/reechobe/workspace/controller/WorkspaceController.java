@@ -19,6 +19,7 @@ import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import com.reecho.reechobe.workspace.service.command.WorkspaceCreateCommandService;
+import com.reecho.reechobe.workspace.service.command.WorkspaceLifecycleCommandService;
 import com.reecho.reechobe.workspace.service.command.WorkspaceUpdateCommandService;
 import com.reecho.reechobe.workspace.service.query.WorkspaceQueryService;
 import jakarta.validation.Valid;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WorkspaceController {
 
     private final WorkspaceCreateCommandService workspaceCreateCommandService;
+    private final WorkspaceLifecycleCommandService workspaceLifecycleCommandService;
     private final WorkspaceUpdateCommandService workspaceUpdateCommandService;
     private final WorkspaceQueryService workspaceQueryService;
     private final WorkspaceMembershipRepository workspaceMembershipRepository;
@@ -90,6 +92,26 @@ public class WorkspaceController {
                 request
         );
         return ApiResponse.success(HttpStatus.OK, "워크스페이스 정보를 수정했습니다.", result);
+    }
+
+    // 소유자 요청으로 워크스페이스와 활성 하위 채널을 보관 상태로 전환한다.
+    @PatchMapping("/{workspaceId}/archive")
+    public ApiResponse<Void> archiveWorkspace(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId
+    ) {
+        workspaceLifecycleCommandService.archiveWorkspace(principal.userId(), workspaceId);
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스를 보관했습니다.", null);
+    }
+
+    // 소유자 요청으로 만료 전 보관 워크스페이스와 하위 채널을 복원한다.
+    @PatchMapping("/{workspaceId}/restore")
+    public ApiResponse<Void> restoreWorkspace(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId
+    ) {
+        workspaceLifecycleCommandService.restoreWorkspace(principal.userId(), workspaceId);
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스를 복원했습니다.", null);
     }
 
     @PostMapping("/{workspaceId}/image/presign-upload")

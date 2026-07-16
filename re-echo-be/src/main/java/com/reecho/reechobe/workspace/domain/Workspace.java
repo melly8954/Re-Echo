@@ -93,6 +93,20 @@ public class Workspace {
         this.imageUrl = normalizeNullable(imageUrl);
     }
 
+    // 보관 시각과 만료 시각을 함께 저장해 복원 가능 기간을 명확히 한다.
+    public void archive(LocalDateTime archivedAt, LocalDateTime archiveExpiresAt) {
+        this.status = WorkspaceStatus.ARCHIVED;
+        this.archivedAt = archivedAt;
+        this.archiveExpiresAt = archiveExpiresAt;
+    }
+
+    // 복원된 워크스페이스는 다음 보관 전까지 이전 보관 이력을 유지하지 않는다.
+    public void restore() {
+        this.status = WorkspaceStatus.ACTIVE;
+        this.archivedAt = null;
+        this.archiveExpiresAt = null;
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

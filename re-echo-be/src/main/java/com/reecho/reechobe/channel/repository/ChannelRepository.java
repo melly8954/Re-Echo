@@ -1,6 +1,8 @@
 package com.reecho.reechobe.channel.repository;
 
 import com.reecho.reechobe.channel.domain.Channel;
+import com.reecho.reechobe.channel.domain.ChannelStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +16,14 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
     Optional<Channel> findByWorkspaceIdAndGeneralTrue(UUID workspaceId);
 
     List<Channel> findByWorkspaceIdInAndGeneralTrue(Iterable<UUID> workspaceIds);
+
+    List<Channel> findByWorkspaceIdAndStatus(UUID workspaceId, ChannelStatus status);
+
+    List<Channel> findByWorkspaceIdAndStatusAndArchivedAt(
+            UUID workspaceId,
+            ChannelStatus status,
+            LocalDateTime archivedAt
+    );
 
     boolean existsByWorkspaceIdAndName(UUID workspaceId, String name);
 
