@@ -164,6 +164,18 @@
   resize: vertical;
 }
 
+.field input[readonly] {
+  color: var(--color-muted);
+  background: var(--color-surface-subtle);
+  cursor: not-allowed;
+}
+
+.help {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .error {
   margin: 0;
   color: var(--color-danger);

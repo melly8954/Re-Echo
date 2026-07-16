@@ -47,6 +47,7 @@ export function WorkspaceSettingsDialog({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const isSaving = updateWorkspaceMutation.isPending || isUploadingImage
+  const canUpdateName = workspace.myMembership.role === 'OWNER'
 
   useEffect(() => {
     if (!isOpen) {
@@ -240,11 +241,18 @@ export function WorkspaceSettingsDialog({
               type="text"
               value={name}
               maxLength={100}
+              readOnly={!canUpdateName}
+              aria-describedby={canUpdateName ? undefined : 'workspace-name-readonly-help'}
               onChange={(event) => {
                 setName(event.target.value)
                 setSubmitError(null)
               }}
             />
+            {!canUpdateName && (
+              <small id="workspace-name-readonly-help" className={styles.help}>
+                워크스페이스 이름은 소유자만 변경할 수 있습니다.
+              </small>
+            )}
           </label>
           <label className={styles.field}>
             <span>설명</span>
