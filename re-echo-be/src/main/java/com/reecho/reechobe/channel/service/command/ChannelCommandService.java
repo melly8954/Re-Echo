@@ -238,7 +238,7 @@ public class ChannelCommandService {
                 .filter(message -> message.getChannelId().equals(channelId))
                 .orElseThrow(() -> new BusinessException(MessageErrorCode.MESSAGE_NOT_FOUND));
 
-        channelReadStateRepository.findByChannelMembershipId(channelMembership.getId())
+        channelReadStateRepository.findByChannelMembershipIdForUpdate(channelMembership.getId())
                 .ifPresentOrElse(
                         readState -> advanceReadState(readState, requestedMessage),
                         () -> channelReadStateRepository.save(

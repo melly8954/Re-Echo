@@ -811,7 +811,7 @@ class ChannelCommandServiceTest {
         when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), member.getId()))
                 .thenReturn(Optional.of(channelMembership));
         when(messageRepository.findById(message.getId())).thenReturn(Optional.of(message));
-        when(channelReadStateRepository.findByChannelMembershipId(channelMembership.getId()))
+        when(channelReadStateRepository.findByChannelMembershipIdForUpdate(channelMembership.getId()))
                 .thenReturn(Optional.empty());
 
         service.updateChannelReadState(
