@@ -122,7 +122,9 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
-  const canManageActiveChannel = Boolean(canCreateChannel && activeChannelDetail)
+  const canManageActiveChannel = Boolean(
+    canCreateChannel && activeChannelDetail && !activeChannelDetail.isGeneral,
+  )
   const canManageActivePrivateChannel =
     canCreateChannel &&
     activeChannel?.visibility === 'PRIVATE' &&
