@@ -402,7 +402,6 @@
   transition: opacity 120ms ease;
 }
 
-.channelRowActive .channelActions,
 .channelRow:hover .channelActions,
 .channelRow:focus-within .channelActions {
   opacity: 1;

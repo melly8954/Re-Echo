@@ -26,6 +26,7 @@ import {
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import type {
   ChannelVisibility,
+  WorkspaceChannel,
   WorkspaceMembershipRole,
 } from '../features/workspace/workspaceApi'
 import { ApiError } from '../shared/api/apiTypes'
@@ -65,6 +66,9 @@ export function WorkspacePage() {
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [isChannelSettingsOpen, setIsChannelSettingsOpen] = useState(false)
   const [isChannelLeaveConfirmOpen, setIsChannelLeaveConfirmOpen] = useState(false)
+  const [channelSettingsTargetId, setChannelSettingsTargetId] = useState<string | null>(null)
+  const [channelLeaveTargetId, setChannelLeaveTargetId] = useState<string | null>(null)
+  const [channelLeaveError, setChannelLeaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isChannelCreateOpen) {
@@ -101,6 +105,14 @@ export function WorkspacePage() {
     activeChannel?.id ?? '',
   )
   const activeChannelDetail = channelDetailQuery.data
+  const channelSettingsDetailQuery = useWorkspaceChannelDetail(
+    routeWorkspaceId,
+    channelSettingsTargetId ?? '',
+  )
+  const settingsChannelDetail =
+    channelSettingsTargetId === activeChannel?.id
+      ? activeChannelDetail
+      : channelSettingsDetailQuery.data
   const channelMembersQuery = useWorkspaceChannelMembers(
     routeWorkspaceId,
     activeChannel?.id ?? '',
@@ -113,6 +125,9 @@ export function WorkspacePage() {
     setIsChannelMemberAddOpen(false)
     setIsChannelSettingsOpen(false)
     setIsChannelLeaveConfirmOpen(false)
+    setChannelSettingsTargetId(null)
+    setChannelLeaveTargetId(null)
+    setChannelLeaveError(null)
   }, [activeChannel?.id])
 
   useEffect(() => {
@@ -144,22 +159,11 @@ export function WorkspacePage() {
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
   const canCreateChannel = canIssueInvite
-  const canManageActiveChannel = Boolean(
-    canCreateChannel && activeChannelDetail && !activeChannelDetail.isGeneral,
-  )
   const canManageActivePrivateChannel =
     canCreateChannel &&
     activeChannel?.visibility === 'PRIVATE' &&
     activeChannel.joined
-  const canLeaveActiveChannel =
-    Boolean(
-      activeChannel?.joined &&
-        !activeChannel.isGeneral &&
-        !(
-          activeChannel.visibility === 'PRIVATE' &&
-          activeChannel.createdByMe
-        ),
-    )
+  const leavingChannel = channels.find((channel) => channel.id === channelLeaveTargetId)
   const isChannelMembershipPending = joinChannel.isPending || leaveChannel.isPending
   const members = channelMembersQuery.data?.contents ?? []
   const privateChannelMemberOptions =
@@ -198,6 +202,12 @@ export function WorkspacePage() {
       members: members.filter((member) => member.role === 'MEMBER'),
     },
   ]
+
+  function canLeaveChannel(channel: WorkspaceChannel) {
+    return channel.joined &&
+      !channel.isGeneral &&
+      !(channel.visibility === 'PRIVATE' && channel.createdByMe)
+  }
 
   async function handleCreateChannel(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -268,31 +278,34 @@ export function WorkspacePage() {
     }
   }
 
-  async function handleLeaveActiveChannel() {
-    if (!workspaceId || !activeChannel || !canLeaveActiveChannel) {
+  async function handleLeaveChannel() {
+    if (!workspaceId || !leavingChannel || !canLeaveChannel(leavingChannel)) {
       return
     }
 
-    setChannelMembershipMessage(null)
+    setChannelLeaveError(null)
     try {
       await leaveChannel.mutateAsync({
         workspaceId,
-        channelId: activeChannel.id,
+        channelId: leavingChannel.id,
       })
       await queryClient.invalidateQueries({
         queryKey: workspaceChannelsQueryKey(workspaceId),
       })
       await queryClient.invalidateQueries({
-        queryKey: workspaceChannelMembersQueryKey(workspaceId, activeChannel.id),
+        queryKey: workspaceChannelMembersQueryKey(workspaceId, leavingChannel.id),
       })
       setIsChannelLeaveConfirmOpen(false)
-      setChannelMembershipMessage('채널에서 나갔습니다.')
+      setChannelLeaveTargetId(null)
+      if (activeChannel?.id === leavingChannel.id) {
+        setChannelMembershipMessage('채널에서 나갔습니다.')
+      }
     } catch (error) {
       if (error instanceof ApiError) {
-        setChannelMembershipMessage(error.message)
+        setChannelLeaveError(error.message)
         return
       }
-      setChannelMembershipMessage('채널에서 나가지 못했습니다.')
+      setChannelLeaveError('채널에서 나가지 못했습니다.')
     }
   }
 
@@ -340,12 +353,23 @@ export function WorkspacePage() {
     setIsChannelCreateOpen(false)
   }
 
-  function requestLeaveActiveChannel() {
-    if (!canLeaveActiveChannel) {
+  function openChannelSettings(channelId: string) {
+    const channel = channels.find((item) => item.id === channelId)
+    if (!canCreateChannel || !channel || channel.isGeneral) {
+      return
+    }
+    setChannelSettingsTargetId(channel.id)
+    setIsChannelSettingsOpen(true)
+  }
+
+  function requestLeaveChannel(channelId: string) {
+    const channel = channels.find((item) => item.id === channelId)
+    if (!channel || !canLeaveChannel(channel)) {
       return
     }
     leaveChannel.reset()
-    setChannelMembershipMessage(null)
+    setChannelLeaveError(null)
+    setChannelLeaveTargetId(channel.id)
     setIsChannelLeaveConfirmOpen(true)
   }
 
@@ -691,17 +715,15 @@ export function WorkspacePage() {
       channels={channels.map((channel) => ({
         ...channel,
         href: `/workspaces/${workspaceId}/channels/${channel.id}`,
+        canManage: canCreateChannel && !channel.isGeneral,
+        canLeave: canLeaveChannel(channel),
       }))}
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
       channelHeaderAction={channelCreateAction}
-      onOpenActiveChannelSettings={
-        canManageActiveChannel ? () => setIsChannelSettingsOpen(true) : undefined
-      }
-      onRequestLeaveActiveChannel={
-        canLeaveActiveChannel ? requestLeaveActiveChannel : undefined
-      }
-      isActiveChannelLeavePending={leaveChannel.isPending}
+      onOpenChannelSettings={openChannelSettings}
+      onRequestLeaveChannel={requestLeaveChannel}
+      isChannelLeavePending={leaveChannel.isPending}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="채널 참여자"
     >
@@ -806,7 +828,7 @@ export function WorkspacePage() {
         )}
       </section>
       {channelCreateDialog}
-      {isChannelLeaveConfirmOpen && activeChannel && (
+      {isChannelLeaveConfirmOpen && leavingChannel && (
         <div className={styles.channelLeaveLayer}>
           <button
             className={styles.channelLeaveOverlay}
@@ -823,13 +845,13 @@ export function WorkspacePage() {
             aria-describedby="channel-leave-description"
           >
             <p className={styles.eyebrow}>채널 나가기</p>
-            <h2 id="channel-leave-title">{activeChannel.name} 채널에서 나갈까요?</h2>
+            <h2 id="channel-leave-title">{leavingChannel.name} 채널에서 나갈까요?</h2>
             <p id="channel-leave-description">
               나가면 이 채널의 메시지를 더 이상 볼 수 없습니다.
             </p>
-            {channelMembershipMessage && (
+            {channelLeaveError && (
               <p className={styles.channelLeaveError} role="alert">
-                {channelMembershipMessage}
+                {channelLeaveError}
               </p>
             )}
             <div className={styles.channelLeaveFooter}>
@@ -842,7 +864,7 @@ export function WorkspacePage() {
               </button>
               <button
                 type="button"
-                onClick={() => void handleLeaveActiveChannel()}
+                onClick={() => void handleLeaveChannel()}
                 disabled={leaveChannel.isPending}
               >
                 {leaveChannel.isPending ? '나가는 중...' : '나가기'}
@@ -851,12 +873,15 @@ export function WorkspacePage() {
           </section>
         </div>
       )}
-      {activeChannelDetail && canManageActiveChannel && (
+      {settingsChannelDetail && canCreateChannel && !settingsChannelDetail.isGeneral && (
         <WorkspaceChannelSettingsDialog
           workspaceId={workspaceId}
-          channel={activeChannelDetail}
+          channel={settingsChannelDetail}
           isOpen={isChannelSettingsOpen}
-          onClose={() => setIsChannelSettingsOpen(false)}
+          onClose={() => {
+            setIsChannelSettingsOpen(false)
+            setChannelSettingsTargetId(null)
+          }}
         />
       )}
     </AppShell>

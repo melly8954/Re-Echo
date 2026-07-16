@@ -14,6 +14,8 @@ interface ChannelNavigationItem {
   visibility: 'PUBLIC' | 'PRIVATE'
   joined: boolean
   unreadCount: number
+  canManage?: boolean
+  canLeave?: boolean
 }
 
 interface AppShellProps {
@@ -24,9 +26,9 @@ interface AppShellProps {
   activeChannelId?: string
   isChannelsLoading?: boolean
   channelHeaderAction?: ReactNode
-  onOpenActiveChannelSettings?: () => void
-  onRequestLeaveActiveChannel?: () => void
-  isActiveChannelLeavePending?: boolean
+  onOpenChannelSettings?: (channelId: string) => void
+  onRequestLeaveChannel?: (channelId: string) => void
+  isChannelLeavePending?: boolean
   channelEmptyMessage?: string
   rightSidebar?: ReactNode
   rightSidebarLabel?: string
@@ -42,9 +44,9 @@ export function AppShell({
   activeChannelId,
   isChannelsLoading = false,
   channelHeaderAction,
-  onOpenActiveChannelSettings,
-  onRequestLeaveActiveChannel,
-  isActiveChannelLeavePending = false,
+  onOpenChannelSettings,
+  onRequestLeaveChannel,
+  isChannelLeavePending = false,
   channelEmptyMessage = '워크스페이스에 참여하면 채널이 표시됩니다.',
   rightSidebar,
   rightSidebarLabel,
@@ -143,8 +145,9 @@ export function AppShell({
         <nav className={styles.channelList} aria-label="워크스페이스 채널">
           {channels.map((channel) => {
             const isActiveChannel = channel.id === activeChannelId
-            const hasActiveChannelAction = isActiveChannel && (
-              onOpenActiveChannelSettings || onRequestLeaveActiveChannel
+            const hasChannelAction = (
+              (channel.canManage && onOpenChannelSettings) ||
+              (channel.canLeave && onRequestLeaveChannel)
             )
 
             return (
@@ -193,9 +196,9 @@ export function AppShell({
                     </span>
                   )}
                 </Link>
-                {hasActiveChannelAction && (
+                {hasChannelAction && (
                   <div className={styles.channelActions} aria-label={`${channel.name} 관리 동작`}>
-                    {onOpenActiveChannelSettings && (
+                    {channel.canManage && onOpenChannelSettings && (
                       <button
                         className={styles.channelActionButton}
                         type="button"
@@ -203,7 +206,7 @@ export function AppShell({
                         title="채널 설정"
                         onClick={() => {
                           closeNavigationSurfaces()
-                          onOpenActiveChannelSettings()
+                          onOpenChannelSettings(channel.id)
                         }}
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -211,7 +214,7 @@ export function AppShell({
                         </svg>
                       </button>
                     )}
-                    {onRequestLeaveActiveChannel && (
+                    {channel.canLeave && onRequestLeaveChannel && (
                       <button
                         className={`${styles.channelActionButton} ${styles.channelLeaveActionButton}`}
                         type="button"
@@ -219,9 +222,9 @@ export function AppShell({
                         title="채널 나가기"
                         onClick={() => {
                           closeNavigationSurfaces()
-                          onRequestLeaveActiveChannel()
+                          onRequestLeaveChannel(channel.id)
                         }}
-                        disabled={isActiveChannelLeavePending}
+                        disabled={isChannelLeavePending}
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
                           <path d="M4.5 3.5h9v17h-9v-17Z" />
