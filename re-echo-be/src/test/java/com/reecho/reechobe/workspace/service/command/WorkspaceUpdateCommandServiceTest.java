@@ -11,6 +11,7 @@ import com.reecho.reechobe.channel.repository.ChannelRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.file.service.WorkspaceImageFileService;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
+import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
 import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
 import com.reecho.reechobe.user.domain.User;
@@ -110,6 +111,63 @@ class WorkspaceUpdateCommandServiceTest {
                 .isEqualTo(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
 
         verifyNoInteractions(workspaceImageFileService, channelRepository);
+    }
+
+    @Test
+    void 관리자는_워크스페이스_이름을_변경할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        User user = User.createActive("관리자", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        Workspace workspace = Workspace.create("기존 이름", "기존 설명", null, userId);
+        WorkspaceMembership membership = WorkspaceMembership.createMember(workspace.getId(), user);
+        ReflectionTestUtils.setField(membership, "role", WorkspaceMembershipRole.ADMIN);
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(membership));
+
+        assertThatThrownBy(() -> service.updateWorkspace(
+                userId,
+                workspace.getId(),
+                new UpdateWorkspaceRequest("새 이름", "새 설명", null)
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
+
+        assertThat(workspace.getName()).isEqualTo("기존 이름");
+        verifyNoInteractions(workspaceImageFileService, channelRepository);
+    }
+
+    @Test
+    void 관리자는_현재_이름을_유지하면_설명과_대표_이미지를_변경할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        UUID imageFileId = UUID.randomUUID();
+        User user = User.createActive("관리자", null);
+        ReflectionTestUtils.setField(user, "id", userId);
+        Workspace workspace = Workspace.create("기존 이름", "기존 설명", null, userId);
+        WorkspaceMembership membership = WorkspaceMembership.createMember(workspace.getId(), user);
+        ReflectionTestUtils.setField(membership, "role", WorkspaceMembershipRole.ADMIN);
+        Channel generalChannel = Channel.createGeneral(workspace.getId(), membership.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(membership));
+        when(workspaceImageFileService.requireUploadedWorkspaceImageUrl(
+                workspace.getId(), userId, imageFileId
+        )).thenReturn("https://example.com/workspace.png");
+        when(channelRepository.findByWorkspaceIdAndGeneralTrue(workspace.getId()))
+                .thenReturn(Optional.of(generalChannel));
+
+        service.updateWorkspace(
+                userId,
+                workspace.getId(),
+                new UpdateWorkspaceRequest("기존 이름", "새 설명", imageFileId)
+        );
+
+        assertThat(workspace.getName()).isEqualTo("기존 이름");
+        assertThat(workspace.getDescription()).isEqualTo("새 설명");
+        assertThat(workspace.getImageFileId()).isEqualTo(imageFileId);
     }
 
     @Test

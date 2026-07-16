@@ -53,6 +53,10 @@ public class WorkspaceUpdateCommandService {
         if (!canManageWorkspace(membership)) {
             throw new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
         }
+        if (membership.getRole() != WorkspaceMembershipRole.OWNER
+                && !workspace.getName().equals(request.name().trim())) {
+            throw new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
+        }
 
         UUID previousImageFileId = workspace.getImageFileId();
         String imageUrl = request.imageFileId() == null
@@ -78,7 +82,7 @@ public class WorkspaceUpdateCommandService {
         );
     }
 
-    // 워크스페이스 설정 변경에는 소유자와 관리자만 허용한다.
+    // 이름을 제외한 워크스페이스 설정 변경에는 소유자와 관리자만 허용한다.
     private boolean canManageWorkspace(WorkspaceMembership membership) {
         return membership.getRole() == WorkspaceMembershipRole.OWNER
                 || membership.getRole() == WorkspaceMembershipRole.ADMIN;
