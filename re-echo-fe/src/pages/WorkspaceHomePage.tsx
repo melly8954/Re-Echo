@@ -9,7 +9,10 @@ import { useRestoreWorkspace } from '../features/workspace/useRestoreWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
 import { WorkspaceSettingsDialog } from '../features/workspace/WorkspaceSettingsDialog'
-import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
+import {
+  useWorkspaceChannels,
+  workspaceChannelsQueryKey,
+} from '../features/workspace/useWorkspaceChannels'
 import {
   useWorkspaceDetail,
   workspaceDetailQueryKey,
@@ -20,11 +23,7 @@ import {
 } from '../features/workspace/useWorkspaceInviteLink'
 import { useWorkspaceMembers } from '../features/workspace/useWorkspaceMembers'
 import { workspaceListQueryKey } from '../features/workspace/useWorkspaceList'
-import {
-  getWorkspaceMembershipStatusLabel,
-  getWorkspaceRoleLabel,
-  getWorkspaceStatusLabel,
-} from '../features/workspace/workspaceLabels'
+import { getWorkspaceMembershipStatusLabel } from '../features/workspace/workspaceLabels'
 import type {
   WorkspaceInviteLink,
   WorkspaceMembershipRole,
@@ -200,10 +199,13 @@ export function WorkspaceHomePage() {
 
     try {
       await archiveWorkspace.mutateAsync(routeWorkspaceId)
-      await queryClient.invalidateQueries({ queryKey: workspaceListQueryKey })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: workspaceListQueryKey }),
+        queryClient.invalidateQueries({ queryKey: workspaceDetailQueryKey(routeWorkspaceId) }),
+        queryClient.invalidateQueries({ queryKey: workspaceChannelsQueryKey(routeWorkspaceId) }),
+      ])
       setIsWorkspaceArchiveOpen(false)
       setIsWorkspaceSettingsOpen(false)
-      void navigate('/', { replace: true })
     } catch {
       // mutation 상태를 통해 확인 모달에 오류 메시지를 표시한다.
     }
@@ -219,6 +221,7 @@ export function WorkspaceHomePage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: workspaceListQueryKey }),
         queryClient.invalidateQueries({ queryKey: workspaceDetailQueryKey(routeWorkspaceId) }),
+        queryClient.invalidateQueries({ queryKey: workspaceChannelsQueryKey(routeWorkspaceId) }),
       ])
       setIsWorkspaceRestoreOpen(false)
     } catch {
@@ -512,9 +515,8 @@ export function WorkspaceHomePage() {
                   )}
                 </p>
               </div>
-              <div className={styles.actions}>
-                <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
-                <span>{getWorkspaceStatusLabel(workspace.status)}</span>
+              {!isArchivedWorkspace && (
+                <div className={styles.actions}>
                 {canManageWorkspaceSettings && (
                   <button
                     type="button"
@@ -522,18 +524,6 @@ export function WorkspaceHomePage() {
                     onClick={() => setIsWorkspaceSettingsOpen(true)}
                   >
                     워크스페이스 설정
-                  </button>
-                )}
-                {canRestoreWorkspace && (
-                  <button
-                    type="button"
-                    className={styles.workspaceRestoreButton}
-                    onClick={() => {
-                      restoreWorkspace.reset()
-                      setIsWorkspaceRestoreOpen(true)
-                    }}
-                  >
-                    워크스페이스 복원
                   </button>
                 )}
                 {canIssueInvite && (
@@ -557,7 +547,8 @@ export function WorkspaceHomePage() {
                     워크스페이스 나가기
                   </button>
                 )}
-              </div>
+                </div>
+              )}
             </header>
 
             {isArchivedWorkspace ? (
