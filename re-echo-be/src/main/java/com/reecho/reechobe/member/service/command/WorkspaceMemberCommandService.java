@@ -25,6 +25,7 @@ public class WorkspaceMemberCommandService {
     private final ChannelMembershipRepository channelMembershipRepository;
 
     @Transactional
+    // 본인만 워크스페이스를 탈퇴하고 연결된 채널 참여 상태도 함께 해제한다.
     public void leaveWorkspace(UUID userId, UUID workspaceId, UUID memberId) {
         WorkspaceMembership membership = getActiveMembership(userId, workspaceId);
         if (!membership.getId().equals(memberId)) {
@@ -39,6 +40,7 @@ public class WorkspaceMemberCommandService {
     }
 
     @Transactional
+    // 소유자가 다른 활성 멤버의 관리자 또는 일반 멤버 역할을 변경한다.
     public void changeMemberRole(
             UUID userId,
             UUID workspaceId,
@@ -62,6 +64,7 @@ public class WorkspaceMemberCommandService {
     }
 
     @Transactional
+    // 소유자 또는 관리자가 대상 멤버와 해당 채널 접근 권한을 제거한다.
     public void removeMember(UUID userId, UUID workspaceId, UUID memberId) {
         WorkspaceMembership actorMembership = getActiveMembership(userId, workspaceId);
         if (actorMembership.getRole() == WorkspaceMembershipRole.MEMBER) {
@@ -98,6 +101,7 @@ public class WorkspaceMemberCommandService {
     }
 
     // 재참여 시 기본 채널만 자동 복구되도록 기존 채널 참여도 함께 종료한다.
+    // 워크스페이스 접근이 끝난 멤버가 기존 채널에 남지 않도록 모든 활성 참여를 해제한다.
     private void leaveActiveChannelMemberships(UUID workspaceMembershipId) {
         channelMembershipRepository
                 .findByWorkspaceMembershipIdAndStatus(

@@ -30,6 +30,7 @@ public class WorkspaceLifecycleCommandService {
 
     // 소유자 요청으로 활성 워크스페이스와 활성 채널을 같은 보관 시각으로 전환한다.
     @Transactional
+    // 소유자 요청으로 워크스페이스와 하위 채널을 복원 가능 기간의 보관 상태로 전환한다.
     public void archiveWorkspace(UUID userId, UUID workspaceId) {
         Workspace workspace = requireWorkspace(workspaceId);
         requireOwner(userId, workspaceId);
@@ -46,6 +47,7 @@ public class WorkspaceLifecycleCommandService {
 
     // 만료 전 소유자 요청으로 워크스페이스와 이 보관 작업에 포함된 채널만 복원한다.
     @Transactional
+    // 소유자가 만료 전 보관 워크스페이스와 하위 채널을 다시 활성화한다.
     public void restoreWorkspace(UUID userId, UUID workspaceId) {
         Workspace workspace = requireWorkspace(workspaceId);
         requireOwner(userId, workspaceId);
@@ -69,6 +71,7 @@ public class WorkspaceLifecycleCommandService {
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
     }
 
+    // 생명주기 변경은 관리자보다 강한 소유자 권한으로 제한한다.
     private void requireOwner(UUID userId, UUID workspaceId) {
         WorkspaceMembership membership = workspaceMembershipRepository
                 .findByWorkspaceIdAndUserIdAndStatus(
@@ -82,6 +85,7 @@ public class WorkspaceLifecycleCommandService {
         }
     }
 
+    // 보관 만료 시각을 넘긴 워크스페이스는 복원할 수 없게 한다.
     private boolean canRestore(Workspace workspace) {
         return workspace.getStatus() == WorkspaceStatus.ARCHIVED
                 && workspace.getArchivedAt() != null

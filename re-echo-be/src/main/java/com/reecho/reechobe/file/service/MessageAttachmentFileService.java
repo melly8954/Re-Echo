@@ -42,6 +42,7 @@ public class MessageAttachmentFileService {
     private final R2StorageProperties r2StorageProperties;
 
     @Transactional
+    // 쓰기 가능한 워크스페이스 멤버에게만 메시지 첨부의 직접 업로드 URL을 발급한다.
     public PresignedUploadResponse createUploadUrl(
             UUID userId,
             UUID workspaceId,
@@ -104,6 +105,7 @@ public class MessageAttachmentFileService {
         }
     }
 
+    // 현재 멤버가 볼 수 있는 메시지에 연결된 첨부 파일에만 다운로드 URL을 발급한다.
     public PresignedDownloadResponse createDownloadUrl(UUID userId, UUID workspaceId, UUID fileId) {
         WorkspaceMembership membership = requireAccessibleWorkspaceMembership(userId, workspaceId);
         FileObject fileObject = fileObjectRepository.findById(fileId)
@@ -127,6 +129,7 @@ public class MessageAttachmentFileService {
         );
     }
 
+    // 보관·삭제 워크스페이스에는 새 첨부를 올리지 못하도록 쓰기 가능 상태를 확인한다.
     private WorkspaceMembership requireWritableWorkspaceMembership(UUID userId, UUID workspaceId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
@@ -137,6 +140,7 @@ public class MessageAttachmentFileService {
         return requireAccessibleWorkspaceMembership(userId, workspaceId);
     }
 
+    // 탈퇴하거나 제거된 사용자가 파일 URL을 발급받지 못하도록 활성 멤버십만 허용한다.
     private WorkspaceMembership requireAccessibleWorkspaceMembership(UUID userId, UUID workspaceId) {
         workspaceRepository.findById(workspaceId)
                 .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
@@ -146,6 +150,7 @@ public class MessageAttachmentFileService {
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
     }
 
+    // 첨부 파일을 워크스페이스별 경로와 난수 식별자로 분리해 저장한다.
     private String buildStorageKey(UUID workspaceId, UUID fileId, String fileName) {
         return "workspaces/%s/attachments/%s/%s".formatted(
                 workspaceId,
@@ -154,6 +159,7 @@ public class MessageAttachmentFileService {
         );
     }
 
+    // 사용자 파일명이 저장소 키의 경로나 URL 규칙에 영향을 주지 않게 정규화한다.
     private String normalizeStorageFileName(String fileName) {
         String normalizedFileName = fileName.trim()
                 .replaceAll("[^A-Za-z0-9._-]", "_");

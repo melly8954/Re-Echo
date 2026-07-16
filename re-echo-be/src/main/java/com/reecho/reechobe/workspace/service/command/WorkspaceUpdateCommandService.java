@@ -29,6 +29,7 @@ public class WorkspaceUpdateCommandService {
     private final WorkspaceImageFileService workspaceImageFileService;
 
     @Transactional
+    // 소유자 또는 관리자가 기본 정보와 대표 이미지를 한 트랜잭션으로 갱신한다.
     public WorkspaceDetailResponse updateWorkspace(
             UUID userId,
             UUID workspaceId,
@@ -77,6 +78,7 @@ public class WorkspaceUpdateCommandService {
         );
     }
 
+    // 워크스페이스 설정 변경에는 소유자와 관리자만 허용한다.
     private boolean canManageWorkspace(WorkspaceMembership membership) {
         return membership.getRole() == WorkspaceMembershipRole.OWNER
                 || membership.getRole() == WorkspaceMembershipRole.ADMIN;

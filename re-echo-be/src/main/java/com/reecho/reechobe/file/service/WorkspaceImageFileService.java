@@ -32,6 +32,7 @@ public class WorkspaceImageFileService {
     private final R2StorageProperties r2StorageProperties;
 
     @Transactional
+    // 워크스페이스 멤버가 변경할 대표 이미지의 직접 업로드 URL과 임시 메타데이터를 만든다.
     public PresignedUploadResponse createWorkspaceImageUpload(
             UUID workspaceId,
             UUID userId,
@@ -81,6 +82,7 @@ public class WorkspaceImageFileService {
     }
 
     @Transactional
+    // 워크스페이스에 더 이상 연결되지 않은 대표 이미지를 정리 대상으로 표시한다.
     public void markWorkspaceImageOrphaned(UUID workspaceId, UUID fileId) {
         FileObject fileObject = fileObjectRepository.findById(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
@@ -90,6 +92,7 @@ public class WorkspaceImageFileService {
         fileObject.markOrphaned();
     }
 
+    // 대표 이미지가 허용된 형식과 용량을 초과하지 않게 검증한다.
     private void validateWorkspaceImage(ProfileImagePresignRequest request) {
         if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
             throw new BusinessException(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);
@@ -99,6 +102,7 @@ public class WorkspaceImageFileService {
         }
     }
 
+    // 워크스페이스 범위와 난수 식별자로 대표 이미지 객체 키를 구성한다.
     private String buildWorkspaceImageStorageKey(UUID workspaceId, UUID fileId, String fileName) {
         return "workspaces/%s/%s/%s".formatted(
                 workspaceId,
@@ -107,6 +111,7 @@ public class WorkspaceImageFileService {
         );
     }
 
+    // 저장소 키가 사용자 입력 파일명에 따라 깨지지 않도록 허용 문자만 남긴다.
     private String normalizeFileName(String fileName) {
         String normalizedFileName = fileName.trim()
                 .replaceAll("[^A-Za-z0-9._-]", "_");

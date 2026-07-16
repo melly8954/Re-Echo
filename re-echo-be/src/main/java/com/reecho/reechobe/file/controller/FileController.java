@@ -27,6 +27,7 @@ public class FileController {
     private final MessageAttachmentFileService messageAttachmentFileService;
 
     @PostMapping("/presign-upload")
+    // 메시지 첨부 직접 업로드 URL 발급 요청을 파일 서비스에 위임한다.
     public ApiResponse<PresignedUploadResponse> createUploadUrl(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -41,6 +42,7 @@ public class FileController {
     }
 
     @GetMapping("/{fileId}/download-url")
+    // 접근 가능한 메시지 첨부의 제한 시간 다운로드 URL 발급을 파일 서비스에 위임한다.
     public ApiResponse<PresignedDownloadResponse> createDownloadUrl(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,

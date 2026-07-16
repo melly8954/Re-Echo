@@ -35,6 +35,7 @@ public class ChannelController {
     private final ChannelQueryService channelQueryService;
 
     @GetMapping
+    // 현재 워크스페이스에서 접근 가능한 채널 목록 조회를 Query Service에 위임한다.
     public ApiResponse<ChannelListResponse> getChannels(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId
@@ -44,6 +45,7 @@ public class ChannelController {
     }
 
     @GetMapping("/{channelId}/members")
+    // 채널 멤버 목록 조회와 비공개 채널 접근 검증을 Query Service에 위임한다.
     public ApiResponse<WorkspaceMemberListResponse> getChannelMembers(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -59,6 +61,7 @@ public class ChannelController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    // 채널 생성 요청을 Command Service에 위임하고 생성 채널 식별자를 반환한다.
     public ApiResponse<CreatedChannelResponse> createChannel(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -73,6 +76,7 @@ public class ChannelController {
     }
 
     @PostMapping("/{channelId}/join")
+    // 공개 채널 참여 요청을 Command Service에 위임한다.
     public ApiResponse<Void> joinPublicChannel(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -83,6 +87,7 @@ public class ChannelController {
     }
 
     @PostMapping("/{channelId}/members")
+    // 비공개 채널 멤버 추가 요청을 Command Service에 위임한다.
     public ApiResponse<Void> addPrivateChannelMembers(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -94,6 +99,7 @@ public class ChannelController {
     }
 
     @PostMapping("/{channelId}/leave")
+    // 현재 사용자의 채널 탈퇴 요청을 Command Service에 위임한다.
     public ApiResponse<Void> leaveChannel(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -104,6 +110,7 @@ public class ChannelController {
     }
 
     @PutMapping("/{channelId}/read-state")
+    // 채널별 마지막 읽음 메시지 갱신 요청을 Command Service에 위임한다.
     public ApiResponse<Void> updateChannelReadState(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -115,6 +122,7 @@ public class ChannelController {
     }
 
     @DeleteMapping("/{channelId}/members/{memberId}")
+    // 비공개 채널 멤버 제거 요청을 Command Service에 위임한다.
     public ApiResponse<Void> removeChannelMember(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,

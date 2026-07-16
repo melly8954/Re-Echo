@@ -43,6 +43,7 @@ public class MessageQueryService {
     private final MessageResponseAssembler messageResponseAssembler;
 
     @Transactional(readOnly = true)
+    // 채널 멤버가 최신 또는 지정 cursor 이전 메시지를 페이지 단위로 조회한다.
     public CursorPageResponse<ChannelMessageResponse, MessageCursorResponse> getMessages(
             UUID userId,
             UUID workspaceId,
@@ -75,6 +76,7 @@ public class MessageQueryService {
         );
     }
 
+    // 비공개 채널은 활성 채널 멤버만 메시지 이력을 조회할 수 있도록 검증한다.
     private WorkspaceMembership validateReadableChannel(UUID userId, UUID workspaceId, UUID channelId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
@@ -92,6 +94,7 @@ public class MessageQueryService {
         return membership;
     }
 
+    // cursor 두 값 중 하나만 전달된 불완전한 과거 조회 요청을 거부한다.
     private void validateCursor(LocalDateTime cursorCreatedAt, UUID cursorMessageId) {
         if ((cursorCreatedAt == null) != (cursorMessageId == null)) {
             throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED, "메시지 cursor 값이 올바르지 않습니다.");

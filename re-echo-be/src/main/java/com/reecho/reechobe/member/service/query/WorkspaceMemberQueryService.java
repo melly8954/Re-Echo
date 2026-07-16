@@ -26,6 +26,7 @@ public class WorkspaceMemberQueryService {
     private final WorkspaceMembershipRepository workspaceMembershipRepository;
 
     @Transactional(readOnly = true)
+    // 활성 멤버가 워크스페이스 구성원을 권한 우선순위로 조회한다.
     public WorkspaceMemberListResponse getWorkspaceMembers(UUID userId, UUID workspaceId) {
         workspaceRepository.findById(workspaceId)
                 .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
@@ -49,6 +50,7 @@ public class WorkspaceMemberQueryService {
         return WorkspaceMemberListResponse.of(members);
     }
 
+    // 멤버 관리 화면에서 소유자와 관리자를 먼저 보이게 할 정렬 기준이다.
     private int roleOrder(WorkspaceMembershipRole role) {
         return switch (role) {
             case OWNER -> 0;

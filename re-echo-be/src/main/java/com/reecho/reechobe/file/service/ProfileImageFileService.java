@@ -32,6 +32,7 @@ public class ProfileImageFileService {
     private final R2StorageProperties r2StorageProperties;
 
     @Transactional
+    // 계정 소유자에게만 허용 확장자와 용량을 검증한 프로필 이미지 업로드 URL을 발급한다.
     public PresignedUploadResponse createAccountProfileImageUpload(
             UUID userId,
             ProfileImagePresignRequest request
@@ -75,6 +76,7 @@ public class ProfileImageFileService {
     }
 
     @Transactional
+    // 더 이상 프로필에 연결되지 않은 계정 소유자의 이미지 파일을 정리 대상으로 표시한다.
     public void markAccountProfileImageOrphaned(UUID userId, UUID fileId) {
         FileObject fileObject = fileObjectRepository.findById(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
@@ -84,6 +86,7 @@ public class ProfileImageFileService {
         fileObject.markOrphaned();
     }
 
+    // 브라우저가 선언한 파일 형식과 크기를 서버 정책 범위로 제한한다.
     private void validateProfileImage(ProfileImagePresignRequest request) {
         if (!ALLOWED_CONTENT_TYPES.contains(request.contentType())) {
             throw new BusinessException(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);
@@ -93,6 +96,7 @@ public class ProfileImageFileService {
         }
     }
 
+    // 계정과 난수 파일 식별자를 포함해 서로 충돌하지 않는 R2 경로를 만든다.
     private String buildProfileImageStorageKey(UUID userId, UUID fileId, String fileName) {
         return "profiles/%s/%s/%s".formatted(
                 userId,
@@ -101,6 +105,7 @@ public class ProfileImageFileService {
         );
     }
 
+    // 객체 키에 사용할 수 없는 파일명 문자를 치환해 경로 해석 문제를 막는다.
     private String normalizeFileName(String fileName) {
         String normalizedFileName = fileName.trim()
                 .replaceAll("[^A-Za-z0-9._-]", "_");

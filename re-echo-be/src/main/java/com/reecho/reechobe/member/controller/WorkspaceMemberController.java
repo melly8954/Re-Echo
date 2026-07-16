@@ -29,6 +29,7 @@ public class WorkspaceMemberController {
     private final WorkspaceMemberQueryService workspaceMemberQueryService;
 
     @GetMapping
+    // 워크스페이스 멤버 목록 조회를 Query Service에 위임한다.
     public ApiResponse<WorkspaceMemberListResponse> getWorkspaceMembers(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId
@@ -41,6 +42,7 @@ public class WorkspaceMemberController {
     }
 
     @PatchMapping("/{memberId}/role")
+    // 멤버 역할 변경 요청을 Command Service에 위임한다.
     public ApiResponse<Void> changeMemberRole(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -57,6 +59,7 @@ public class WorkspaceMemberController {
     }
 
     @PostMapping("/{memberId}/remove")
+    // 멤버 강제 제거 요청을 Command Service에 위임한다.
     public ApiResponse<Void> removeMember(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,
@@ -67,6 +70,7 @@ public class WorkspaceMemberController {
     }
 
     @PostMapping("/{memberId}/leave")
+    // 현재 사용자 워크스페이스 탈퇴 요청을 Command Service에 위임한다.
     public ApiResponse<Void> leaveWorkspace(
             @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
             @PathVariable UUID workspaceId,

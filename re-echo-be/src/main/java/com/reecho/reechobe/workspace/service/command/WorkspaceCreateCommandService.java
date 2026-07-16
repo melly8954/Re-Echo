@@ -31,6 +31,7 @@ public class WorkspaceCreateCommandService {
     private final ChannelMembershipRepository channelMembershipRepository;
 
     @Transactional
+    // 생성자를 소유자로 등록하고 기본 공개 채널까지 포함한 워크스페이스를 만든다.
     public CreatedWorkspaceResponse createWorkspace(UUID userId, CreateWorkspaceRequest request) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED));

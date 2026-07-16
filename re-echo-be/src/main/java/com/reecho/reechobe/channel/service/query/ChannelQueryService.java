@@ -40,6 +40,7 @@ public class ChannelQueryService {
     private final ChannelMembershipRepository channelMembershipRepository;
 
     @Transactional(readOnly = true)
+    // 현재 워크스페이스 멤버가 접근 가능한 채널과 참여·안 읽음 상태를 함께 구성한다.
     public ChannelListResponse getChannels(UUID userId, UUID workspaceId) {
         validateExistingWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -88,6 +89,7 @@ public class ChannelQueryService {
     }
 
     @Transactional(readOnly = true)
+    // 공개 범위 또는 활성 참여 여부를 확인한 뒤 채널 멤버 목록을 권한순으로 반환한다.
     public WorkspaceMemberListResponse getChannelMembers(UUID userId, UUID workspaceId, UUID channelId) {
         validateExistingWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -115,12 +117,14 @@ public class ChannelQueryService {
         return WorkspaceMemberListResponse.of(members);
     }
 
+    // 삭제된 워크스페이스는 멤버십이 남아 있어도 조회 대상으로 허용하지 않는다.
     private void validateExistingWorkspace(UUID workspaceId) {
         workspaceRepository.findById(workspaceId)
                 .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
     }
 
+    // 비활성 또는 탈퇴 멤버가 채널 정보로 우회 접근하지 못하도록 활성 멤버십만 찾는다.
     private WorkspaceMembership getActiveWorkspaceMembership(UUID userId, UUID workspaceId) {
         return workspaceMembershipRepository
                 .findByWorkspaceIdAndUserIdAndStatus(
@@ -131,6 +135,7 @@ public class ChannelQueryService {
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
     }
 
+    // 멤버 목록에서 권한이 높은 사용자를 먼저 보여주기 위한 정렬 우선순위다.
     private int roleOrder(WorkspaceMembershipRole role) {
         return switch (role) {
             case OWNER -> 0;

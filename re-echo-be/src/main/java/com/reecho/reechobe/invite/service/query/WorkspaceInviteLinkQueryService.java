@@ -31,6 +31,7 @@ public class WorkspaceInviteLinkQueryService {
     private final WorkspaceInviteLinkRepository workspaceInviteLinkRepository;
 
     @Transactional
+    // 초대 권한이 있는 멤버에게만 현재 활성 초대 링크를 반환한다.
     public WorkspaceInviteLinkResponse getActiveInviteLink(UUID userId, UUID workspaceId) {
         validateInviteIssuer(userId, workspaceId);
         WorkspaceInviteLink inviteLink = workspaceInviteLinkRepository
@@ -42,6 +43,7 @@ public class WorkspaceInviteLinkQueryService {
     }
 
     @Transactional
+    // 로그인 전에도 참여 대상을 확인할 수 있도록 유효한 초대의 최소 정보만 반환한다.
     public WorkspaceInvitePreviewResponse previewInviteLink(String token) {
         WorkspaceInviteLink inviteLink = workspaceInviteLinkRepository.findByToken(token)
                 .orElseThrow(() -> new BusinessException(InviteErrorCode.INVITE_NOT_FOUND));
@@ -53,6 +55,7 @@ public class WorkspaceInviteLinkQueryService {
         return WorkspaceInvitePreviewResponse.of(workspace, inviteLink);
     }
 
+    // 링크 조회는 워크스페이스 소유자 또는 관리자 권한으로 제한한다.
     private void validateInviteIssuer(UUID userId, UUID workspaceId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
@@ -73,6 +76,7 @@ public class WorkspaceInviteLinkQueryService {
         }
     }
 
+    // 폐기되었거나 만료된 토큰은 공개 미리보기와 참여 모두에서 거부한다.
     private void validateUsable(WorkspaceInviteLink inviteLink) {
         if (inviteLink.getStatus() == WorkspaceInviteLinkStatus.REVOKED) {
             throw new BusinessException(InviteErrorCode.INVITE_REVOKED);

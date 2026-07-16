@@ -28,6 +28,7 @@ public class MessageResponseAssembler {
     private final MessageAttachmentRepository messageAttachmentRepository;
     private final FileObjectRepository fileObjectRepository;
 
+    // 목록 조회에 필요한 작성자·첨부 파일 정보를 일괄 조합해 N+1 조회를 피한다.
     public List<ChannelMessageResponse> assembleAll(List<Message> messages) {
         if (messages.isEmpty()) {
             return List.of();
@@ -53,10 +54,12 @@ public class MessageResponseAssembler {
                 .toList();
     }
 
+    // 실시간 단건 이벤트에 필요한 메시지 snapshot을 조합한다.
     public ChannelMessageResponse assemble(Message message) {
         return assembleAll(List.of(message)).getFirst();
     }
 
+    // 이미 조회한 작성자와 첨부 파일을 재사용해 응답 DTO를 생성한다.
     private ChannelMessageResponse assemble(
             Message message,
             Map<UUID, WorkspaceMembership> authors,

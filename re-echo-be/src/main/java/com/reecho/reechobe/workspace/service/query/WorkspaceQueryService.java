@@ -34,6 +34,7 @@ public class WorkspaceQueryService {
     private final ChannelRepository channelRepository;
 
     @Transactional
+    // 활성 멤버만 워크스페이스 기본 정보와 자신의 멤버십 상태를 조회한다.
     public WorkspaceDetailResponse getWorkspaceDetail(UUID userId, UUID workspaceId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
@@ -58,6 +59,7 @@ public class WorkspaceQueryService {
     }
 
     @Transactional(readOnly = true)
+    // 사용자가 가입한 워크스페이스를 레일의 가입 순서로 반환한다.
     public WorkspaceListResponse getWorkspaceList(UUID userId) {
         List<WorkspaceMembership> memberships = workspaceMembershipRepository
                 .findByUserIdAndStatusOrderByJoinedAtAscIdAsc(userId, WorkspaceMembershipStatus.ACTIVE);
@@ -92,6 +94,7 @@ public class WorkspaceQueryService {
         );
     }
 
+    // 소유자만 만료 전 보관 워크스페이스를 복원할 수 있도록 화면 노출 상태를 계산한다.
     private boolean canRestore(Workspace workspace, WorkspaceMembership membership) {
         return workspace.getStatus() == WorkspaceStatus.ARCHIVED
                 && membership.getRole() == WorkspaceMembershipRole.OWNER
