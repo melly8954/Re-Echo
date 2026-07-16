@@ -82,6 +82,7 @@ MVP 범위 밖인 DM, 메시지 검색, 멘션, AI 기능은 포함하지 않는
 ### 4.2 워크스페이스 및 멤버십 도메인
 
 - 워크스페이스 생성, 보관, 복원, 삭제
+- 워크스페이스 대표 이미지 관리
 - 워크스페이스별 멤버 역할과 상태 관리
 - 워크스페이스별 닉네임과 프로필 이미지 관리
 - 초대 링크 기반 참여 관리
@@ -191,6 +192,7 @@ Re-Echo 사용자 기본 계정이다.
 | slug | varchar(100) |  |  | Y |  | URL 또는 표시용 식별자 |
 | description | varchar(500) |  |  | Y |  | 소개 문구 |
 | image_url | text |  |  | Y |  | 워크스페이스 대표 이미지 |
+| image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 대표 이미지 참조 |
 | created_by_user_id | uuid |  | users.id | N |  | 생성자 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ARCHIVED`, `DELETED` |
 | archived_at | timestamptz |  |  | Y |  | 보관 시각 |
@@ -218,11 +220,11 @@ Re-Echo 사용자 기본 계정이다.
 | display_name | varchar(80) |  |  | N |  | 워크스페이스별 표시 이름 |
 | profile_image_url | text |  |  | Y |  | 워크스페이스별 프로필 이미지 URL |
 | profile_image_file_id | uuid |  | file_objects.id | Y |  | R2 업로드 프로필 이미지 참조 |
-| status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED`, `BANNED` |
+| status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `LEFT`, `REMOVED` |
 | joined_at | timestamptz |  |  | N | `now()` | 참여 시각 |
+| last_visited_at | timestamptz |  |  | N | `now()` | 마지막 워크스페이스 진입 시각 |
 | left_at | timestamptz |  |  | Y |  | 자진 탈퇴 시각 |
 | removed_at | timestamptz |  |  | Y |  | 관리자 강제 제거 시각 |
-| banned_at | timestamptz |  |  | Y |  | 차단 시각 |
 | created_at | timestamptz |  |  | N | `now()` | 생성 시각 |
 | updated_at | timestamptz |  |  | N | `now()` | 수정 시각 |
 
@@ -230,7 +232,8 @@ Re-Echo 사용자 기본 계정이다.
 
 - `(workspace_id, user_id)` 유니크
 - 같은 워크스페이스 내 `display_name` 중복 허용
-- `BANNED` 상태면 재가입 불가
+- `LEFT` 상태는 재참여 시 기존 행을 `ACTIVE`로 복구
+- `REMOVED` 상태면 재가입 불가
 - `OWNER`는 워크스페이스당 정확히 1명이어야 하므로 애플리케이션 제약 추가 필요
 
 ### 7.5 `workspace_invite_links`
@@ -354,12 +357,12 @@ Re-Echo 사용자 기본 계정이다.
 | workspace_id | uuid |  | workspaces.id | Y |  | 워크스페이스 참조 |
 | uploaded_by_user_id | uuid |  | users.id | N |  | 업로더 사용자 |
 | uploaded_by_membership_id | uuid |  | workspace_memberships.id | Y |  | 워크스페이스 문맥 업로더 |
-| purpose | varchar(30) |  |  | N |  | `MESSAGE_ATTACHMENT`, `PROFILE_IMAGE` |
+| purpose | varchar(30) |  |  | N |  | `MESSAGE_ATTACHMENT`, `PROFILE_IMAGE`, `WORKSPACE_IMAGE` |
 | storage_provider | varchar(30) |  |  | N |  | 기본값 `R2` |
 | storage_key | varchar(255) |  |  | N |  | 저장소 내부 키 |
 | original_filename | varchar(255) |  |  | N |  | 원본 파일명 |
 | content_type | varchar(120) |  |  | N |  | MIME 타입 |
-| file_size_bytes | bigint |  |  | N |  | 메시지 첨부 최대 20MB, 프로필 이미지 최대 10MB |
+| file_size_bytes | bigint |  |  | N |  | 메시지 첨부 최대 20MB, 프로필·대표 이미지는 최대 10MB |
 | image_width | integer |  |  | Y |  | 이미지 가로 크기 |
 | image_height | integer |  |  | Y |  | 이미지 세로 크기 |
 | status | varchar(20) |  |  | N | `'ACTIVE'` | `ACTIVE`, `ORPHANED`, `DELETED` |
@@ -379,8 +382,12 @@ Re-Echo 사용자 기본 계정이다.
   워크스페이스 프로필 이미지 문맥을 구분한다.
   - 계정 기본 프로필 이미지는 `workspace_id`와
     `uploaded_by_membership_id`가 모두 `null`이다.
-  - 워크스페이스 프로필 이미지는 `workspace_id`와
-    `uploaded_by_membership_id`가 모두 필요하다.
+   - 워크스페이스 프로필 이미지는 `workspace_id`와
+     `uploaded_by_membership_id`가 모두 필요하다.
+- `purpose = 'WORKSPACE_IMAGE'`이면 이미지 MIME 타입만 허용하고
+  `file_size_bytes <= 10485760`이어야 한다. `workspace_id`와
+  `uploaded_by_membership_id`가 모두 필요하며, 해당 워크스페이스의
+  `image_file_id`로만 최종 연결할 수 있다.
 - `purpose = 'MESSAGE_ATTACHMENT'`이면 `file_size_bytes <= 20971520`
 
 ### 7.11 `message_attachments`
@@ -461,7 +468,6 @@ Re-Echo 사용자 기본 계정이다.
 - `ACTIVE`
 - `LEFT`
 - `REMOVED`
-- `BANNED`
 
 ### 9.4 Invite Link Status
 
@@ -526,7 +532,10 @@ Re-Echo 사용자 기본 계정이다.
 
 - 자진 탈퇴는 `LEFT`
 - 관리자 강제 제거는 `REMOVED`
-- 차단은 `BANNED`
+- 자진 탈퇴 후 재참여는 기존 멤버십 행을 `ACTIVE`로 복구한다.
+- 강제 제거된 멤버는 재가입할 수 없다.
+- 비공개 채널 생성자는 채널 보관 전까지 자진 탈퇴와 강제 제거를
+  허용하지 않는다.
 
 ### 10.4 메시지
 
@@ -561,8 +570,8 @@ Re-Echo 사용자 기본 계정이다.
 
 ### 11.2 주요 조회 인덱스
 
-- `workspace_memberships(user_id, status)`
-  - 사용자가 속한 워크스페이스 목록 조회
+- `workspace_memberships(user_id, status, joined_at asc, id asc)`
+  - 사용자가 속한 워크스페이스 목록의 등록 순 조회
 - `workspace_memberships(workspace_id, display_name)`
   - 워크스페이스 멤버 목록 및 닉네임 조회
 - `channels(workspace_id, status, visibility)`

@@ -80,10 +80,12 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
         return Long.valueOf(1L).equals(result);
     }
 
+    // 사용자별 다중 세션을 독립적으로 폐기할 수 있도록 토큰 식별자를 Redis 키로 사용한다.
     private String key(UUID tokenId) {
         return KEY_PREFIX + tokenId;
     }
 
+    // 이미 만료된 토큰이 Redis에 무기한 남지 않도록 양수 TTL만 허용한다.
     private Duration ttl(Instant expiresAt) {
         Duration ttl = Duration.between(Instant.now(), expiresAt);
         if (ttl.isZero() || ttl.isNegative()) {

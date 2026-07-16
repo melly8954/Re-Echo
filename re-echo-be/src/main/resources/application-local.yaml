@@ -92,3 +92,7 @@ reecho:
     orphan-retention: 24h
     batch-size: 100
     cron: "0 0 3 * * *"
+  websocket:
+    allowed-origins:
+      - http://localhost:5173
+    typing-ttl-seconds: 5

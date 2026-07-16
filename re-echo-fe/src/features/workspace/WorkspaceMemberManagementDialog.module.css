@@ -1,0 +1,236 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 620px);
+  max-height: min(720px, calc(100svh - 48px));
+  overflow: auto;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.header p,
+.header h2,
+.header span,
+.error,
+.emptyState p,
+.confirmPanel p {
+  margin: 0;
+}
+
+.header p {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.header h2 {
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.header span {
+  margin-top: 5px;
+  display: block;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.header > button,
+.emptyState button,
+.cancelButton,
+.confirmButton,
+.removeButton {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.header > button,
+.emptyState button,
+.cancelButton {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+.header > button:disabled,
+.removeButton:disabled,
+.cancelButton:disabled,
+.confirmButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.error {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.groups,
+.skeletonList {
+  display: grid;
+  gap: 18px;
+}
+
+.group {
+  display: grid;
+  gap: 8px;
+}
+
+.group h3 {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.group h3 span {
+  color: #08665f;
+}
+
+.memberItem {
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  gap: 9px;
+  align-items: center;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.memberItem img,
+.avatarFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+}
+
+.memberItem img {
+  object-fit: cover;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.memberItem strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.roleLabel,
+.roleSelectLabel select {
+  color: #08665f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.roleSelectLabel select {
+  height: 30px;
+  padding: 0 7px;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.removeButton,
+.confirmButton {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+.emptyState {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.skeletonList span {
+  width: 100%;
+  height: 48px;
+  background: var(--color-surface-subtle);
+  border-radius: 7px;
+  animation: member-management-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.confirmPanel {
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  background: #fff8f7;
+  border: 1px solid #e7b2ad;
+  border-radius: 7px;
+}
+
+.confirmPanel p {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.confirmPanel div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@keyframes member-management-pulse {
+  from { opacity: 0.48; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 560px) {
+  .layer { padding: 16px; }
+  .dialog { padding: 18px; }
+  .memberItem { grid-template-columns: 32px minmax(0, 1fr) auto; }
+  .removeButton { grid-column: 2 / -1; justify-self: end; }
+}

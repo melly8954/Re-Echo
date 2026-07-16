@@ -1,5 +1,6 @@
 import styles from './HomePage.module.css'
 
+// 로그인 후 마지막 워크스페이스 또는 초기 진입 화면으로 연결한다.
 export function HomePage() {
   return (
     <main className={styles.page}>

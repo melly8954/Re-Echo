@@ -1,0 +1,740 @@
+.panel {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.messageList {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: grid;
+  align-content: start;
+  gap: 15px;
+}
+
+.message {
+  min-width: 0;
+  max-width: min(78%, 640px);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.myMessage .messageContent {
+  background: #edf9f7;
+}
+
+.myMessage {
+  grid-template-columns: minmax(0, 1fr);
+  justify-self: end;
+}
+
+.myMessage .messageMeta {
+  justify-content: flex-end;
+}
+
+.myMessage .messageBody {
+  flex-direction: row-reverse;
+}
+
+.myMessage .messageGroup {
+  grid-column: 1;
+}
+
+.myMessage .messageContent p {
+  margin-top: 0;
+  text-align: left;
+}
+
+.avatar,
+.avatarFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.messageContent {
+  position: relative;
+  min-width: 0;
+  padding: 7px 9px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.messageContentWithAction {
+  padding-right: 36px;
+}
+
+.messageGroup {
+  min-width: 0;
+  grid-column: 2;
+  display: grid;
+  gap: 2px;
+}
+
+.continuedMessage {
+  margin-top: -8px;
+}
+
+.messageBody {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.messageMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: baseline;
+}
+
+.messageAuthor {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.messageMeta time,
+.messageMeta span,
+.messageTime,
+.historyLoading,
+.historyEnd {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.messageContent p {
+  margin: 3px 0 0;
+  color: var(--color-text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.attachmentOnlyMessage .messageAttachments {
+  margin-top: 0;
+}
+
+.messageAttachments {
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  list-style: none;
+}
+
+.attachmentPreviewList {
+  margin: 0;
+  padding: 0 0 2px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.messageAttachmentButton {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.messageAttachmentButton:hover,
+.messageAttachmentButton:focus-visible {
+  background: var(--color-surface-subtle);
+}
+
+.messageAttachmentButton span,
+.messageAttachmentButton small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.messageAttachmentButton strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.messageImageAttachment {
+  width: min(260px, 100%);
+}
+
+.messageImageAttachmentButton {
+  width: 100%;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.messageImageAttachmentButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.messageImagePreview,
+.messageImagePreviewPlaceholder {
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.messageImagePreview {
+  object-fit: cover;
+  background: var(--color-surface-subtle);
+}
+
+.messageImagePreviewPlaceholder {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: var(--color-surface-subtle);
+  font-size: 12px;
+}
+
+.messageImageMeta {
+  min-width: 0;
+  padding: 0 2px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.messageImageMeta strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.messageImageMeta small {
+  flex: 0 0 auto;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.messageEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.messageEditActions button,
+.deleteDialogActions button {
+  min-height: 30px;
+  padding: 0 9px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.messageActionPopup {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: calc(100% + 4px);
+  min-width: 84px;
+  padding: 4px;
+  display: grid;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(31 45 42 / 16%);
+}
+
+.messageActionArea {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.messageActionTrigger {
+  width: 24px;
+  min-height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.messageActionTrigger:hover,
+.messageActionTrigger:focus-visible,
+.messageActionTrigger[aria-expanded='true'] {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.messageActionPopup button {
+  min-height: 32px;
+  padding: 0 9px;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.messageActionPopup button:hover,
+.messageActionPopup button:focus-visible {
+  background: var(--color-surface-subtle);
+}
+
+.messageEditActions button:last-child {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.deleteButton {
+  color: var(--color-danger) !important;
+  border-color: #f3c6c2 !important;
+}
+
+.messageEditForm {
+  display: grid;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.messageEditForm textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.messageActionError {
+  margin: 7px 0 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+.deletedContent {
+  color: var(--color-muted) !important;
+  font-style: italic;
+}
+
+.historyLoading,
+.historyEnd,
+.empty,
+.loading {
+  margin: 0;
+  text-align: center;
+}
+
+.empty,
+.loading {
+  padding: 34px 16px;
+  color: var(--color-muted);
+}
+
+.composer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.composerLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.composerSurface {
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.composerSurface:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(64 163 148 / 14%);
+}
+
+.composerSurfaceDragOver {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgb(64 163 148 / 14%);
+}
+
+.composerField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.composer textarea {
+  min-height: 40px;
+  max-height: 130px;
+  padding: 8px 4px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  resize: vertical;
+}
+
+.composer textarea:focus {
+  outline: 0;
+}
+
+.composer button,
+.error button {
+  min-height: 38px;
+  padding: 0 13px;
+}
+
+.composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.attachmentInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.attachmentMenuArea {
+  position: relative;
+}
+
+.attachmentMenuTrigger {
+  width: 36px;
+  min-height: 36px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.attachmentMenuTrigger:hover,
+.attachmentMenuTrigger:focus-visible,
+.attachmentMenuTrigger[aria-expanded='true'] {
+  color: var(--color-primary);
+  background: #edf9f7;
+}
+
+.composerSendButton {
+  width: 36px;
+  min-height: 36px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.attachmentMenu {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 112px;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  box-shadow: 0 8px 20px rgb(31 45 42 / 16%);
+}
+
+.attachmentMenu button {
+  width: 100%;
+  min-height: 34px !important;
+  padding: 0 9px !important;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.attachmentMenu button:hover,
+.attachmentMenu button:focus-visible {
+  background: var(--color-surface-subtle);
+}
+
+.attachmentPreviewItem {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.imageAttachmentPreview {
+  width: 64px;
+  height: 64px;
+}
+
+.fileAttachmentPreview {
+  max-width: 190px;
+  padding: 7px 30px 7px 7px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+}
+
+.attachmentThumbnail,
+.attachmentFileIcon {
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+}
+
+.attachmentThumbnail {
+  object-fit: cover;
+}
+
+.attachmentFileIcon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.attachmentPreviewInfo {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.attachmentPreviewInfo strong,
+.attachmentPreviewInfo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachmentPreviewInfo strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.attachmentPreviewInfo span {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.attachmentPreviewInfo .attachmentError {
+  color: #bd3f3f;
+}
+
+.attachmentRemoveButton {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 1;
+  width: 20px;
+  min-height: 20px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  color: #fff !important;
+  background: rgb(31 45 42 / 72%) !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.fileAttachmentPreview .attachmentRemoveButton {
+  top: 50%;
+  right: 7px;
+  color: var(--color-muted) !important;
+  background: transparent !important;
+  transform: translateY(-50%);
+}
+
+.attachmentPreviewStatus {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 4px;
+  overflow: hidden;
+  color: #fff;
+  background: rgb(31 45 42 / 72%);
+  border-radius: 0 0 7px 7px;
+  font-size: 10px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imageAttachmentPreview .attachmentError {
+  color: #fff;
+  background: rgb(189 63 63 / 88%);
+}
+
+.submitError,
+.error p {
+  margin: 8px 0 0;
+  color: #bd3f3f;
+  font-size: 12px;
+}
+
+.typing {
+  margin: 0;
+  padding: 0 16px 8px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  font-size: 12px;
+}
+
+.error {
+  padding: 24px;
+}
+
+.error p {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.deleteDialogLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.deleteDialogOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.deleteDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.deleteDialog h2,
+.deleteDialog p {
+  margin: 0;
+}
+
+.deleteDialog > p:not(.dialogEyebrow):not(.messageActionError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dialogEyebrow {
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.deleteDialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 700px) {
+  .messageList {
+    padding: 14px;
+  }
+
+  .composer {
+    padding: 10px 12px 12px;
+  }
+}

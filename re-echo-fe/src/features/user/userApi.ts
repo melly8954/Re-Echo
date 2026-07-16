@@ -18,6 +18,7 @@ interface PresignedUploadResponse {
   expiresAt: string
 }
 
+// 계정 기본 프로필과 R2 직접 업로드용 URL을 요청하는 사용자 API다.
 export function updateUserProfile(request: UpdateUserProfileRequest) {
   return apiRequest<AuthenticatedUser>('/api/v1/users/me/profile', {
     method: 'PATCH',

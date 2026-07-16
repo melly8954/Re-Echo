@@ -32,8 +32,13 @@
 - 동일 사용자의 다중 로그인 세션을 허용하며 logout은 현재 세션만 종료한다.
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - `#general`은 나갈 수 없다.
-- 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기가 가능하다.
-- 비공개 채널은 멤버가 아니면 존재와 메시지에 접근할 수 없다.
+- 활성 워크스페이스의 `#general`은 이름·설명 수정, 개별 보관·복원을
+  허용하지 않는다. 워크스페이스 보관·복원 시에만 함께 상태가 전환된다.
+- 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기/재참여가 가능하다.
+- 비공개 채널은 멤버가 아니면 목록에 표시되지 않고 메시지에 접근할 수 없다.
+- 비공개 채널은 자진 나가기가 가능하며, 재참여는 관리자 추가를 통해서만 가능하다.
+- 공개/비공개 채널 모두 강제 제거된 멤버는 재참여할 수 없다.
+- 비공개 채널 생성자는 채널 보관 전까지 자진 나가기와 강제 제거가 불가능하다.
 - 워크스페이스와 채널은 삭제 요청 시 즉시 물리 삭제하지 않고 보관 후 15일 뒤 자동 삭제한다.
 - 메시지 목록은 cursor pagination을 사용하며 cursor 기준은 `createdAt + messageId` 조합이다.
 - 읽음 갱신은 REST API로만 처리하고 읽음 상태 전용 실시간 브로드캐스트는 제공하지 않는다.
@@ -71,12 +76,14 @@
 
 ### 4.3 시간과 ID
 
-- 시간 필드는 ISO-8601 UTC 문자열을 사용한다.
+- 도메인 데이터의 시간 필드는 ISO-8601 `LocalDateTime` 문자열을 사용한다.
+- Access Token·Presigned URL의 만료 시각과 WebSocket event의 `occurredAt`은
+  ISO-8601 UTC `Instant` 문자열을 사용한다.
 - 리소스 ID는 UUID 문자열을 사용한다.
 
 ### 4.4 공통 정렬 규칙
 
-- 워크스페이스 목록: 최근 방문/활동 순
+- 워크스페이스 목록: 사용자의 생성·참여 등록 순
 - 채널 목록: `#general` 우선, 나머지는 최근 활동 순
 - 메시지 목록: 최신 메시지 기준 진입, 과거 메시지는 역방향 페이징
 
@@ -95,10 +102,12 @@
 - `OWNER`
   - 관리자 권한 포함
   - 관리자 임명/해제 가능
+  - 워크스페이스 이름 변경 가능
   - 워크스페이스 보관 가능
 - `ADMIN`
   - 채널 생성 가능
   - 초대 링크 발급 가능
+  - 워크스페이스 설명·대표 이미지 변경 가능
   - 멤버 강제 제거 가능
   - 비공개 채널 멤버 관리 가능
   - 모든 멤버 메시지 삭제 가능
@@ -117,7 +126,7 @@
     "type": "CURSOR",
     "size": 30,
     "cursor": {
-      "createdAt": "2026-07-06T12:00:00Z",
+      "createdAt": "2026-07-06T12:00:00",
       "messageId": "11111111-1111-1111-1111-111111111111"
     }
   }
@@ -163,7 +172,7 @@
       "size": 30,
       "hasNext": true,
       "nextCursor": {
-        "createdAt": "2026-07-06T12:00:00Z",
+        "createdAt": "2026-07-06T12:00:00",
         "messageId": "11111111-1111-1111-1111-111111111111"
       }
     }
@@ -218,10 +227,11 @@
 | Workspaces | POST | `/workspaces` | 워크스페이스 생성 |
 | Workspaces | GET | `/workspaces/{workspaceId}` | 워크스페이스 상세 조회 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}` | 워크스페이스 정보 수정 |
+| Workspaces | POST | `/workspaces/{workspaceId}/image/presign-upload` | 대표 이미지 업로드 Presigned URL 발급 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}/archive` | 워크스페이스 보관 |
 | Workspaces | PATCH | `/workspaces/{workspaceId}/restore` | 워크스페이스 복원 |
 | Invites | GET | `/workspaces/{workspaceId}/invite-link` | 활성 초대 링크 조회 |
-| Invites | POST | `/workspaces/{workspaceId}/invite-link` | 초대 링크 발급/재발급 |
+| Invites | POST | `/workspaces/{workspaceId}/invite-link` | 초대 링크 발급/명시적 재발급 |
 | Invites | GET | `/invite-links/{token}` | 초대 링크 미리보기 |
 | Invites | POST | `/invite-links/{token}/join` | 초대 링크로 워크스페이스 참여 |
 | Members | GET | `/workspaces/{workspaceId}/members` | 워크스페이스 멤버 목록 조회 |
@@ -235,10 +245,10 @@
 | Channels | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/archive` | 채널 보관 |
 | Channels | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/restore` | 채널 복원 |
 | Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/join` | 공개 채널 참여 |
-| Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/leave` | 공개 채널 나가기 |
+| Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/leave` | 채널 나가기 |
 | Channel Members | GET | `/workspaces/{workspaceId}/channels/{channelId}/members` | 채널 멤버 목록 조회 |
 | Channel Members | POST | `/workspaces/{workspaceId}/channels/{channelId}/members` | 비공개 채널 멤버 추가 |
-| Channel Members | DELETE | `/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}` | 비공개 채널 멤버 제거 |
+| Channel Members | DELETE | `/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}` | 채널 멤버 강제 제거 |
 | Messages | GET | `/workspaces/{workspaceId}/channels/{channelId}/messages` | 메시지 목록 조회 |
 | Messages | POST | `/workspaces/{workspaceId}/channels/{channelId}/messages` | 메시지 생성 |
 | Messages | PATCH | `/workspaces/{workspaceId}/channels/{channelId}/messages/{messageId}` | 본인 메시지 수정 |
@@ -369,11 +379,14 @@
 
 ### 11.6 워크스페이스 목록 조회
 
-- Description: 사용자가 속한 워크스페이스 목록을 최근 방문/활동 순으로 조회한다.
+- Description: 사용자가 속한 워크스페이스 목록을 사용자의 생성·참여 등록 순으로 조회한다.
 - Method: `GET`
 - URL: `/api/v1/workspaces`
 - Authentication: 필요
 - Authorization: 멤버십 보유 사용자
+- Note: `lastVisitedAt`은 워크스페이스 마지막 진입 시각이며, 최초 참여 시에는
+  참여 시각으로 초기화한다. 목록 정렬에는 사용하지 않고 로그인 후 복귀 대상을
+  결정하는 데만 사용한다.
 - Response Body
 
 ```json
@@ -389,7 +402,7 @@
         "imageUrl": "https://...",
         "role": "OWNER",
         "status": "ACTIVE",
-        "lastVisitedAt": "2026-07-06T12:00:00Z",
+        "lastVisitedAt": "2026-07-06T12:00:00",
         "defaultChannelId": "uuid",
         "unreadChannelCount": 2
       }
@@ -412,12 +425,28 @@
 ```json
 {
   "name": "Re-Echo Team",
-  "description": "팀 워크스페이스",
-  "imageUrl": "https://..."
+  "description": "팀 워크스페이스"
 }
 ```
 
+- 대표 이미지는 생성 후 `11.9.1`의 Presigned URL 업로드와 워크스페이스
+  정보 수정 흐름으로 설정한다.
+
 - Success Response: `201 Created`
+- Response Body
+
+```json
+{
+  "status": 201,
+  "errorCode": null,
+  "message": "워크스페이스가 생성되었습니다.",
+  "result": {
+    "id": "uuid",
+    "defaultChannelId": "uuid"
+  }
+}
+```
+
 - Error Responses
   - `400 VALIDATION_ERROR`
   - `409 WORKSPACE_NAME_CONFLICT`
@@ -441,6 +470,7 @@
     "name": "Re-Echo Team",
     "description": "팀 워크스페이스",
     "imageUrl": "https://...",
+    "imageFileId": "uuid",
     "status": "ACTIVE",
     "myMembership": {
       "id": "uuid",
@@ -457,7 +487,8 @@
 
 ### 11.9 워크스페이스 정보 수정
 
-- Description: 워크스페이스 이름, 설명, 이미지를 수정한다.
+- Description: 소유자는 워크스페이스 이름, 설명, 이미지를 수정한다.
+  관리자는 현재 이름을 유지한 채 설명과 이미지만 수정할 수 있다.
 - Method: `PATCH`
 - URL: `/api/v1/workspaces/{workspaceId}`
 - Authentication: 필요
@@ -468,9 +499,30 @@
 {
   "name": "Re-Echo Team",
   "description": "새 설명",
-  "imageUrl": "https://..."
+  "imageFileId": "uuid"
 }
 ```
+
+- `imageFileId`에 `null`을 전달하면 대표 이미지를 제거한다.
+- `ADMIN`이 현재 이름과 다른 `name`을 전달하면 `403 WORKSPACE_ACCESS_DENIED`를
+  반환한다.
+- Response Body: `11.8 워크스페이스 상세 조회`와 동일
+
+### 11.9.1 워크스페이스 대표 이미지 업로드 Presigned URL 발급
+
+- Description: 워크스페이스 대표 이미지 1건에 대한 업로드 URL을 발급하고
+  대표 이미지 용도의 임시 파일 메타데이터를 생성한다.
+- Method: `POST`
+- URL: `/api/v1/workspaces/{workspaceId}/image/presign-upload`
+- Authentication: 필요
+- Authorization: `OWNER`, `ADMIN`
+- Request Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Response Body: `11.38 계정 프로필 이미지 업로드 Presigned URL 발급`과 동일
+- Constraints
+  - 허용 MIME 타입: `image/jpeg`, `image/png`, `image/webp`
+  - 최대 크기: 10MB
+  - 서버는 파일 메타데이터에 `workspaceId`와 현재 사용자의 `membershipId`를
+    함께 저장해 워크스페이스 대표 이미지 문맥을 고정한다.
 
 ### 11.10 워크스페이스 보관
 
@@ -493,15 +545,19 @@
 
 ### 11.12 활성 초대 링크 조회
 
-- Description: 현재 활성화된 초대 링크를 조회한다.
+- Description: 현재 활성화된 초대 링크를 조회한다. 링크 복사처럼 기존
+  초대 링크를 공유하는 동작은 이 API를 우선 사용해 활성 링크를
+  재사용한다.
 - Method: `GET`
 - URL: `/api/v1/workspaces/{workspaceId}/invite-link`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
 
-### 11.13 초대 링크 발급/재발급
+### 11.13 초대 링크 발급/명시적 재발급
 
-- Description: 24시간 만료 초대 링크를 발급한다. 기존 활성 링크가 있으면 무효화하고 새 링크로 교체한다.
+- Description: 활성 초대 링크가 없으면 24시간 만료 초대 링크를
+  발급한다. 사용자가 명시적으로 재발급을 요청한 경우에만 기존 활성
+  링크를 무효화하고 새 링크로 교체한다.
 - Method: `POST`
 - URL: `/api/v1/workspaces/{workspaceId}/invite-link`
 - Authentication: 필요
@@ -525,7 +581,7 @@
   "result": {
     "workspaceName": "Re-Echo Team",
     "workspaceImageUrl": "https://...",
-    "expiresAt": "2026-07-07T12:00:00Z"
+    "expiresAt": "2026-07-07T12:00:00"
   }
 }
 ```
@@ -542,7 +598,10 @@
   - `401 AUTH_UNAUTHORIZED`
   - `404 INVITE_NOT_FOUND`
   - `409 INVITE_EXPIRED`
-  - `409 MEMBER_BANNED`
+  - `409 MEMBER_REMOVED`
+- Rules
+  - 자진 탈퇴한 멤버가 다시 참여하면 기존 멤버십을 `ACTIVE`로 복구한다.
+  - 강제 제거된 멤버는 초대 링크로 다시 참여할 수 없다.
 
 ### 11.16 워크스페이스 멤버 목록 조회
 
@@ -589,6 +648,9 @@
 }
 ```
 
+- `role`에는 `ADMIN` 또는 `MEMBER`만 지정할 수 있다. 소유자 권한 이전은
+  MVP 범위에 포함하지 않는다.
+
 - Error Responses
   - `409 MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 
@@ -612,11 +674,16 @@
 
 ### 11.20 채널 목록 조회
 
-- Description: 사용자가 접근 가능한 채널 목록을 조회한다.
+- Description: 사용자가 접근 가능한 활성·보관 채널 목록을 조회한다.
 - Method: `GET`
 - URL: `/api/v1/workspaces/{workspaceId}/channels`
 - Authentication: 필요
 - Authorization: 해당 워크스페이스 멤버
+- Note: 공개 채널은 워크스페이스 멤버에게 표시되며, 비공개 채널은
+  참여 중인 채널만 표시된다. 보관 채널은 읽기 전용으로 유지되고,
+  `archiveExpiresAt`에 자동 삭제 예정 시각을 제공한다.
+  `memberCount`는 활성 채널 멤버 수이며, 워크스페이스 홈의 채널 요약과
+  사이드바가 같은 목록 응답을 재사용한다.
 - Response Body
 
 ```json
@@ -632,7 +699,11 @@
         "visibility": "PUBLIC",
         "isGeneral": true,
         "joined": true,
-        "unreadCount": 3
+        "createdByMe": false,
+        "status": "ACTIVE",
+        "archiveExpiresAt": null,
+        "unreadCount": 3,
+        "memberCount": 12
       }
     ]
   }
@@ -660,6 +731,19 @@
 ```
 
 - Note: 비공개 채널 생성자는 자동 포함되고, 초기 멤버를 추가로 지정할 수 있다.
+- Success Response: `201 Created`
+- Response Body
+
+```json
+{
+  "status": 201,
+  "errorCode": null,
+  "message": "채널이 생성되었습니다.",
+  "result": {
+    "id": "uuid"
+  }
+}
+```
 
 ### 11.22 채널 상세 조회
 
@@ -670,6 +754,26 @@
 - Authorization
   - 공개 채널: 워크스페이스 멤버
   - 비공개 채널: 채널 멤버만 가능
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "id": "uuid",
+    "name": "design",
+    "description": "디자인 논의",
+    "visibility": "PRIVATE",
+    "isGeneral": false,
+    "joined": true,
+    "createdByMe": false,
+    "status": "ACTIVE",
+    "archiveExpiresAt": null
+  }
+}
+```
 
 ### 11.23 채널 정보 수정
 
@@ -678,6 +782,18 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
+- Request Body
+
+```json
+{
+  "name": "design",
+  "description": "디자인 논의"
+}
+```
+
+- Success Response: `200 OK`
+- Error Responses
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.24 채널 보관
 
@@ -686,6 +802,10 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/archive`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
+- Success Response: `200 OK`
+- Error Responses
+  - `409 CHANNEL_ARCHIVED`
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.25 채널 복원
 
@@ -694,6 +814,10 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/restore`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
+- Success Response: `200 OK`
+- Error Responses
+  - `409 CHANNEL_RESTORE_NOT_ALLOWED`
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.26 공개 채널 참여
 
@@ -702,19 +826,25 @@
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/join`
 - Authentication: 필요
 - Authorization: 워크스페이스 멤버
+- Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_ALREADY_JOINED`
+  - `409 CHANNEL_MEMBER_REMOVED`
   - `403 CHANNEL_JOIN_FORBIDDEN`
 
-### 11.27 공개 채널 나가기
+### 11.27 채널 나가기
 
-- Description: 공개 채널에서 나간다.
+- Description: 공개 또는 비공개 채널에서 자진 나간다. 비공개 채널에서
+  나간 사용자는 목록에서 해당 채널이 사라지며, 재참여하려면 관리자가
+  다시 추가해야 한다.
 - Method: `POST`
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/leave`
 - Authentication: 필요
 - Authorization: 채널 멤버
+- Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_GENERAL_LEAVE_FORBIDDEN`
+  - `409 CHANNEL_CREATOR_LEAVE_FORBIDDEN`
 
 ### 11.28 채널 멤버 목록 조회
 
@@ -725,6 +855,26 @@
 - Authorization
   - 공개 채널: 채널 접근 가능한 워크스페이스 멤버
   - 비공개 채널: 채널 멤버만 가능
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "contents": [
+      {
+        "id": "uuid",
+        "displayName": "홍길동",
+        "profileImageUrl": "https://...",
+        "role": "MEMBER",
+        "status": "ACTIVE"
+      }
+    ]
+  }
+}
+```
 
 ### 11.29 비공개 채널 멤버 추가
 
@@ -743,13 +893,19 @@
 }
 ```
 
-### 11.30 비공개 채널 멤버 제거
+### 11.30 채널 멤버 강제 제거
 
-- Description: 비공개 채널에서 멤버를 제거한다.
+- Description: 공개 또는 비공개 채널에서 멤버를 강제 제거한다. 강제
+  제거된 멤버는 해당 채널에 재참여할 수 없다.
 - Method: `DELETE`
 - URL: `/api/v1/workspaces/{workspaceId}/channels/{channelId}/members/{memberId}`
 - Authentication: 필요
 - Authorization: `OWNER`, `ADMIN`
+- Error Responses
+  - `409 CHANNEL_MEMBER_REMOVED`
+- Note
+  - `#general`에서는 멤버를 제거할 수 없다.
+  - 비공개 채널 생성자는 채널 보관 전까지 제거할 수 없다.
 
 ### 11.31 메시지 목록 조회
 
@@ -789,8 +945,8 @@
             "previewImage": true
           }
         ],
-        "createdAt": "2026-07-06T12:00:00Z",
-        "updatedAt": "2026-07-06T12:00:00Z",
+        "createdAt": "2026-07-06T12:00:00",
+        "updatedAt": "2026-07-06T12:00:00",
         "edited": false,
         "deleted": false
       }
@@ -800,7 +956,7 @@
       "size": 30,
       "hasNext": true,
       "nextCursor": {
-        "createdAt": "2026-07-06T11:59:00Z",
+        "createdAt": "2026-07-06T11:59:00",
         "messageId": "uuid"
       }
     }
@@ -829,6 +985,8 @@
 - Validation
   - `content`와 `fileIds`가 모두 비어 있으면 안 된다.
   - 보관된 채널에서는 생성할 수 없다.
+- Success Response: `201 Created`, `result`에는 11.31의 메시지 항목과 같은
+  전체 메시지 snapshot을 반환한다.
 
 ### 11.33 메시지 수정
 
@@ -849,6 +1007,8 @@
 ```
 
 - Note: 시간 제한 없이 수정 가능하다.
+- Success Response: `200 OK`, `result`에는 11.31의 메시지 항목과 같은
+  전체 메시지 snapshot을 반환한다.
 
 ### 11.34 메시지 삭제
 
@@ -921,6 +1081,24 @@
 - URL: `/api/v1/workspaces/{workspaceId}/files/{fileId}/download-url`
 - Authentication: 필요
 - Authorization: 파일이 연결된 워크스페이스/채널 접근 가능 사용자
+- Response Body
+
+```json
+{
+  "status": 200,
+  "errorCode": null,
+  "message": "OK",
+  "result": {
+    "downloadUrl": "https://r2-presigned-url",
+    "expiresAt": "2026-07-06T12:10:00Z"
+  }
+}
+```
+
+- Error Responses
+  - `403 FILE_ACCESS_DENIED`
+  - `404 FILE_NOT_FOUND`
+  - `400 FILE_UPLOAD_NOT_COMPLETED`
 
 ### 11.38 계정 프로필 이미지 업로드 Presigned URL 발급
 
@@ -1040,6 +1218,7 @@
   - `400 FILE_UPLOAD_NOT_COMPLETED`
   - `403 FILE_ACCESS_DENIED`
   - `404 FILE_NOT_FOUND`
+- Response Body: `11.16 워크스페이스 멤버 목록 조회`의 멤버 항목과 동일
 
 ## 12. Pagination / Sorting / Filtering
 
@@ -1055,7 +1234,7 @@
 ### 12.2 워크스페이스 목록
 
 - Pagination: 생략 가능
-- 정렬: 최근 방문/활동 순
+- 정렬: 사용자의 생성·참여 등록 순
 
 ### 12.3 채널 목록
 
@@ -1084,6 +1263,10 @@
 4. 클라이언트가 프로필 수정 API에 `profileImageFileId`를 전달한다.
 5. 서버가 파일을 검증한 뒤 프로필 이미지로 연결한다.
 
+워크스페이스 대표 이미지 업로드 흐름도 동일하다. `OWNER`, `ADMIN`이
+대표 이미지 Presign API로 업로드한 뒤 워크스페이스 수정 API에
+`imageFileId`를 전달한다.
+
 ### 13.2 파일 정책
 
 - 파일 메타데이터는 PostgreSQL에서 관리한다.
@@ -1091,10 +1274,12 @@
 - 메시지에 연결되지 않은 업로드 완료 파일은 임시 파일 상태로 남을 수 있다.
 - 프로필에 연결되지 않은 프로필 이미지 업로드 파일도 임시 파일 상태로
   남을 수 있다.
-- 프로필에서 제거되거나 교체된 이미지는 `ORPHANED` 상태로 표시한 뒤
+- 프로필 또는 워크스페이스 대표 이미지에서 제거되거나 교체된 이미지는 `ORPHANED` 상태로 표시한 뒤
   정리 스케줄러가 지연 삭제한다.
 - orphan 파일은 배치로 정리한다.
 - 파일 정리 스케줄러의 기본 실행 주기는 하루 1회 새벽 3시다.
+- 메시지 첨부 정리 배치는 24시간 이상 메시지에 연결되지 않은
+  `MESSAGE_ATTACHMENT` 파일을 한 번에 최대 100개씩 처리한다.
 - 프로필 이미지 정리 배치는 기본적으로 24시간 이상 참조되지 않은
   `PROFILE_IMAGE` 파일을 한 번에 최대 100개씩 처리한다.
 - 정리 후보는 사용자 계정과 워크스페이스 멤버십의 프로필 이미지
@@ -1110,6 +1295,11 @@
 /ws
 ```
 
+- 클라이언트는 STOMP `CONNECT` frame의 `Authorization` header에
+  `Bearer {accessToken}`을 전달한다.
+- 서버는 `CONNECT`, `/sub/**` 구독, `/pub/**` 발행마다 인증 사용자와
+  채널 멤버십을 검증한다.
+
 ### 14.2 구독 채널
 
 ```text
@@ -1122,6 +1312,18 @@
 /pub/workspaces/{workspaceId}/channels/{channelId}/messages
 /pub/workspaces/{workspaceId}/channels/{channelId}/typing
 ```
+
+- `messages` 발행 body는 11.32의 메시지 생성 요청과 같은
+  `content`, `fileIds`를 사용한다.
+- `typing` 발행 body는 아래와 같다.
+
+```json
+{
+  "typing": true
+}
+```
+
+- 입력 중 상태는 마지막 `typing: true` 발행 후 5초가 지나면 자동 해제한다.
 
 ### 14.4 Event Envelope
 
@@ -1141,10 +1343,17 @@
   "message": {
     "id": "uuid",
     "channelId": "uuid",
+    "author": {
+      "memberId": "uuid",
+      "displayName": "홍길동",
+      "profileImageUrl": "https://..."
+    },
     "content": "안녕하세요",
     "attachments": [],
-    "createdAt": "2026-07-06T12:00:00Z",
-    "updatedAt": "2026-07-06T12:00:00Z"
+    "createdAt": "2026-07-06T12:00:00",
+    "updatedAt": "2026-07-06T12:00:00",
+    "edited": false,
+    "deleted": false
   }
 }
 ```
@@ -1217,7 +1426,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 
 - `MEMBER_NOT_FOUND`
 - `MEMBER_INVALID_DISPLAY_NAME`
-- `MEMBER_BANNED`
+- `MEMBER_REMOVED`
 - `MEMBER_LAST_OWNER_CHANGE_FORBIDDEN`
 - `MEMBER_LAST_OWNER_LEAVE_FORBIDDEN`
 - `MEMBER_REMOVE_FORBIDDEN`
@@ -1229,6 +1438,10 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 - `CHANNEL_ALREADY_JOINED`
 - `CHANNEL_JOIN_FORBIDDEN`
 - `CHANNEL_GENERAL_LEAVE_FORBIDDEN`
+- `CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
+- `CHANNEL_MEMBER_REMOVED`
+- `CHANNEL_CREATOR_LEAVE_FORBIDDEN`
+- `CHANNEL_ARCHIVED`
 - `CHANNEL_RESTORE_NOT_ALLOWED`
 
 ### 16.7 Message
@@ -1252,7 +1465,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 - OAuth 로그인 시작과 콜백 처리는 Spring Security의 기본
   `/oauth2/authorization/{provider}`, `/login/oauth2/code/{provider}`
   패턴을 사용한다.
-- 초대 링크는 워크스페이스당 활성 링크 1개 정책을 반영해 조회와 발급 리소스를 분리한다.
+- 초대 링크는 워크스페이스당 활성 링크 1개 정책을 반영해 조회와 발급 리소스를 분리한다. 링크 복사/공유는 기존 활성 링크 조회를 우선하고, 명시적 재발급만 기존 링크를 무효화한다.
 - 멤버 강제 제거와 자진 탈퇴는 단순 필드 수정이 아니라 권한/상태 검증이 큰 도메인 동작이므로 명령형 endpoint를 허용한다.
 - 읽음 상태는 메시지별 영수증이 아니라 채널별 마지막 읽은 메시지 기준점으로 단순화한다.
 - 파일 첨부는 업로드와 메시지 연결을 분리해 대용량 바이너리가 애플리케이션 서버를 통과하지 않게 한다.

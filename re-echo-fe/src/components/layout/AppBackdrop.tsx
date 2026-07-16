@@ -1,5 +1,6 @@
 import styles from './AppBackdrop.module.css'
 
+// 다이얼로그 뒤쪽을 가려 현재 상호작용 대상에 집중시키는 공통 배경이다.
 export function AppBackdrop() {
   return (
     <div className={styles.backdrop} aria-hidden="true">

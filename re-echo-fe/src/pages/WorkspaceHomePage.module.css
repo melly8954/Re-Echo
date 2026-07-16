@@ -1,0 +1,727 @@
+.page {
+  min-height: calc(100svh - 64px);
+  padding: 24px;
+}
+
+.panel,
+.workspace {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.panel,
+.header,
+.summaryGrid article,
+.invitePanel,
+.channelPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.panel {
+  padding: 28px;
+  display: grid;
+  gap: 12px;
+}
+
+.panel h1,
+.panel p,
+.header h1,
+.header p,
+.invitePanel h2,
+.invitePanel p,
+.channelPanel h2 {
+  margin: 0;
+}
+
+.panel button,
+.invitePanel button,
+.inviteLinkField button {
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.panel button:hover,
+.invitePanel button:hover:not(:disabled),
+.inviteLinkField button:hover {
+  background: var(--color-primary-hover);
+}
+
+.invitePanel button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.header h1 {
+  margin: 4px 0 6px;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.description,
+.invitePanel p,
+.emptyText,
+.errorText {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: start;
+  justify-content: flex-end;
+}
+
+.actions span {
+  min-height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.workspaceLeaveButton {
+  min-height: 32px;
+  padding: 0 11px;
+  color: #b3261e;
+  background: #fff;
+  border: 1px solid #e7b2ad;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.memberManageButton {
+  min-height: 32px;
+  padding: 0 11px;
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.memberManageButton:hover {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.channelCreateActionButton {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-primary);
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.channelCreateActionButton:hover {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryGrid article {
+  min-height: 110px;
+  padding: 20px;
+  display: grid;
+  align-content: space-between;
+}
+
+.summaryCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.memberManagementSummaryButton {
+  min-height: 28px;
+  padding: 0 9px;
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberManagementSummaryButton:hover,
+.memberManagementSummaryButton:focus-visible {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.summaryGrid span,
+.channelCard span,
+.channelCard dt {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summaryGrid strong {
+  font-size: 30px;
+}
+
+.invitePanel,
+.channelPanel {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.archivedWorkspacePanel {
+  min-height: 250px;
+  padding: 30px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  background: linear-gradient(135deg, #f4f8f7, #eef5f3);
+  border: 1px solid #c9ddd8;
+  border-radius: 8px;
+}
+
+.archivedWorkspacePanel h2,
+.archivedWorkspacePanel p {
+  margin: 0;
+}
+
+.archivedWorkspacePanel h2 {
+  font-size: 23px;
+}
+
+.archivedWorkspacePanel > p:not(.eyebrow) {
+  max-width: 480px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.archivedWorkspacePanel button {
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.invitePanel h2,
+.channelPanel h2 {
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+.inviteLinkField {
+  display: flex;
+  gap: 8px;
+}
+
+.inviteLinkField input {
+  min-width: 0;
+  flex: 1;
+  height: 38px;
+  padding: 0 11px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.inviteMessage {
+  color: #08665f !important;
+  font-weight: 700;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.channelCard {
+  padding: 18px;
+  display: grid;
+  gap: 18px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  text-decoration: none;
+}
+
+.channelCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 20px rgb(31 45 42 / 8%);
+}
+
+.channelCard > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channelCard strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channelCard dl {
+  margin: 0;
+  display: flex;
+  gap: 20px;
+}
+
+.channelCard dl div {
+  display: grid;
+  gap: 3px;
+}
+
+.channelCard dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.workspaceLeaveLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.workspaceLeaveOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.workspaceLeaveDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.workspaceLeaveDialog h2,
+.workspaceLeaveDialog p {
+  margin: 0;
+}
+
+.workspaceLeaveDialog > p:not(.eyebrow):not(.workspaceLeaveError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.workspaceLeaveError {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workspaceLeaveFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workspaceLifecycleLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.workspaceLifecycleOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.workspaceLifecycleDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.workspaceLifecycleDialog h2,
+.workspaceLifecycleDialog p {
+  margin: 0;
+}
+
+.workspaceLifecycleDialog > p:not(.eyebrow):not(.workspaceLifecycleError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.workspaceLifecycleError {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workspaceLifecycleFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workspaceLifecycleFooter button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspaceLifecycleFooter button:first-child {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+.workspaceArchiveConfirmButton {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+.workspaceRestoreConfirmButton {
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.workspaceLeaveCancelButton,
+.workspaceLeaveConfirmButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspaceLeaveCancelButton {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+.workspaceLeaveConfirmButton {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+.memberPanel {
+  display: grid;
+  gap: 18px;
+}
+
+.memberPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.memberPanelHeader h2 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.memberPanelContext {
+  margin: 5px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.memberPanelHeader span {
+  min-width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberGroups,
+.memberSkeletonList {
+  display: grid;
+  gap: 18px;
+}
+
+.memberGroup {
+  display: grid;
+  gap: 9px;
+}
+
+.memberGroup h3 {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memberGroup h3 span {
+  color: #08665f;
+  font-size: 11px;
+}
+
+.memberList {
+  display: grid;
+  gap: 10px;
+}
+
+.memberItem {
+  min-width: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.memberItemSelf {
+  padding: 4px;
+  margin: -4px;
+  border-radius: 7px;
+  cursor: context-menu;
+}
+
+.memberItemSelf:hover {
+  background: var(--color-primary-soft);
+}
+
+.memberItemSelf:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.memberItem img,
+.memberAvatarFallback {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.memberAvatarFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.memberContent {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.memberContent div {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.memberContent strong,
+.memberContent small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberContent strong {
+  font-size: 14px;
+}
+
+.memberContent em {
+  padding: 2px 5px;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 5px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.memberContent small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.memberSkeletonList span {
+  width: 100%;
+  height: 38px;
+  background: var(--color-surface-subtle);
+  border-radius: 7px;
+  animation: member-skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.memberError {
+  display: grid;
+  gap: 10px;
+}
+
+.memberError p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.memberError button {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.memberError button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@keyframes member-skeleton-pulse {
+  from {
+    opacity: 0.48;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header,
+  .channelCard > div {
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .summaryGrid,
+  .channelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inviteLinkField {
+    flex-direction: column;
+  }
+
+  .inviteLinkField button {
+    width: 100%;
+  }
+}

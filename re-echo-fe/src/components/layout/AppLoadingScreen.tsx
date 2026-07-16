@@ -5,6 +5,7 @@ interface AppLoadingScreenProps {
   message: string
 }
 
+// 인증 복구나 초기 화면 데이터 준비 중 일관된 대기 화면을 표시한다.
 export function AppLoadingScreen({ message }: AppLoadingScreenProps) {
   return (
     <main className={styles.page}>

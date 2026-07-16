@@ -63,7 +63,6 @@ CREATE TABLE workspace_memberships (
     joined_at timestamptz NOT NULL DEFAULT now(),
     left_at timestamptz,
     removed_at timestamptz,
-    banned_at timestamptz,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT fk_workspace_memberships_workspace
@@ -73,7 +72,7 @@ CREATE TABLE workspace_memberships (
     CONSTRAINT chk_workspace_memberships_role
         CHECK (role IN ('OWNER', 'ADMIN', 'MEMBER')),
     CONSTRAINT chk_workspace_memberships_status
-        CHECK (status IN ('ACTIVE', 'LEFT', 'REMOVED', 'BANNED')),
+        CHECK (status IN ('ACTIVE', 'LEFT', 'REMOVED')),
     CONSTRAINT uq_workspace_memberships_workspace_user
         UNIQUE (workspace_id, user_id)
 );
