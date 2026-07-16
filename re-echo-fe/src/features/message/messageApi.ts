@@ -24,6 +24,7 @@ export interface ChannelMessage {
   updatedAt: string
   edited: boolean
   deleted: boolean
+  moderatorDeleted: boolean
 }
 
 export interface MessageCursor {

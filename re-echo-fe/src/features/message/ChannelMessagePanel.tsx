@@ -477,6 +477,10 @@ export function ChannelMessagePanel({
     setDeleteTarget(message)
   }
 
+  function isModeratorDelete(message: ChannelMessage) {
+    return message.author.memberId !== currentMembershipId && canManageMessages
+  }
+
   function startMessageLongPress(event: PointerEvent<HTMLElement>, messageId: string) {
     if (event.pointerType !== 'touch') {
       return
@@ -565,6 +569,7 @@ export function ChannelMessagePanel({
           const showAuthor = !isMine && !isContinuation
           const isEditing = editingMessageId === message.id
           const canDeleteMessage = isMine || canManageMessages
+          const moderatorDelete = isModeratorDelete(message)
           const isAttachmentOnly = !message.deleted && !message.content && message.attachments.length > 0
           return (
             <article
@@ -637,7 +642,7 @@ export function ChannelMessagePanel({
                   </form>
                 ) : message.deleted ? (
                   <p className={message.deleted ? styles.deletedContent : undefined}>
-                    삭제된 메시지입니다.
+                    {message.moderatorDeleted ? '관리 권한에 의해 삭제된 메시지입니다.' : '삭제된 메시지입니다.'}
                   </p>
                 ) : message.content ? <p>{message.content}</p> : null}
                   {!message.deleted && message.attachments.length > 0 && (
@@ -679,7 +684,7 @@ export function ChannelMessagePanel({
                             </button>
                           )}
                           <button type="button" role="menuitem" className={styles.deleteButton} onClick={() => openDeleteDialog(message)}>
-                            삭제
+                            {moderatorDelete ? '강제 삭제' : '삭제'}
                           </button>
                         </div>
                       )}
@@ -835,10 +840,16 @@ export function ChannelMessagePanel({
             aria-labelledby="message-delete-title"
             aria-describedby="message-delete-description"
           >
-            <p className={styles.dialogEyebrow}>메시지 삭제</p>
-            <h2 id="message-delete-title">이 메시지를 삭제하시겠습니까?</h2>
+            <p className={styles.dialogEyebrow}>{isModeratorDelete(deleteTarget) ? '메시지 강제 삭제' : '메시지 삭제'}</p>
+            <h2 id="message-delete-title">
+              {isModeratorDelete(deleteTarget)
+                ? `${deleteTarget.author.displayName}님의 메시지를 강제 삭제하시겠습니까?`
+                : '이 메시지를 삭제하시겠습니까?'}
+            </h2>
             <p id="message-delete-description">
-              삭제된 메시지는 대화에 삭제 흔적으로 남습니다.
+              {isModeratorDelete(deleteTarget)
+                ? '관리자 권한으로 삭제되며, 대화에 관리 삭제 흔적이 남습니다.'
+                : '삭제된 메시지는 대화에 삭제 흔적으로 남습니다.'}
             </p>
             {deleteMessage.isError && (
               <p className={styles.messageActionError} role="alert">
@@ -852,7 +863,7 @@ export function ChannelMessagePanel({
                 취소
               </button>
               <button type="button" className={styles.deleteButton} onClick={() => void handleMessageDelete()} disabled={deleteMessage.isPending}>
-                {deleteMessage.isPending ? '삭제 중' : '삭제'}
+                {deleteMessage.isPending ? '삭제 중' : isModeratorDelete(deleteTarget) ? '강제 삭제' : '삭제'}
               </button>
             </div>
           </section>
