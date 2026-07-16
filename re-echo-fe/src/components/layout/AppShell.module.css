@@ -442,6 +442,29 @@
   stroke-width: 1.8;
 }
 
+.channelSettingsIcon {
+  fill: none;
+}
+
+.channelSettingsIconRing {
+  fill: #fff;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.channelSettingsIconGear {
+  fill: #0fb6cc;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.channelSettingsIconCenter {
+  fill: #fff;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
 .channelActionButton:hover:not(:disabled) {
   color: var(--color-primary);
   background: var(--color-primary-soft);
