@@ -106,6 +106,9 @@ export function WorkspacePage() {
   if (!workspaceId) {
     return <Navigate to="/" replace />
   }
+  if (workspace?.status === 'ARCHIVED') {
+    return <Navigate to={`/workspaces/${workspaceId}`} replace />
+  }
   const canIssueInvite =
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
@@ -740,7 +743,7 @@ export function WorkspacePage() {
                       workspace.myMembership.role === 'ADMIN'
                     }
                     channelName={activeChannel.name}
-                    readOnly={workspace.status === 'ARCHIVED'}
+                    readOnly={false}
                   />
                 )
               )}
