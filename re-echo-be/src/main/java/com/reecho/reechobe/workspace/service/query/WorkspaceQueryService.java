@@ -2,6 +2,8 @@ package com.reecho.reechobe.workspace.service.query;
 
 import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
+import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
+import com.reecho.reechobe.channel.repository.WorkspaceUnreadChannelCountProjection;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
@@ -32,6 +34,7 @@ public class WorkspaceQueryService {
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMembershipRepository workspaceMembershipRepository;
     private final ChannelRepository channelRepository;
+    private final ChannelMembershipRepository channelMembershipRepository;
 
     @Transactional
     // 활성 멤버만 워크스페이스 기본 정보와 자신의 멤버십 상태를 조회한다.
@@ -78,6 +81,15 @@ public class WorkspaceQueryService {
                 .findByWorkspaceIdInAndGeneralTrue(workspaceIds)
                 .stream()
                 .collect(Collectors.toMap(Channel::getWorkspaceId, Function.identity()));
+        Map<UUID, Long> unreadChannelCountByMembershipId = channelMembershipRepository
+                .countUnreadChannelsByWorkspaceMembershipIds(memberships.stream()
+                        .map(WorkspaceMembership::getId)
+                        .toList())
+                .stream()
+                .collect(Collectors.toMap(
+                        WorkspaceUnreadChannelCountProjection::getWorkspaceMembershipId,
+                        WorkspaceUnreadChannelCountProjection::getUnreadChannelCount
+                ));
 
         return WorkspaceListResponse.of(
                 memberships.stream()
@@ -88,7 +100,13 @@ public class WorkspaceQueryService {
                             if (generalChannel == null) {
                                 throw new IllegalStateException("기본 채널이 없습니다.");
                             }
-                            return WorkspaceListItemResponse.of(workspace, membership, generalChannel.getId());
+                            return WorkspaceListItemResponse.of(
+                                    workspace,
+                                    membership,
+                                    generalChannel.getId(),
+                                    Math.toIntExact(unreadChannelCountByMembershipId
+                                            .getOrDefault(membership.getId(), 0L))
+                            );
                         })
                         .toList()
         );

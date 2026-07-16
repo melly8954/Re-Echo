@@ -22,7 +22,8 @@ public record WorkspaceListItemResponse(
     public static WorkspaceListItemResponse of(
             Workspace workspace,
             WorkspaceMembership membership,
-            UUID defaultChannelId
+            UUID defaultChannelId,
+            int unreadChannelCount
     ) {
         return new WorkspaceListItemResponse(
                 workspace.getId(),
@@ -32,7 +33,7 @@ public record WorkspaceListItemResponse(
                 workspace.getStatus(),
                 membership.getLastVisitedAt(),
                 defaultChannelId,
-                0
+                unreadChannelCount
         );
     }
 }

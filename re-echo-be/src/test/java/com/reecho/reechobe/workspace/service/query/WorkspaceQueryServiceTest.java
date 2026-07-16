@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
+import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
+import com.reecho.reechobe.channel.repository.WorkspaceUnreadChannelCountProjection;
 import com.reecho.reechobe.common.exception.BusinessException;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
@@ -42,6 +45,9 @@ class WorkspaceQueryServiceTest {
     @Mock
     private ChannelRepository channelRepository;
 
+    @Mock
+    private ChannelMembershipRepository channelMembershipRepository;
+
     private WorkspaceQueryService service;
 
     @BeforeEach
@@ -49,7 +55,8 @@ class WorkspaceQueryServiceTest {
         service = new WorkspaceQueryService(
                 workspaceRepository,
                 workspaceMembershipRepository,
-                channelRepository
+                channelRepository,
+                channelMembershipRepository
         );
     }
 
@@ -160,6 +167,15 @@ class WorkspaceQueryServiceTest {
         when(channelRepository.findByWorkspaceIdInAndGeneralTrue(
                 List.of(ownedWorkspace.getId(), joinedWorkspace.getId())
         )).thenReturn(List.of(ownedGeneralChannel, joinedGeneralChannel));
+        WorkspaceUnreadChannelCountProjection ownedUnreadCount = mock(WorkspaceUnreadChannelCountProjection.class);
+        when(ownedUnreadCount.getWorkspaceMembershipId()).thenReturn(ownerMembership.getId());
+        when(ownedUnreadCount.getUnreadChannelCount()).thenReturn(2L);
+        WorkspaceUnreadChannelCountProjection joinedUnreadCount = mock(WorkspaceUnreadChannelCountProjection.class);
+        when(joinedUnreadCount.getWorkspaceMembershipId()).thenReturn(memberMembership.getId());
+        when(joinedUnreadCount.getUnreadChannelCount()).thenReturn(1L);
+        when(channelMembershipRepository.countUnreadChannelsByWorkspaceMembershipIds(
+                List.of(ownerMembership.getId(), memberMembership.getId())
+        )).thenReturn(List.of(ownedUnreadCount, joinedUnreadCount));
 
         var result = service.getWorkspaceList(userId);
 
@@ -170,7 +186,7 @@ class WorkspaceQueryServiceTest {
         assertThat(result.contents()).extracting("defaultChannelId")
                 .containsExactly(ownedGeneralChannel.getId(), joinedGeneralChannel.getId());
         assertThat(result.contents()).extracting("unreadChannelCount")
-                .containsOnly(0);
+                .containsExactly(2, 1);
         verify(workspaceMembershipRepository).findByUserIdAndStatusOrderByJoinedAtAscIdAsc(
                 userId,
                 WorkspaceMembershipStatus.ACTIVE
