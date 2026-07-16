@@ -395,16 +395,14 @@
 
 .channelActions {
   padding-right: 4px;
-  display: flex;
+  display: none;
   gap: 1px;
   align-items: center;
-  opacity: 0;
-  transition: opacity 120ms ease;
 }
 
 .channelRow:hover .channelActions,
 .channelRow:focus-within .channelActions {
-  opacity: 1;
+  display: flex;
 }
 
 .channelActionButton {
