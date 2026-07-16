@@ -319,6 +319,11 @@
   border-radius: 6px;
 }
 
+.channelRow:hover,
+.channelRow:focus-within {
+  background: rgb(255 255 255 / 66%);
+}
+
 .channelSkeletonList {
   display: grid;
   gap: 8px;
@@ -395,14 +400,20 @@
 
 .channelActions {
   padding-right: 4px;
-  display: none;
+  display: flex;
   gap: 1px;
   align-items: center;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
 }
 
 .channelRow:hover .channelActions,
 .channelRow:focus-within .channelActions {
-  display: flex;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .channelActionButton {
@@ -453,7 +464,6 @@
 
 .channelLink:hover {
   color: var(--color-text);
-  background: rgb(255 255 255 / 66%);
 }
 
 .workspaceHeaderLink:focus-visible,
@@ -464,8 +474,16 @@
 
 .channelLinkActive {
   color: var(--color-text);
+}
+
+.channelRowActive {
   background: #fff;
   box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.channelRowActive:hover,
+.channelRowActive:focus-within {
+  background: #fff;
 }
 
 @keyframes channel-skeleton-pulse {
