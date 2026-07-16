@@ -209,8 +209,9 @@ export function AppShell({
                           onOpenChannelSettings(channel.id)
                         }}
                       >
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                          <path d="M9.6 3.1h4.8l.7 2.1 2 .9 2.1-1 3.4 3.4-1 2.1.9 2 .1.3-1.4 1.7-4.8.1-1.4-1.8.1-.3.9-2-1-2.1L16.8 5l-2-.9-.7-2.1Zm2.4 5.4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                          <path d="M9.5 3.5h5l.6 2.1 1.6.7 1.9-1.1 2.6 2.6-1.1 1.9.7 1.6 2.1.6v3.6l-2.1.6-.7 1.6 1.1 1.9-2.6 2.6-1.9-1.1-1.6.7-.6 2.1h-5l-.6-2.1-1.6-.7-1.9 1.1-2.6-2.6 1.1-1.9-.7-1.6-2.1-.6v-3.6l2.1-.6.7-1.6-1.1-1.9 2.6-2.6 1.9 1.1 1.6-.7.6-2.1Z" />
+                          <circle cx="12" cy="12" r="3.3" />
                         </svg>
                       </button>
                     )}
