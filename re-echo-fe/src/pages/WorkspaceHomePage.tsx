@@ -538,15 +538,6 @@ export function WorkspaceHomePage() {
                     워크스페이스 설정
                   </button>
                 )}
-                {canIssueInvite && (
-                  <button
-                    type="button"
-                    className={styles.memberManageButton}
-                    onClick={() => setIsMemberManagementOpen(true)}
-                  >
-                    멤버 관리
-                  </button>
-                )}
                 {canLeaveWorkspace && (
                   <button
                     type="button"
@@ -587,7 +578,18 @@ export function WorkspaceHomePage() {
               <>
                 <section className={styles.summaryGrid} aria-label="워크스페이스 현황">
                   <article>
-                    <span>전체 참여자</span>
+                    <div className={styles.summaryCardHeader}>
+                      <span>전체 참여자</span>
+                      {canIssueInvite && (
+                        <button
+                          type="button"
+                          className={styles.memberManagementSummaryButton}
+                          onClick={() => setIsMemberManagementOpen(true)}
+                        >
+                          멤버 관리
+                        </button>
+                      )}
+                    </div>
                     <strong>{workspaceMembersQuery.isLoading ? '—' : members.length}</strong>
                   </article>
                   <article>
