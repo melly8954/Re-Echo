@@ -206,6 +206,46 @@
   gap: 14px;
 }
 
+.archivedWorkspacePanel {
+  min-height: 250px;
+  padding: 30px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  background: linear-gradient(135deg, #f4f8f7, #eef5f3);
+  border: 1px solid #c9ddd8;
+  border-radius: 8px;
+}
+
+.archivedWorkspacePanel h2,
+.archivedWorkspacePanel p {
+  margin: 0;
+}
+
+.archivedWorkspacePanel h2 {
+  font-size: 23px;
+}
+
+.archivedWorkspacePanel > p:not(.eyebrow) {
+  max-width: 480px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.archivedWorkspacePanel button {
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .invitePanel h2,
 .channelPanel h2 {
   margin-top: 4px;

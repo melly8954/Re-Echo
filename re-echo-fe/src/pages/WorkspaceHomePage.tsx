@@ -466,6 +466,11 @@ export function WorkspaceHomePage() {
         ...channel,
         href: `/workspaces/${workspaceId}/channels/${channel.id}`,
       }))}
+      channelEmptyMessage={
+        isArchivedWorkspace
+          ? '보관된 워크스페이스입니다. 채널은 복원 후 다시 표시됩니다.'
+          : undefined
+      }
       isChannelsLoading={channelsQuery.isLoading}
       rightSidebar={workspace ? workspaceMemberPanel : undefined}
       rightSidebarLabel="워크스페이스 참여자"
@@ -500,7 +505,11 @@ export function WorkspaceHomePage() {
                 <p className={styles.eyebrow}>워크스페이스 홈</p>
                 <h1 id="workspace-home-title">{workspace.name}</h1>
                 <p className={styles.description}>
-                  {workspace.description ?? '채널 현황과 팀 정보를 확인하세요.'}
+                  {workspace.description ?? (
+                    isArchivedWorkspace
+                      ? '워크스페이스가 보관되었습니다.'
+                      : '채널 현황과 팀 정보를 확인하세요.'
+                  )}
                 </p>
               </div>
               <div className={styles.actions}>
@@ -551,91 +560,115 @@ export function WorkspaceHomePage() {
               </div>
             </header>
 
-            <section className={styles.summaryGrid} aria-label="워크스페이스 현황">
-              <article>
-                <span>전체 참여자</span>
-                <strong>{workspaceMembersQuery.isLoading ? '—' : members.length}</strong>
-              </article>
-              <article>
-                <span>채널</span>
-                <strong>{channelsQuery.isLoading ? '—' : channels.length}</strong>
-              </article>
-            </section>
-
-            {canIssueInvite && (
-              <section className={styles.invitePanel} aria-labelledby="invite-link-title">
-                <div>
-                  <p className={styles.eyebrow}>팀 초대</p>
-                  <h2 id="invite-link-title">초대 링크</h2>
-                  <p>워크스페이스 전체에 참여할 수 있는 링크입니다.</p>
-                </div>
-                {inviteLinkQuery.isLoading && <span>초대 링크를 불러오는 중입니다.</span>}
-                {requiresInviteIssue && (
+            {isArchivedWorkspace ? (
+              <section className={styles.archivedWorkspacePanel} aria-labelledby="archived-workspace-title">
+                <p className={styles.eyebrow}>보관됨</p>
+                <h2 id="archived-workspace-title">이 워크스페이스는 보관 중입니다.</h2>
+                <p>
+                  채널은 보관 기간 동안 표시되지 않습니다. 소유자는 15일 안에
+                  워크스페이스를 복원할 수 있습니다.
+                </p>
+                {canRestoreWorkspace && (
                   <button
                     type="button"
-                    onClick={() => void handleIssueInviteLink()}
-                    disabled={issueInviteLink.isPending}
+                    onClick={() => {
+                      restoreWorkspace.reset()
+                      setIsWorkspaceRestoreOpen(true)
+                    }}
                   >
-                    {issueInviteLink.isPending ? '발급 중' : '초대 링크 발급'}
+                    워크스페이스 복원
                   </button>
                 )}
-                {inviteLinkQuery.isError && !requiresInviteIssue && (
-                  <button type="button" onClick={() => void inviteLinkQuery.refetch()}>
-                    초대 링크 다시 불러오기
-                  </button>
-                )}
-                {inviteUrl && (
-                  <div className={styles.inviteLinkField}>
-                    <input aria-label="초대 링크" value={inviteUrl} readOnly />
-                    <button type="button" onClick={() => void handleCopyInviteLink()}>
-                      복사
-                    </button>
-                  </div>
-                )}
-                {inviteMessage && <p className={styles.inviteMessage}>{inviteMessage}</p>}
               </section>
-            )}
+            ) : (
+              <>
+                <section className={styles.summaryGrid} aria-label="워크스페이스 현황">
+                  <article>
+                    <span>전체 참여자</span>
+                    <strong>{workspaceMembersQuery.isLoading ? '—' : members.length}</strong>
+                  </article>
+                  <article>
+                    <span>채널</span>
+                    <strong>{channelsQuery.isLoading ? '—' : channels.length}</strong>
+                  </article>
+                </section>
 
-            <section className={styles.channelPanel} aria-labelledby="workspace-channel-title">
-              <div className={styles.sectionHeader}>
-                <div>
-                  <p className={styles.eyebrow}>채널 현황</p>
-                  <h2 id="workspace-channel-title">채널 목록</h2>
-                </div>
-              </div>
-              {channelsQuery.isError && (
-                <p className={styles.errorText}>채널 목록을 불러올 수 없습니다.</p>
-              )}
-              {!channelsQuery.isLoading && !channelsQuery.isError && channels.length === 0 && (
-                <p className={styles.emptyText}>표시할 채널이 없습니다.</p>
-              )}
-              <div className={styles.channelGrid}>
-                {channels.map((channel) => (
-                  <Link
-                    key={channel.id}
-                    className={styles.channelCard}
-                    to={`/workspaces/${workspaceId}/channels/${channel.id}`}
-                  >
+                {canIssueInvite && (
+                  <section className={styles.invitePanel} aria-labelledby="invite-link-title">
                     <div>
-                      <strong>
-                        {channel.visibility === 'PRIVATE' ? '잠금 ' : '#'}{channel.name}
-                      </strong>
-                      <span>{channel.visibility === 'PRIVATE' ? '비공개' : '공개'}</span>
+                      <p className={styles.eyebrow}>팀 초대</p>
+                      <h2 id="invite-link-title">초대 링크</h2>
+                      <p>워크스페이스 전체에 참여할 수 있는 링크입니다.</p>
                     </div>
-                    <dl>
-                      <div>
-                        <dt>참여자</dt>
-                        <dd>{channel.memberCount}명</dd>
+                    {inviteLinkQuery.isLoading && <span>초대 링크를 불러오는 중입니다.</span>}
+                    {requiresInviteIssue && (
+                      <button
+                        type="button"
+                        onClick={() => void handleIssueInviteLink()}
+                        disabled={issueInviteLink.isPending}
+                      >
+                        {issueInviteLink.isPending ? '발급 중' : '초대 링크 발급'}
+                      </button>
+                    )}
+                    {inviteLinkQuery.isError && !requiresInviteIssue && (
+                      <button type="button" onClick={() => void inviteLinkQuery.refetch()}>
+                        초대 링크 다시 불러오기
+                      </button>
+                    )}
+                    {inviteUrl && (
+                      <div className={styles.inviteLinkField}>
+                        <input aria-label="초대 링크" value={inviteUrl} readOnly />
+                        <button type="button" onClick={() => void handleCopyInviteLink()}>
+                          복사
+                        </button>
                       </div>
-                      <div>
-                        <dt>읽지 않음</dt>
-                        <dd>{channel.unreadCount}개</dd>
-                      </div>
-                    </dl>
-                  </Link>
-                ))}
-              </div>
-            </section>
+                    )}
+                    {inviteMessage && <p className={styles.inviteMessage}>{inviteMessage}</p>}
+                  </section>
+                )}
+
+                <section className={styles.channelPanel} aria-labelledby="workspace-channel-title">
+                  <div className={styles.sectionHeader}>
+                    <div>
+                      <p className={styles.eyebrow}>채널 현황</p>
+                      <h2 id="workspace-channel-title">채널 목록</h2>
+                    </div>
+                  </div>
+                  {channelsQuery.isError && (
+                    <p className={styles.errorText}>채널 목록을 불러올 수 없습니다.</p>
+                  )}
+                  {!channelsQuery.isLoading && !channelsQuery.isError && channels.length === 0 && (
+                    <p className={styles.emptyText}>표시할 채널이 없습니다.</p>
+                  )}
+                  <div className={styles.channelGrid}>
+                    {channels.map((channel) => (
+                      <Link
+                        key={channel.id}
+                        className={styles.channelCard}
+                        to={`/workspaces/${workspaceId}/channels/${channel.id}`}
+                      >
+                        <div>
+                          <strong>
+                            {channel.visibility === 'PRIVATE' ? '잠금 ' : '#'}{channel.name}
+                          </strong>
+                          <span>{channel.visibility === 'PRIVATE' ? '비공개' : '공개'}</span>
+                        </div>
+                        <dl>
+                          <div>
+                            <dt>참여자</dt>
+                            <dd>{channel.memberCount}명</dd>
+                          </div>
+                          <div>
+                            <dt>읽지 않음</dt>
+                            <dd>{channel.unreadCount}개</dd>
+                          </div>
+                        </dl>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         )}
       </section>

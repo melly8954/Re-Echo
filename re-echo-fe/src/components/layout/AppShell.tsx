@@ -24,6 +24,7 @@ interface AppShellProps {
   activeChannelId?: string
   isChannelsLoading?: boolean
   channelHeaderAction?: ReactNode
+  channelEmptyMessage?: string
   rightSidebar?: ReactNode
   rightSidebarLabel?: string
 }
@@ -37,6 +38,7 @@ export function AppShell({
   activeChannelId,
   isChannelsLoading = false,
   channelHeaderAction,
+  channelEmptyMessage = '워크스페이스에 참여하면 채널이 표시됩니다.',
   rightSidebar,
   rightSidebarLabel,
 }: PropsWithChildren<AppShellProps>) {
@@ -172,7 +174,7 @@ export function AppShell({
         </nav>
       ) : (
         <p className={styles.emptyText}>
-          워크스페이스에 참여하면 채널이 표시됩니다.
+          {channelEmptyMessage}
         </p>
       )}
     </>
