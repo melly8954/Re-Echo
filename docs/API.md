@@ -32,6 +32,8 @@
 - 동일 사용자의 다중 로그인 세션을 허용하며 logout은 현재 세션만 종료한다.
 - 워크스페이스 참여 시 기본 채널 `#general`에 자동 참여한다.
 - `#general`은 나갈 수 없다.
+- 활성 워크스페이스의 `#general`은 이름·설명 수정, 개별 보관·복원을
+  허용하지 않는다. 워크스페이스 보관·복원 시에만 함께 상태가 전환된다.
 - 공개 채널은 워크스페이스 멤버라면 자유롭게 참여/나가기/재참여가 가능하다.
 - 비공개 채널은 멤버가 아니면 목록에 표시되지 않고 메시지에 접근할 수 없다.
 - 비공개 채널은 자진 나가기가 가능하며, 재참여는 관리자 추가를 통해서만 가능하다.
@@ -790,6 +792,8 @@
 ```
 
 - Success Response: `200 OK`
+- Error Responses
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.24 채널 보관
 
@@ -801,6 +805,7 @@
 - Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_ARCHIVED`
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.25 채널 복원
 
@@ -812,6 +817,7 @@
 - Success Response: `200 OK`
 - Error Responses
   - `409 CHANNEL_RESTORE_NOT_ALLOWED`
+  - `409 CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 
 ### 11.26 공개 채널 참여
 
@@ -1431,6 +1437,7 @@ event envelope의 `occurredAt`이 아니라 `payload.message.updatedAt`을
 - `CHANNEL_ALREADY_JOINED`
 - `CHANNEL_JOIN_FORBIDDEN`
 - `CHANNEL_GENERAL_LEAVE_FORBIDDEN`
+- `CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN`
 - `CHANNEL_MEMBER_REMOVED`
 - `CHANNEL_CREATOR_LEAVE_FORBIDDEN`
 - `CHANNEL_ARCHIVED`
