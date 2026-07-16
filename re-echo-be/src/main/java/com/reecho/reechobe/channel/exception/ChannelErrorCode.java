@@ -11,6 +11,7 @@ public enum ChannelErrorCode implements ErrorCode {
     CHANNEL_MEMBER_REMOVED(HttpStatus.CONFLICT, "강제 제거된 채널에는 다시 참여할 수 없습니다."),
     CHANNEL_JOIN_FORBIDDEN(HttpStatus.FORBIDDEN, "채널에 참여할 수 없습니다."),
     CHANNEL_GENERAL_LEAVE_FORBIDDEN(HttpStatus.CONFLICT, "기본 채널에서는 나갈 수 없습니다."),
+    CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN(HttpStatus.CONFLICT, "기본 채널은 개별적으로 관리할 수 없습니다."),
     CHANNEL_CREATOR_LEAVE_FORBIDDEN(HttpStatus.CONFLICT, "비공개 채널 생성자는 채널에서 나갈 수 없습니다."),
     CHANNEL_ARCHIVED(HttpStatus.CONFLICT, "보관된 채널입니다."),
     CHANNEL_RESTORE_NOT_ALLOWED(HttpStatus.CONFLICT, "채널을 복원할 수 없습니다.");

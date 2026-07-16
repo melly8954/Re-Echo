@@ -88,6 +88,7 @@ public class ChannelCommandService {
         validateActiveWorkspace(workspaceId);
         requireChannelManager(userId, workspaceId);
         Channel channel = getActiveWorkspaceChannel(workspaceId, channelId);
+        requireIndividuallyManageableChannel(channel);
         String requestedName = request.name().trim();
         if (!channel.getName().equals(requestedName)
                 && channelRepository.existsByWorkspaceIdAndName(workspaceId, requestedName)) {
@@ -102,6 +103,7 @@ public class ChannelCommandService {
         validateActiveWorkspace(workspaceId);
         requireChannelManager(userId, workspaceId);
         Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        requireIndividuallyManageableChannel(channel);
         if (channel.getStatus() == ChannelStatus.ARCHIVED) {
             throw new BusinessException(ChannelErrorCode.CHANNEL_ARCHIVED);
         }
@@ -115,6 +117,7 @@ public class ChannelCommandService {
         validateActiveWorkspace(workspaceId);
         requireChannelManager(userId, workspaceId);
         Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        requireIndividuallyManageableChannel(channel);
         if (!canRestore(channel)) {
             throw new BusinessException(ChannelErrorCode.CHANNEL_RESTORE_NOT_ALLOWED);
         }
@@ -293,6 +296,13 @@ public class ChannelCommandService {
                 .filter(channel -> channel.getWorkspaceId().equals(workspaceId))
                 .filter(channel -> channel.getStatus() != ChannelStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
+    }
+
+    // 기본 채널은 활성 워크스페이스에서 항상 유지하고 워크스페이스 수명주기만 따른다.
+    private void requireIndividuallyManageableChannel(Channel channel) {
+        if (channel.isGeneral()) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN);
+        }
     }
 
     // 보관 만료 시각을 넘긴 채널은 자동 삭제 전후에 복원할 수 없게 한다.

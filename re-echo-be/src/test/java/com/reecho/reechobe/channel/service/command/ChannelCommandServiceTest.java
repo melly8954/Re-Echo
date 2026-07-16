@@ -852,6 +852,40 @@ class ChannelCommandServiceTest {
     }
 
     @Test
+    void 기본_채널은_개별_수정_보관_복원을_할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        Channel channel = Channel.createGeneral(workspace.getId(), admin.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        assertThatThrownBy(() -> service.updateChannel(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new UpdateChannelRequest("공지", "설명")
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN);
+
+        assertThatThrownBy(() -> service.archiveChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN);
+
+        channel.archive(LocalDateTime.now(), LocalDateTime.now().plusDays(15));
+        assertThatThrownBy(() -> service.restoreChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_GENERAL_MANAGEMENT_FORBIDDEN);
+    }
+
+    @Test
     void 관리자는_채널을_15일_동안_보관할_수_있다() {
         UUID userId = UUID.randomUUID();
         Workspace workspace = createWorkspace(userId);
