@@ -10,13 +10,18 @@ import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
 import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.file.service.ProfileImageFileService;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
+import com.reecho.reechobe.member.dto.UpdateWorkspaceProfileRequest;
+import com.reecho.reechobe.member.dto.WorkspaceMemberResponse;
 import com.reecho.reechobe.member.exception.MemberErrorCode;
 import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
 import com.reecho.reechobe.user.domain.User;
+import com.reecho.reechobe.workspace.domain.Workspace;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
+import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,14 +41,48 @@ class WorkspaceMemberCommandServiceTest {
     @Mock
     private ChannelMembershipRepository channelMembershipRepository;
 
+    @Mock
+    private WorkspaceRepository workspaceRepository;
+
+    @Mock
+    private ProfileImageFileService profileImageFileService;
+
     private WorkspaceMemberCommandService service;
 
     @BeforeEach
     void setUp() {
         service = new WorkspaceMemberCommandService(
                 workspaceMembershipRepository,
-                channelMembershipRepository
+                channelMembershipRepository,
+                workspaceRepository,
+                profileImageFileService
         );
+    }
+
+    @Test
+    void 활성_멤버는_자신의_워크스페이스_표시_이름을_수정할_수_있다() {
+        UUID workspaceId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        WorkspaceMembership membership = createMembership(
+                workspaceId,
+                userId,
+                WorkspaceMembershipRole.MEMBER
+        );
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(
+                Workspace.create("워크스페이스", null, null, userId)
+        ));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspaceId,
+                userId,
+                WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(membership));
+        UpdateWorkspaceProfileRequest request = new UpdateWorkspaceProfileRequest();
+        request.setDisplayName("워크스페이스 이름");
+
+        WorkspaceMemberResponse result = service.updateMyProfile(userId, workspaceId, request);
+
+        assertThat(result.displayName()).isEqualTo("워크스페이스 이름");
+        verifyNoInteractions(profileImageFileService);
     }
 
     @Test

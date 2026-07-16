@@ -69,6 +69,29 @@ class ProfileImageFileServiceTest {
     }
 
     @Test
+    void 워크스페이스_프로필_이미지_업로드_URL을_발급한다() {
+        UUID workspaceId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID membershipId = UUID.randomUUID();
+        Instant expiresAt = Instant.parse("2026-07-10T12:10:00Z");
+        when(storageClient.presignPut(any(String.class), eq("image/png"), eq(Duration.ofMinutes(10))))
+                .thenReturn(new StorageClient.PresignedUpload("https://r2-presigned-url", expiresAt));
+        when(fileObjectRepository.save(any(FileObject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PresignedUploadResponse response = service.createWorkspaceProfileImageUpload(
+                workspaceId,
+                userId,
+                membershipId,
+                new ProfileImagePresignRequest("profile.png", "image/png", 1200L)
+        );
+
+        assertThat(response.fileId()).isNotNull();
+        assertThat(response.uploadUrl()).isEqualTo("https://r2-presigned-url");
+        assertThat(response.expiresAt()).isEqualTo(expiresAt);
+    }
+
+    @Test
     void 업로드가_완료된_본인_프로필_이미지_URL을_반환한다() {
         UUID userId = UUID.randomUUID();
         UUID fileId = UUID.randomUUID();

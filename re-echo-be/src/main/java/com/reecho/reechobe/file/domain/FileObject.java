@@ -100,6 +100,31 @@ public class FileObject {
                 .build();
     }
 
+    public static FileObject createWorkspaceProfileImage(
+            UUID fileId,
+            UUID workspaceId,
+            UUID uploadedByUserId,
+            UUID uploadedByMembershipId,
+            String storageKey,
+            String originalFilename,
+            String contentType,
+            long fileSizeBytes
+    ) {
+        return FileObject.builder()
+                .id(fileId)
+                .workspaceId(workspaceId)
+                .uploadedByUserId(uploadedByUserId)
+                .uploadedByMembershipId(uploadedByMembershipId)
+                .purpose(FilePurpose.PROFILE_IMAGE)
+                .storageProvider(StorageProvider.R2)
+                .storageKey(storageKey)
+                .originalFilename(originalFilename)
+                .contentType(contentType)
+                .fileSizeBytes(fileSizeBytes)
+                .status(FileStatus.ACTIVE)
+                .build();
+    }
+
     public static FileObject createMessageAttachment(
             UUID fileId,
             UUID workspaceId,

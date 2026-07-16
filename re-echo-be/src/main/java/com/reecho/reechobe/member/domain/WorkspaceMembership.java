@@ -1,5 +1,7 @@
 package com.reecho.reechobe.member.domain;
 
+import com.reecho.reechobe.common.exception.BusinessException;
+import com.reecho.reechobe.member.exception.MemberErrorCode;
 import com.reecho.reechobe.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -110,6 +112,22 @@ public class WorkspaceMembership {
         this.leftAt = null;
     }
 
+    // 워크스페이스 안에서만 쓰는 표시 이름은 계정 기본 프로필과 분리한다.
+    public void updateDisplayName(String displayName) {
+        this.displayName = normalizeDisplayName(displayName);
+    }
+
+    // 워크스페이스 전용 이미지 검증은 서비스가 완료한 뒤 멤버십에 반영한다.
+    public void updateProfileImage(String profileImageUrl, UUID profileImageFileId) {
+        this.profileImageUrl = profileImageUrl;
+        this.profileImageFileId = profileImageFileId;
+    }
+
+    public void removeProfileImage() {
+        this.profileImageUrl = null;
+        this.profileImageFileId = null;
+    }
+
     // 워크스페이스 재진입 순서와 복귀 기준을 위한 방문 시각을 갱신한다.
     public void visit() {
         this.lastVisitedAt = LocalDateTime.now();
@@ -144,5 +162,16 @@ public class WorkspaceMembership {
     @PreUpdate
     void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private static String normalizeDisplayName(String displayName) {
+        if (displayName == null || displayName.isBlank()) {
+            throw new BusinessException(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
+        }
+        String normalizedDisplayName = displayName.trim();
+        if (normalizedDisplayName.length() > 80) {
+            throw new BusinessException(MemberErrorCode.MEMBER_INVALID_DISPLAY_NAME);
+        }
+        return normalizedDisplayName;
     }
 }

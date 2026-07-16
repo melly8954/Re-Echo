@@ -1,8 +1,12 @@
 package com.reecho.reechobe.member.controller;
 
 import com.reecho.reechobe.common.response.ApiResponse;
+import com.reecho.reechobe.file.dto.PresignedUploadResponse;
+import com.reecho.reechobe.file.dto.ProfileImagePresignRequest;
 import com.reecho.reechobe.member.dto.ChangeWorkspaceMemberRoleRequest;
 import com.reecho.reechobe.member.dto.WorkspaceMemberListResponse;
+import com.reecho.reechobe.member.dto.WorkspaceMemberResponse;
+import com.reecho.reechobe.member.dto.UpdateWorkspaceProfileRequest;
 import jakarta.validation.Valid;
 import com.reecho.reechobe.member.service.command.WorkspaceMemberCommandService;
 import com.reecho.reechobe.member.service.query.WorkspaceMemberQueryService;
@@ -39,6 +43,36 @@ public class WorkspaceMemberController {
                 workspaceId
         );
         return ApiResponse.success(HttpStatus.OK, "워크스페이스 멤버 목록을 조회했습니다.", result);
+    }
+
+    @PatchMapping("/me/profile")
+    // 현재 사용자의 워크스페이스별 표시 이름과 프로필 이미지만 수정한다.
+    public ApiResponse<WorkspaceMemberResponse> updateMyProfile(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @Valid @RequestBody UpdateWorkspaceProfileRequest request
+    ) {
+        WorkspaceMemberResponse result = workspaceMemberCommandService.updateMyProfile(
+                principal.userId(),
+                workspaceId,
+                request
+        );
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스 프로필을 수정했습니다.", result);
+    }
+
+    @PostMapping("/me/profile-image/presign-upload")
+    // 현재 사용자 멤버십에만 연결할 프로필 이미지 업로드 URL을 발급한다.
+    public ApiResponse<PresignedUploadResponse> createMyProfileImageUploadUrl(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @Valid @RequestBody ProfileImagePresignRequest request
+    ) {
+        PresignedUploadResponse result = workspaceMemberCommandService.createMyProfileImageUpload(
+                principal.userId(),
+                workspaceId,
+                request
+        );
+        return ApiResponse.success(HttpStatus.OK, "워크스페이스 프로필 이미지 업로드 URL을 발급했습니다.", result);
     }
 
     @PatchMapping("/{memberId}/role")
