@@ -201,8 +201,8 @@ export function WorkspaceProfileDialog({
       >
         <header className={styles.header}>
           <div>
-            <p>내 프로필</p>
-            <h2 id="workspace-profile-title">워크스페이스 프로필</h2>
+            <p>워크스페이스별 프로필</p>
+            <h2 id="workspace-profile-title">{workspace.name} 프로필</h2>
           </div>
           {!embedded && (
             <button type="button" onClick={onClose} disabled={isSaving}>
@@ -213,7 +213,7 @@ export function WorkspaceProfileDialog({
         <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
           <div className={styles.imageSection}>
             {currentImageUrl ? (
-              <img src={currentImageUrl} alt="현재 워크스페이스 프로필 이미지" />
+              <img src={currentImageUrl} alt={`현재 ${workspace.name} 프로필 이미지`} />
             ) : (
               <span className={styles.imageFallback} aria-hidden="true">
                 {workspace.myMembership.displayName.slice(0, 1)}
@@ -252,7 +252,7 @@ export function WorkspaceProfileDialog({
               }}
             />
             <small className={styles.help}>
-              이 워크스페이스에만 표시되며 계정 기본 프로필은 바뀌지 않습니다.
+              {workspace.name}에만 표시되며 계정 기본 프로필은 바뀌지 않습니다.
             </small>
           </label>
           {submitError && <p className={styles.error} role="alert">{submitError}</p>}

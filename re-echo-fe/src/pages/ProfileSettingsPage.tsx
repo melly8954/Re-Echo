@@ -44,6 +44,11 @@ export function ProfileSettingsPage() {
   const workspaceId = searchParams.get('workspaceId') ?? ''
   const workspaceQuery = useWorkspaceDetail(workspaceId)
   const isWorkspaceProfileScope = searchParams.get('scope') === 'workspace' && Boolean(workspaceId)
+  const profileDescription = isWorkspaceProfileScope
+    ? workspaceQuery.data
+      ? `${workspaceQuery.data.name}에서만 사용할 프로필을 관리합니다.`
+      : '워크스페이스별 프로필을 불러오는 중입니다.'
+    : '새 워크스페이스에 참여할 때 사용할 기본 정보를 관리합니다.'
   const updateProfile = useUpdateUserProfile()
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [clientError, setClientError] = useState<string | null>(null)
@@ -172,7 +177,7 @@ export function ProfileSettingsPage() {
           <p>계정 설정</p>
           <h1 id="profile-title">프로필</h1>
           <span>
-            전체 기본 프로필과 현재 워크스페이스 프로필을 구분해 관리합니다.
+            {profileDescription}
           </span>
         </div>
 
@@ -184,7 +189,7 @@ export function ProfileSettingsPage() {
             className={!isWorkspaceProfileScope ? styles.scopeTabActive : styles.scopeTab}
             onClick={() => selectProfileScope('global')}
           >
-            전체 프로필
+            기본 프로필
           </button>
           {workspaceId && (
             <button
@@ -194,7 +199,7 @@ export function ProfileSettingsPage() {
               className={isWorkspaceProfileScope ? styles.scopeTabActive : styles.scopeTab}
               onClick={() => selectProfileScope('workspace')}
             >
-              이 워크스페이스 프로필
+              워크스페이스 프로필
             </button>
           )}
         </div>
