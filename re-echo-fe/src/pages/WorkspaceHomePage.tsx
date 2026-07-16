@@ -8,6 +8,7 @@ import { useArchiveWorkspace } from '../features/workspace/useArchiveWorkspace'
 import { useRestoreWorkspace } from '../features/workspace/useRestoreWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
+import { WorkspaceProfileDialog } from '../features/workspace/WorkspaceProfileDialog'
 import { WorkspaceSettingsDialog } from '../features/workspace/WorkspaceSettingsDialog'
 import {
   useWorkspaceChannels,
@@ -50,6 +51,7 @@ export function WorkspaceHomePage() {
   const [isWorkspaceRestoreOpen, setIsWorkspaceRestoreOpen] = useState(false)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isMemberManagementOpen, setIsMemberManagementOpen] = useState(false)
+  const [isWorkspaceProfileOpen, setIsWorkspaceProfileOpen] = useState(false)
   const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false)
   const workspace = workspaceQuery.data
   const isArchivedWorkspace = workspace?.status === 'ARCHIVED'
@@ -67,6 +69,7 @@ export function WorkspaceHomePage() {
   const canLeaveWorkspace = Boolean(
     workspace && workspace.myMembership.role !== 'OWNER',
   )
+  const canUpdateWorkspaceProfile = Boolean(workspace && !isArchivedWorkspace)
   const canCreateChannel = canIssueInvite
   const inviteLinkQuery = useWorkspaceInviteLink(routeWorkspaceId, canIssueInvite)
   const channels = channelsQuery.data?.contents ?? []
@@ -517,6 +520,15 @@ export function WorkspaceHomePage() {
               </div>
               {!isArchivedWorkspace && (
                 <div className={styles.actions}>
+                {canUpdateWorkspaceProfile && (
+                  <button
+                    type="button"
+                    className={styles.memberManageButton}
+                    onClick={() => setIsWorkspaceProfileOpen(true)}
+                  >
+                    내 프로필
+                  </button>
+                )}
                 {canManageWorkspaceSettings && (
                   <button
                     type="button"
@@ -666,6 +678,13 @@ export function WorkspaceHomePage() {
       {workspaceLeaveDialog}
       {workspaceArchiveDialog}
       {workspaceRestoreDialog}
+      {workspace && canUpdateWorkspaceProfile && (
+        <WorkspaceProfileDialog
+          workspace={workspace}
+          isOpen={isWorkspaceProfileOpen}
+          onClose={() => setIsWorkspaceProfileOpen(false)}
+        />
+      )}
       {workspace && canManageWorkspaceSettings && (
         <WorkspaceSettingsDialog
           workspace={workspace}

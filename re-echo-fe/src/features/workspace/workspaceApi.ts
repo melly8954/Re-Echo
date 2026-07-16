@@ -11,6 +11,11 @@ export interface UpdateWorkspaceRequest {
   imageFileId: string | null
 }
 
+export interface UpdateWorkspaceProfileRequest {
+  displayName: string
+  profileImageFileId?: string | null
+}
+
 export interface WorkspaceImagePresignRequest {
   fileName: string
   contentType: string
@@ -221,6 +226,48 @@ export async function uploadWorkspaceImageToStorage(uploadUrl: string, file: Fil
 
   if (!response.ok) {
     throw new Error('워크스페이스 대표 이미지 업로드에 실패했습니다.')
+  }
+}
+
+export function updateWorkspaceProfile(
+  workspaceId: string,
+  request: UpdateWorkspaceProfileRequest,
+) {
+  return apiRequest<WorkspaceMember>(
+    `/api/v1/workspaces/${workspaceId}/members/me/profile`,
+    {
+      method: 'PATCH',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export function createWorkspaceProfileImageUploadUrl(
+  workspaceId: string,
+  request: WorkspaceImagePresignRequest,
+) {
+  return apiRequest<PresignedUploadResponse>(
+    `/api/v1/workspaces/${workspaceId}/members/me/profile-image/presign-upload`,
+    {
+      method: 'POST',
+      authenticated: true,
+      body: JSON.stringify(request),
+    },
+  )
+}
+
+export async function uploadWorkspaceProfileImageToStorage(uploadUrl: string, file: File) {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+  })
+
+  if (!response.ok) {
+    throw new Error('워크스페이스 프로필 이미지 업로드에 실패했습니다.')
   }
 }
 
