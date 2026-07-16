@@ -12,11 +12,13 @@ import com.reecho.reechobe.channel.domain.Channel;
 import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelReadState;
+import com.reecho.reechobe.channel.domain.ChannelStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
 import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
+import com.reecho.reechobe.channel.dto.UpdateChannelRequest;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
 import com.reecho.reechobe.channel.repository.ChannelReadStateRepository;
@@ -36,6 +38,7 @@ import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -822,6 +825,88 @@ class ChannelCommandServiceTest {
         verify(channelReadStateRepository).save(readStateCaptor.capture());
         assertThat(readStateCaptor.getValue().getChannelMembershipId()).isEqualTo(channelMembership.getId());
         assertThat(readStateCaptor.getValue().getLastReadMessageId()).isEqualTo(message.getId());
+    }
+
+    @Test
+    void 관리자는_활성_채널의_이름과_설명을_변경할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        Channel channel = Channel.create(workspace.getId(), "design", "기존 설명", ChannelVisibility.PUBLIC, admin.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelRepository.existsByWorkspaceIdAndName(workspace.getId(), "product")).thenReturn(false);
+
+        service.updateChannel(
+                userId,
+                workspace.getId(),
+                channel.getId(),
+                new UpdateChannelRequest("product", "새 설명")
+        );
+
+        assertThat(channel.getName()).isEqualTo("product");
+        assertThat(channel.getDescription()).isEqualTo("새 설명");
+    }
+
+    @Test
+    void 관리자는_채널을_15일_동안_보관할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, admin.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        service.archiveChannel(userId, workspace.getId(), channel.getId());
+
+        assertThat(channel.getStatus()).isEqualTo(ChannelStatus.ARCHIVED);
+        assertThat(channel.getArchiveExpiresAt()).isEqualTo(channel.getArchivedAt().plusDays(15));
+    }
+
+    @Test
+    void 관리자는_만료_전_보관_채널을_복원할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, admin.getId());
+        LocalDateTime archivedAt = LocalDateTime.now().minusDays(1);
+        channel.archive(archivedAt, archivedAt.plusDays(15));
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        service.restoreChannel(userId, workspace.getId(), channel.getId());
+
+        assertThat(channel.getStatus()).isEqualTo(ChannelStatus.ACTIVE);
+        assertThat(channel.getArchivedAt()).isNull();
+    }
+
+    @Test
+    void 만료된_보관_채널은_복원할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(userId);
+        WorkspaceMembership admin = createMembership(workspace.getId(), userId, WorkspaceMembershipRole.ADMIN);
+        Channel channel = Channel.create(workspace.getId(), "design", null, ChannelVisibility.PUBLIC, admin.getId());
+        LocalDateTime archivedAt = LocalDateTime.now().minusDays(16);
+        channel.archive(archivedAt, archivedAt.plusDays(15));
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(admin));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+
+        assertThatThrownBy(() -> service.restoreChannel(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_RESTORE_NOT_ALLOWED);
     }
 
     private Workspace createWorkspace(UUID createdByUserId) {

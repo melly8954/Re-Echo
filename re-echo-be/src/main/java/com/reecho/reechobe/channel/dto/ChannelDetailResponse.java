@@ -7,38 +7,30 @@ import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// 채널 목록과 워크스페이스 홈 표시에 필요한 정보를 전달한다.
-public record ChannelListItemResponse(
+// 채널 화면과 설정 화면이 공유하는 기본 정보와 현재 참여 상태를 전달한다.
+public record ChannelDetailResponse(
         UUID id,
         String name,
+        String description,
         ChannelVisibility visibility,
         @JsonProperty("isGeneral") boolean general,
         boolean joined,
         boolean createdByMe,
         ChannelStatus status,
-        LocalDateTime archiveExpiresAt,
-        int unreadCount,
-        long memberCount
+        LocalDateTime archiveExpiresAt
 ) {
 
-    public static ChannelListItemResponse from(
-            Channel channel,
-            boolean joined,
-            UUID membershipId,
-            long memberCount,
-            long unreadCount
-    ) {
-        return new ChannelListItemResponse(
+    public static ChannelDetailResponse from(Channel channel, boolean joined, UUID membershipId) {
+        return new ChannelDetailResponse(
                 channel.getId(),
                 channel.getName(),
+                channel.getDescription(),
                 channel.getVisibility(),
                 channel.isGeneral(),
                 joined,
                 channel.getCreatedByMembershipId().equals(membershipId),
                 channel.getStatus(),
-                channel.getArchiveExpiresAt(),
-                Math.toIntExact(unreadCount),
-                memberCount
+                channel.getArchiveExpiresAt()
         );
     }
 }

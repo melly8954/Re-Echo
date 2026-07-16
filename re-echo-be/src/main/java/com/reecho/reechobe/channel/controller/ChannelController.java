@@ -2,9 +2,11 @@ package com.reecho.reechobe.channel.controller;
 
 import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.ChannelListResponse;
+import com.reecho.reechobe.channel.dto.ChannelDetailResponse;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
 import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
+import com.reecho.reechobe.channel.dto.UpdateChannelRequest;
 import com.reecho.reechobe.channel.service.command.ChannelCommandService;
 import com.reecho.reechobe.channel.service.query.ChannelQueryService;
 import com.reecho.reechobe.common.response.ApiResponse;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,6 +62,21 @@ public class ChannelController {
         return ApiResponse.success(HttpStatus.OK, "채널 멤버 목록을 조회했습니다.", result);
     }
 
+    @GetMapping("/{channelId}")
+    // 채널 화면이 현재 사용자의 참여 상태를 포함한 상세 정보를 조회한다.
+    public ApiResponse<ChannelDetailResponse> getChannelDetail(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        ChannelDetailResponse result = channelQueryService.getChannelDetail(
+                principal.userId(),
+                workspaceId,
+                channelId
+        );
+        return ApiResponse.success(HttpStatus.OK, "채널 정보를 조회했습니다.", result);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     // 채널 생성 요청을 Command Service에 위임하고 생성 채널 식별자를 반환한다.
@@ -73,6 +91,40 @@ public class ChannelController {
                 request
         );
         return ApiResponse.success(HttpStatus.CREATED, "채널이 생성되었습니다.", result);
+    }
+
+    @PatchMapping("/{channelId}")
+    // 관리자가 활성 채널의 이름과 설명을 변경한다.
+    public ApiResponse<Void> updateChannel(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId,
+            @Valid @RequestBody UpdateChannelRequest request
+    ) {
+        channelCommandService.updateChannel(principal.userId(), workspaceId, channelId, request);
+        return ApiResponse.success(HttpStatus.OK, "채널 정보를 수정했습니다.", null);
+    }
+
+    @PatchMapping("/{channelId}/archive")
+    // 관리자가 채널을 읽기 전용 보관 상태로 전환한다.
+    public ApiResponse<Void> archiveChannel(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        channelCommandService.archiveChannel(principal.userId(), workspaceId, channelId);
+        return ApiResponse.success(HttpStatus.OK, "채널을 보관했습니다.", null);
+    }
+
+    @PatchMapping("/{channelId}/restore")
+    // 관리자가 만료 전 보관 채널을 다시 활성화한다.
+    public ApiResponse<Void> restoreChannel(
+            @AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID channelId
+    ) {
+        channelCommandService.restoreChannel(principal.userId(), workspaceId, channelId);
+        return ApiResponse.success(HttpStatus.OK, "채널을 복원했습니다.", null);
     }
 
     @PostMapping("/{channelId}/join")

@@ -78,7 +78,7 @@ class ChannelQueryServiceTest {
                 membership.getId(),
                 ChannelMembershipStatus.ACTIVE
         )).thenReturn(List.of(generalChannel.getId()));
-        when(channelRepository.findAccessibleActiveChannels(workspace.getId(), membership.getId()))
+        when(channelRepository.findAccessibleChannels(workspace.getId(), membership.getId()))
                 .thenReturn(List.of(generalChannel));
         ChannelMemberCountProjection memberCount = mock(ChannelMemberCountProjection.class);
         when(memberCount.getChannelId()).thenReturn(generalChannel.getId());
@@ -142,6 +142,78 @@ class ChannelQueryServiceTest {
                 .isEqualTo(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
 
         verifyNoInteractions(channelRepository, channelMembershipRepository);
+    }
+
+    @Test
+    void 공개_채널은_워크스페이스_멤버가_상세_정보를_조회할_수_있다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(UUID.randomUUID());
+        WorkspaceMembership requester = createMembership(
+                workspace.getId(),
+                userId,
+                "요청자",
+                WorkspaceMembershipRole.MEMBER
+        );
+        WorkspaceMembership owner = createMembership(
+                workspace.getId(),
+                UUID.randomUUID(),
+                "소유자",
+                WorkspaceMembershipRole.OWNER
+        );
+        Channel channel = Channel.create(
+                workspace.getId(),
+                "design",
+                "디자인 논의",
+                ChannelVisibility.PUBLIC,
+                owner.getId()
+        );
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(requester));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(
+                channel.getId(), requester.getId()
+        )).thenReturn(Optional.empty());
+
+        var result = service.getChannelDetail(userId, workspace.getId(), channel.getId());
+
+        assertThat(result.name()).isEqualTo("design");
+        assertThat(result.description()).isEqualTo("디자인 논의");
+        assertThat(result.joined()).isFalse();
+        assertThat(result.createdByMe()).isFalse();
+    }
+
+    @Test
+    void 비공개_채널_비참여자는_상세_정보를_조회할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        Workspace workspace = createWorkspace(UUID.randomUUID());
+        WorkspaceMembership requester = createMembership(
+                workspace.getId(),
+                userId,
+                "요청자",
+                WorkspaceMembershipRole.MEMBER
+        );
+        WorkspaceMembership admin = createMembership(
+                workspace.getId(),
+                UUID.randomUUID(),
+                "관리자",
+                WorkspaceMembershipRole.ADMIN
+        );
+        Channel channel = Channel.create(workspace.getId(), "secret", null, ChannelVisibility.PRIVATE, admin.getId());
+        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
+                workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
+        )).thenReturn(Optional.of(requester));
+        when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
+        when(channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(
+                channel.getId(), requester.getId()
+        )).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getChannelDetail(userId, workspace.getId(), channel.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
     }
 
     @Test

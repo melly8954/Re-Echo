@@ -32,7 +32,7 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                     SELECT c.*
                     FROM channels c
                     WHERE c.workspace_id = :workspaceId
-                      AND c.status = 'ACTIVE'
+                      AND c.status IN ('ACTIVE', 'ARCHIVED')
                       AND (
                           c.visibility = 'PUBLIC'
                           OR EXISTS (
@@ -45,6 +45,7 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                       )
                     ORDER BY
                         CASE WHEN c.is_general THEN 0 ELSE 1 END,
+                        CASE WHEN c.status = 'ACTIVE' THEN 0 ELSE 1 END,
                         COALESCE(
                             (
                                 SELECT MAX(m.created_at)
@@ -57,7 +58,7 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                     """,
             nativeQuery = true
     )
-    List<Channel> findAccessibleActiveChannels(
+    List<Channel> findAccessibleChannels(
             @Param("workspaceId") UUID workspaceId,
             @Param("workspaceMembershipId") UUID workspaceMembershipId
     );

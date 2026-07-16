@@ -9,6 +9,7 @@ import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.AddChannelMembersRequest;
 import com.reecho.reechobe.channel.dto.CreateChannelRequest;
 import com.reecho.reechobe.channel.dto.CreatedChannelResponse;
+import com.reecho.reechobe.channel.dto.UpdateChannelRequest;
 import com.reecho.reechobe.channel.dto.UpdateChannelReadStateRequest;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
@@ -29,6 +30,7 @@ import com.reecho.reechobe.workspace.domain.WorkspaceStatus;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.util.LinkedHashSet;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -40,6 +42,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ChannelCommandService {
+
+    private static final int ARCHIVE_RETENTION_DAYS = 15;
 
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMembershipRepository workspaceMembershipRepository;
@@ -76,6 +80,45 @@ public class ChannelCommandService {
         );
 
         return new CreatedChannelResponse(channel.getId());
+    }
+
+    @Transactional
+    // 관리자 요청으로 활성 채널의 이름과 설명을 함께 변경한다.
+    public void updateChannel(UUID userId, UUID workspaceId, UUID channelId, UpdateChannelRequest request) {
+        validateActiveWorkspace(workspaceId);
+        requireChannelManager(userId, workspaceId);
+        Channel channel = getActiveWorkspaceChannel(workspaceId, channelId);
+        String requestedName = request.name().trim();
+        if (!channel.getName().equals(requestedName)
+                && channelRepository.existsByWorkspaceIdAndName(workspaceId, requestedName)) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "이미 사용 중인 채널 이름입니다.");
+        }
+        channel.update(request.name(), request.description());
+    }
+
+    @Transactional
+    // 관리자가 채널을 15일간 읽기 전용으로 전환한다.
+    public void archiveChannel(UUID userId, UUID workspaceId, UUID channelId) {
+        validateActiveWorkspace(workspaceId);
+        requireChannelManager(userId, workspaceId);
+        Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        if (channel.getStatus() == ChannelStatus.ARCHIVED) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_ARCHIVED);
+        }
+        LocalDateTime archivedAt = LocalDateTime.now();
+        channel.archive(archivedAt, archivedAt.plusDays(ARCHIVE_RETENTION_DAYS));
+    }
+
+    @Transactional
+    // 관리자가 삭제 예정 시각 전의 보관 채널을 다시 활성화한다.
+    public void restoreChannel(UUID userId, UUID workspaceId, UUID channelId) {
+        validateActiveWorkspace(workspaceId);
+        requireChannelManager(userId, workspaceId);
+        Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        if (!canRestore(channel)) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_RESTORE_NOT_ALLOWED);
+        }
+        channel.restore();
     }
 
     @Transactional
@@ -220,6 +263,15 @@ public class ChannelCommandService {
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
     }
 
+    // 채널 설정과 수명주기 변경은 소유자 또는 관리자 역할로 제한한다.
+    private WorkspaceMembership requireChannelManager(UUID userId, UUID workspaceId) {
+        WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
+        if (membership.getRole() == WorkspaceMembershipRole.MEMBER) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+        }
+        return membership;
+    }
+
     private WorkspaceMembership getReadableWorkspaceMembership(UUID userId, UUID workspaceId) {
         workspaceRepository.findById(workspaceId)
                 .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
@@ -241,6 +293,14 @@ public class ChannelCommandService {
                 .filter(channel -> channel.getWorkspaceId().equals(workspaceId))
                 .filter(channel -> channel.getStatus() != ChannelStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
+    }
+
+    // 보관 만료 시각을 넘긴 채널은 자동 삭제 전후에 복원할 수 없게 한다.
+    private boolean canRestore(Channel channel) {
+        return channel.getStatus() == ChannelStatus.ARCHIVED
+                && channel.getArchivedAt() != null
+                && channel.getArchiveExpiresAt() != null
+                && LocalDateTime.now().isBefore(channel.getArchiveExpiresAt());
     }
 
     // 요청한 메시지가 저장된 읽음 위치보다 뒤에 있을 때만 커서를 전진시킨다.

@@ -103,6 +103,12 @@ public class Channel {
                 .build();
     }
 
+    // 관리자가 채널의 식별 정보와 소개 문구를 함께 갱신한다.
+    public void update(String name, String description) {
+        this.name = normalizeName(name);
+        this.description = normalizeNullable(description);
+    }
+
     // 워크스페이스 보관과 개별 보관 모두 같은 수명주기 상태를 사용한다.
     public void archive(LocalDateTime archivedAt, LocalDateTime archiveExpiresAt) {
         this.status = ChannelStatus.ARCHIVED;

@@ -6,6 +6,7 @@ import com.reecho.reechobe.channel.domain.ChannelStatus;
 import com.reecho.reechobe.channel.domain.ChannelVisibility;
 import com.reecho.reechobe.channel.dto.ChannelListItemResponse;
 import com.reecho.reechobe.channel.dto.ChannelListResponse;
+import com.reecho.reechobe.channel.dto.ChannelDetailResponse;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
 import com.reecho.reechobe.channel.repository.ChannelMembershipRepository;
 import com.reecho.reechobe.channel.repository.ChannelRepository;
@@ -51,7 +52,7 @@ public class ChannelQueryService {
                         ChannelMembershipStatus.ACTIVE
                 )
         );
-        List<Channel> channels = channelRepository.findAccessibleActiveChannels(
+        List<Channel> channels = channelRepository.findAccessibleChannels(
                 workspaceId,
                 membership.getId()
         );
@@ -89,14 +90,27 @@ public class ChannelQueryService {
     }
 
     @Transactional(readOnly = true)
+    // 공개 여부와 참여 상태를 확인한 뒤 채널 화면에 필요한 상세 정보를 반환한다.
+    public ChannelDetailResponse getChannelDetail(UUID userId, UUID workspaceId, UUID channelId) {
+        validateExistingWorkspace(workspaceId);
+        WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
+        Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
+        boolean joined = channelMembershipRepository
+                .findByChannelIdAndWorkspaceMembershipId(channelId, membership.getId())
+                .filter(channelMembership -> channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
+                .isPresent();
+        if (channel.getVisibility() == ChannelVisibility.PRIVATE && !joined) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+        }
+        return ChannelDetailResponse.from(channel, joined, membership.getId());
+    }
+
+    @Transactional(readOnly = true)
     // 공개 범위 또는 활성 참여 여부를 확인한 뒤 채널 멤버 목록을 권한순으로 반환한다.
     public WorkspaceMemberListResponse getChannelMembers(UUID userId, UUID workspaceId, UUID channelId) {
         validateExistingWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
-        Channel channel = channelRepository.findById(channelId)
-                .filter(foundChannel -> foundChannel.getWorkspaceId().equals(workspaceId))
-                .filter(foundChannel -> foundChannel.getStatus() == ChannelStatus.ACTIVE)
-                .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
+        Channel channel = getReadableWorkspaceChannel(workspaceId, channelId);
         if (channel.getVisibility() == ChannelVisibility.PRIVATE) {
             channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channelId, membership.getId())
                     .filter(channelMembership -> channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
@@ -133,6 +147,13 @@ public class ChannelQueryService {
                         WorkspaceMembershipStatus.ACTIVE
                 )
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
+    }
+
+    private Channel getReadableWorkspaceChannel(UUID workspaceId, UUID channelId) {
+        return channelRepository.findById(channelId)
+                .filter(channel -> channel.getWorkspaceId().equals(workspaceId))
+                .filter(channel -> channel.getStatus() != ChannelStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
     }
 
     // 멤버 목록에서 권한이 높은 사용자를 먼저 보여주기 위한 정렬 우선순위다.
