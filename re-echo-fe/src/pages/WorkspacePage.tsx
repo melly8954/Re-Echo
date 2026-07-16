@@ -45,6 +45,7 @@ export function WorkspacePage() {
   const channelsQuery = useWorkspaceChannels(routeWorkspaceId)
   const workspaceMembersQuery = useWorkspaceMembers(routeWorkspaceId)
   const [channelName, setChannelName] = useState('')
+  const [channelDescription, setChannelDescription] = useState('')
   const [channelVisibility, setChannelVisibility] =
     useState<ChannelVisibility>('PUBLIC')
   const [channelCreateError, setChannelCreateError] = useState<string | null>(null)
@@ -63,6 +64,7 @@ export function WorkspacePage() {
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [isChannelSettingsOpen, setIsChannelSettingsOpen] = useState(false)
+  const [isChannelLeaveConfirmOpen, setIsChannelLeaveConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (!isChannelCreateOpen) {
@@ -110,7 +112,27 @@ export function WorkspacePage() {
     setSelectedChannelMemberIds([])
     setIsChannelMemberAddOpen(false)
     setIsChannelSettingsOpen(false)
+    setIsChannelLeaveConfirmOpen(false)
   }, [activeChannel?.id])
+
+  useEffect(() => {
+    if (!isChannelLeaveConfirmOpen) {
+      return undefined
+    }
+
+    const previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !leaveChannel.isPending) {
+        setIsChannelLeaveConfirmOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousBodyOverflow
+    }
+  }, [isChannelLeaveConfirmOpen, leaveChannel.isPending])
 
   if (!workspaceId) {
     return <Navigate to="/" replace />
@@ -195,7 +217,7 @@ export function WorkspacePage() {
         workspaceId,
         request: {
           name: trimmedName,
-          description: null,
+          description: channelDescription.trim() || null,
           visibility: channelVisibility,
           memberIds:
             channelVisibility === 'PRIVATE' ? selectedPrivateMemberIds : [],
@@ -205,6 +227,7 @@ export function WorkspacePage() {
         queryKey: workspaceChannelsQueryKey(workspaceId),
       })
       setChannelName('')
+      setChannelDescription('')
       setChannelVisibility('PUBLIC')
       setSelectedPrivateMemberIds([])
       setIsChannelCreateOpen(false)
@@ -262,6 +285,7 @@ export function WorkspacePage() {
       await queryClient.invalidateQueries({
         queryKey: workspaceChannelMembersQueryKey(workspaceId, activeChannel.id),
       })
+      setIsChannelLeaveConfirmOpen(false)
       setChannelMembershipMessage('채널에서 나갔습니다.')
     } catch (error) {
       if (error instanceof ApiError) {
@@ -314,6 +338,15 @@ export function WorkspacePage() {
       return
     }
     setIsChannelCreateOpen(false)
+  }
+
+  function requestLeaveActiveChannel() {
+    if (!canLeaveActiveChannel) {
+      return
+    }
+    leaveChannel.reset()
+    setChannelMembershipMessage(null)
+    setIsChannelLeaveConfirmOpen(true)
   }
 
   function togglePrivateChannelMember(memberId: string) {
@@ -389,6 +422,16 @@ export function WorkspacePage() {
                 setChannelName(event.target.value)
                 setChannelCreateError(null)
               }}
+            />
+          </label>
+          <label>
+            <span className={styles.channelCreateFieldLabel}>채널 설명 (선택)</span>
+            <textarea
+              value={channelDescription}
+              maxLength={300}
+              rows={3}
+              placeholder="예: 디자인 논의와 피드백을 위한 채널"
+              onChange={(event) => setChannelDescription(event.target.value)}
             />
           </label>
           <label>
@@ -652,6 +695,13 @@ export function WorkspacePage() {
       activeChannelId={activeChannel?.id}
       isChannelsLoading={channelsQuery.isLoading}
       channelHeaderAction={channelCreateAction}
+      onOpenActiveChannelSettings={
+        canManageActiveChannel ? () => setIsChannelSettingsOpen(true) : undefined
+      }
+      onRequestLeaveActiveChannel={
+        canLeaveActiveChannel ? requestLeaveActiveChannel : undefined
+      }
+      isActiveChannelLeavePending={leaveChannel.isPending}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="채널 참여자"
     >
@@ -708,22 +758,6 @@ export function WorkspacePage() {
                   {activeChannelDetail?.description ?? '채널 설명이 없습니다.'}
                 </p>
               </div>
-              <div className={styles.status}>
-                {canManageActiveChannel && (
-                  <button type="button" onClick={() => setIsChannelSettingsOpen(true)}>
-                    채널 설정
-                  </button>
-                )}
-                {canLeaveActiveChannel && (
-                  <button
-                    type="button"
-                    onClick={() => void handleLeaveActiveChannel()}
-                    disabled={isChannelMembershipPending}
-                  >
-                    {leaveChannel.isPending ? '나가는 중' : '채널 나가기'}
-                  </button>
-                )}
-              </div>
             </header>
 
             {channelMembershipMessage && (
@@ -772,6 +806,51 @@ export function WorkspacePage() {
         )}
       </section>
       {channelCreateDialog}
+      {isChannelLeaveConfirmOpen && activeChannel && (
+        <div className={styles.channelLeaveLayer}>
+          <button
+            className={styles.channelLeaveOverlay}
+            type="button"
+            aria-label="채널 나가기 닫기"
+            onClick={() => setIsChannelLeaveConfirmOpen(false)}
+            disabled={leaveChannel.isPending}
+          />
+          <section
+            className={styles.channelLeaveDialog}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="channel-leave-title"
+            aria-describedby="channel-leave-description"
+          >
+            <p className={styles.eyebrow}>채널 나가기</p>
+            <h2 id="channel-leave-title">{activeChannel.name} 채널에서 나갈까요?</h2>
+            <p id="channel-leave-description">
+              나가면 이 채널의 메시지를 더 이상 볼 수 없습니다.
+            </p>
+            {channelMembershipMessage && (
+              <p className={styles.channelLeaveError} role="alert">
+                {channelMembershipMessage}
+              </p>
+            )}
+            <div className={styles.channelLeaveFooter}>
+              <button
+                type="button"
+                onClick={() => setIsChannelLeaveConfirmOpen(false)}
+                disabled={leaveChannel.isPending}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleLeaveActiveChannel()}
+                disabled={leaveChannel.isPending}
+              >
+                {leaveChannel.isPending ? '나가는 중...' : '나가기'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {activeChannelDetail && canManageActiveChannel && (
         <WorkspaceChannelSettingsDialog
           workspaceId={workspaceId}

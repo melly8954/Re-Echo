@@ -75,32 +75,82 @@
   font-size: 14px;
 }
 
-.status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-content: start;
-  justify-content: flex-end;
+.channelLeaveLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 32;
+  display: grid;
+  place-items: center;
+  padding: 24px;
 }
 
-.status button {
-  min-height: 32px;
-  padding: 0 11px;
-  color: #fff;
-  background: var(--color-primary);
+.channelLeaveOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
   border: 0;
+  cursor: pointer;
+}
+
+.channelLeaveDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.channelLeaveDialog h2,
+.channelLeaveDialog p {
+  margin: 0;
+}
+
+.channelLeaveDialog > p:not(.eyebrow):not(.channelLeaveError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.channelLeaveError {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.channelLeaveFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.channelLeaveFooter button {
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 800;
 }
 
-.status button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+.channelLeaveFooter button:first-child {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
 }
 
-.status button:disabled {
-  color: #76837f;
-  background: #e4e9e7;
+.channelLeaveFooter button:last-child {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+.channelLeaveFooter button:disabled,
+.channelLeaveOverlay:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -272,7 +322,8 @@
 }
 
 .channelCreateForm input,
-.channelCreateForm select {
+.channelCreateForm select,
+.channelCreateForm textarea {
   width: 100%;
   min-width: 0;
   height: 40px;
@@ -285,8 +336,16 @@
   font-size: 13px;
 }
 
+.channelCreateForm textarea {
+  min-height: 78px;
+  height: auto;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
 .channelCreateForm input:focus-visible,
-.channelCreateForm select:focus-visible {
+.channelCreateForm select:focus-visible,
+.channelCreateForm textarea:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -752,7 +811,4 @@
     display: grid;
   }
 
-  .status {
-    justify-content: flex-start;
-  }
 }

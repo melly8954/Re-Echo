@@ -311,6 +311,14 @@
   gap: 4px;
 }
 
+.channelRow {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 6px;
+}
+
 .channelSkeletonList {
   display: grid;
   gap: 8px;
@@ -327,6 +335,8 @@
 .channelLink {
   min-height: 34px;
   padding: 0 10px;
+  min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   gap: 7px;
   align-items: center;
@@ -381,6 +391,67 @@
   border-radius: 10px;
   font-size: 11px;
   font-weight: 800;
+}
+
+.channelActions {
+  padding-right: 4px;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.channelRowActive .channelActions,
+.channelRow:hover .channelActions,
+.channelRow:focus-within .channelActions {
+  opacity: 1;
+}
+
+.channelActionButton {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.channelActionButton svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.channelActionButton svg[fill='none'] {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.channelActionButton:hover:not(:disabled) {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.channelLeaveActionButton:hover:not(:disabled) {
+  color: #b3261e;
+  background: var(--color-danger-soft);
+}
+
+.channelActionButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.channelActionButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .channelLink:hover {

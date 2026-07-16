@@ -8,7 +8,8 @@
 .dialog form, .dialog fieldset { display: grid; gap: 14px; }
 .dialog label { display: grid; gap: 7px; }
 .dialog label > span, .dialog legend { color: var(--color-muted); font-size: 13px; font-weight: 700; }
-.dialog input:not([type='checkbox']), .dialog select { min-height: 40px; padding: 0 11px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 6px; font: inherit; }
+.dialog input:not([type='checkbox']), .dialog select, .dialog textarea { min-height: 40px; padding: 0 11px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 6px; font: inherit; }
+.dialog textarea { padding: 10px 11px; resize: vertical; }
 .dialog fieldset { max-height: 180px; overflow: auto; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; }
 .member { grid-template-columns: auto 1fr auto; align-items: center; }
 .member small { color: var(--color-muted); }

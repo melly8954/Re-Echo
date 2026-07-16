@@ -26,6 +26,7 @@ export function WorkspaceChannelCreateDialog({
   const createChannel = useCreateWorkspaceChannel()
   const workspaceMembersQuery = useWorkspaceMembers(workspaceId)
   const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<ChannelVisibility>('PUBLIC')
   const [memberIds, setMemberIds] = useState<string[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -68,7 +69,7 @@ export function WorkspaceChannelCreateDialog({
         workspaceId,
         request: {
           name: trimmedName,
-          description: null,
+          description: description.trim() || null,
           visibility,
           memberIds: visibility === 'PRIVATE' ? memberIds : [],
         },
@@ -105,6 +106,15 @@ export function WorkspaceChannelCreateDialog({
           <label>
             <span>채널 이름</span>
             <input value={name} maxLength={80} autoFocus onChange={(event) => { setName(event.target.value); setErrorMessage(null) }} />
+          </label>
+          <label>
+            <span>채널 설명 (선택)</span>
+            <textarea
+              value={description}
+              maxLength={300}
+              rows={3}
+              onChange={(event) => setDescription(event.target.value)}
+            />
           </label>
           <label>
             <span>공개 범위</span>

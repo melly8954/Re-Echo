@@ -24,6 +24,9 @@ interface AppShellProps {
   activeChannelId?: string
   isChannelsLoading?: boolean
   channelHeaderAction?: ReactNode
+  onOpenActiveChannelSettings?: () => void
+  onRequestLeaveActiveChannel?: () => void
+  isActiveChannelLeavePending?: boolean
   channelEmptyMessage?: string
   rightSidebar?: ReactNode
   rightSidebarLabel?: string
@@ -39,6 +42,9 @@ export function AppShell({
   activeChannelId,
   isChannelsLoading = false,
   channelHeaderAction,
+  onOpenActiveChannelSettings,
+  onRequestLeaveActiveChannel,
+  isActiveChannelLeavePending = false,
   channelEmptyMessage = '워크스페이스에 참여하면 채널이 표시됩니다.',
   rightSidebar,
   rightSidebarLabel,
@@ -135,46 +141,99 @@ export function AppShell({
         </div>
       ) : channels.length > 0 ? (
         <nav className={styles.channelList} aria-label="워크스페이스 채널">
-          {channels.map((channel) => (
-            <Link
-              key={channel.id}
-              className={
-                channel.id === activeChannelId
-                  ? `${styles.channelLink} ${styles.channelLinkActive}`
-                  : `${styles.channelLink} ${
-                      channel.joined ? '' : styles.channelLinkUnjoined
-                    }`
-              }
-              to={channel.href}
-              onClick={closeNavigationSurfaces}
-            >
-              <span className={styles.channelPrefix} aria-hidden="true">
-                {channel.visibility === 'PRIVATE' ? (
-                  <svg
-                    className={styles.lockIcon}
-                    viewBox="0 0 32 32"
-                    focusable="false"
-                  >
-                    <path
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      d="M16 1.5c5.05 0 9.15 4.08 9.15 9.1v2.35h1.7c.91 0 1.65.74 1.65 1.65v11.45a4.45 4.45 0 0 1-4.45 4.45H7.95a4.45 4.45 0 0 1-4.45-4.45V14.6c0-.91.74-1.65 1.65-1.65h1.7V10.6c0-5.02 4.1-9.1 9.15-9.1Zm-6.1 11.45h2.65V10.6a3.45 3.45 0 0 1 6.9 0v2.35h2.65V10.6a6.1 6.1 0 0 0-12.2 0v2.35Zm-3.1 3.1v10c0 .64.51 1.15 1.15 1.15h16.1c.64 0 1.15-.51 1.15-1.15v-10H6.8Zm10.85 7.55.4-3.15a3 3 0 1 0-4.1 0l.4 3.15h3.3Z"
-                    />
-                  </svg>
-                ) : (
-                  '#'
+          {channels.map((channel) => {
+            const isActiveChannel = channel.id === activeChannelId
+            const hasActiveChannelAction = isActiveChannel && (
+              onOpenActiveChannelSettings || onRequestLeaveActiveChannel
+            )
+
+            return (
+              <div
+                key={channel.id}
+                className={
+                  isActiveChannel
+                    ? `${styles.channelRow} ${styles.channelRowActive}`
+                    : styles.channelRow
+                }
+              >
+                <Link
+                  className={
+                    isActiveChannel
+                      ? `${styles.channelLink} ${styles.channelLinkActive}`
+                      : `${styles.channelLink} ${
+                          channel.joined ? '' : styles.channelLinkUnjoined
+                        }`
+                  }
+                  to={channel.href}
+                  onClick={closeNavigationSurfaces}
+                >
+                  <span className={styles.channelPrefix} aria-hidden="true">
+                    {channel.visibility === 'PRIVATE' ? (
+                      <svg
+                        className={styles.lockIcon}
+                        viewBox="0 0 32 32"
+                        focusable="false"
+                      >
+                        <path
+                          fill="currentColor"
+                          fillRule="evenodd"
+                          d="M16 1.5c5.05 0 9.15 4.08 9.15 9.1v2.35h1.7c.91 0 1.65.74 1.65 1.65v11.45a4.45 4.45 0 0 1-4.45 4.45H7.95a4.45 4.45 0 0 1-4.45-4.45V14.6c0-.91.74-1.65 1.65-1.65h1.7V10.6c0-5.02 4.1-9.1 9.15-9.1Zm-6.1 11.45h2.65V10.6a3.45 3.45 0 0 1 6.9 0v2.35h2.65V10.6a6.1 6.1 0 0 0-12.2 0v2.35Zm-3.1 3.1v10c0 .64.51 1.15 1.15 1.15h16.1c.64 0 1.15-.51 1.15-1.15v-10H6.8Zm10.85 7.55.4-3.15a3 3 0 1 0-4.1 0l.4 3.15h3.3Z"
+                        />
+                      </svg>
+                    ) : (
+                      '#'
+                    )}
+                  </span>
+                  <span className={`${styles.channelName} ${channel.unreadCount > 0 ? styles.channelNameUnread : ''}`}>
+                    {channel.name}
+                  </span>
+                  {channel.unreadCount > 0 && (
+                    <span className={styles.unreadBadge} aria-label={`읽지 않은 메시지 ${channel.unreadCount}개`}>
+                      {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                    </span>
+                  )}
+                </Link>
+                {hasActiveChannelAction && (
+                  <div className={styles.channelActions} aria-label={`${channel.name} 관리 동작`}>
+                    {onOpenActiveChannelSettings && (
+                      <button
+                        className={styles.channelActionButton}
+                        type="button"
+                        aria-label="채널 설정"
+                        title="채널 설정"
+                        onClick={() => {
+                          closeNavigationSurfaces()
+                          onOpenActiveChannelSettings()
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path d="M9.6 3.1h4.8l.7 2.1 2 .9 2.1-1 3.4 3.4-1 2.1.9 2 .1.3-1.4 1.7-4.8.1-1.4-1.8.1-.3.9-2-1-2.1L16.8 5l-2-.9-.7-2.1Zm2.4 5.4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+                        </svg>
+                      </button>
+                    )}
+                    {onRequestLeaveActiveChannel && (
+                      <button
+                        className={`${styles.channelActionButton} ${styles.channelLeaveActionButton}`}
+                        type="button"
+                        aria-label="채널 나가기"
+                        title="채널 나가기"
+                        onClick={() => {
+                          closeNavigationSurfaces()
+                          onRequestLeaveActiveChannel()
+                        }}
+                        disabled={isActiveChannelLeavePending}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                          <path d="M4.5 3.5h9v17h-9v-17Z" />
+                          <path d="M13.5 12h6m-2.5-2.5L19.5 12 17 14.5" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 )}
-              </span>
-              <span className={`${styles.channelName} ${channel.unreadCount > 0 ? styles.channelNameUnread : ''}`}>
-                {channel.name}
-              </span>
-              {channel.unreadCount > 0 && (
-                <span className={styles.unreadBadge} aria-label={`읽지 않은 메시지 ${channel.unreadCount}개`}>
-                  {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
-                </span>
-              )}
-            </Link>
-          ))}
+              </div>
+            )
+          })}
         </nav>
       ) : (
         <p className={styles.emptyText}>
