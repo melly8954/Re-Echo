@@ -83,6 +83,13 @@ public class Message {
         return status == MessageStatus.DELETED;
     }
 
+    // 작성자 외 관리 권한자의 삭제임을 응답에서 구분할 수 있게 한다.
+    public boolean isModeratorDeleted() {
+        return isDeleted()
+                && deletedByMembershipId != null
+                && !deletedByMembershipId.equals(authorMembershipId);
+    }
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

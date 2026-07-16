@@ -15,7 +15,8 @@ public record ChannelMessageResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         boolean edited,
-        boolean deleted
+        boolean deleted,
+        boolean moderatorDeleted
 ) {
 
     public static ChannelMessageResponse of(
@@ -32,7 +33,8 @@ public record ChannelMessageResponse(
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getEditedAt() != null,
-                message.isDeleted()
+                message.isDeleted(),
+                message.isModeratorDeleted()
         );
     }
 }
