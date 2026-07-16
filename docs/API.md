@@ -948,7 +948,8 @@
         "createdAt": "2026-07-06T12:00:00",
         "updatedAt": "2026-07-06T12:00:00",
         "edited": false,
-        "deleted": false
+        "deleted": false,
+        "moderatorDeleted": false
       }
     ],
     "page": {
@@ -1019,6 +1020,9 @@
 - Authorization
   - 본인 메시지 작성자
   - 또는 `OWNER`, `ADMIN`
+- Note
+  - 타인 메시지를 삭제한 `OWNER`, `ADMIN`의 삭제 결과는 메시지 snapshot의
+    `moderatorDeleted: true`로 표시한다.
 - Success Response: `200 OK`
 
 ### 11.35 채널 읽음 갱신
