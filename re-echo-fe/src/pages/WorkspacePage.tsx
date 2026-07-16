@@ -30,6 +30,7 @@ import type {
 import { ApiError } from '../shared/api/apiTypes'
 import styles from './WorkspacePage.module.css'
 
+// 워크스페이스와 채널 경로 파라미터를 실제 화면 상태로 연결한다.
 export function WorkspacePage() {
   const { workspaceId, channelId } = useParams()
   const routeWorkspaceId = workspaceId ?? ''

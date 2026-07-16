@@ -55,6 +55,7 @@ export interface UpdateChannelReadStateRequest {
   lastReadMessageId: string
 }
 
+// 메시지 목록과 작성·수정·삭제, 읽음 상태 변경에 쓰는 REST 계약을 제공한다.
 export function getChannelMessages(
   workspaceId: string,
   channelId: string,

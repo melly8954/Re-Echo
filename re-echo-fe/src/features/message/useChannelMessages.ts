@@ -11,6 +11,7 @@ import {
 } from './messageApi'
 import { workspaceChannelsQueryKey } from '../workspace/useWorkspaceChannels'
 
+// 채널별 메시지 목록과 쓰기 mutation의 캐시 동기화를 제공한다.
 export const channelMessagesQueryKey = (workspaceId: string, channelId: string) => [
   'workspace',
   workspaceId,

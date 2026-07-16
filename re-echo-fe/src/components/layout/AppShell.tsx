@@ -29,6 +29,7 @@ interface AppShellProps {
   rightSidebarLabel?: string
 }
 
+// 워크스페이스 레일과 채널 탐색, 전역 다이얼로그를 조합하는 앱 레이아웃이다.
 export function AppShell({
   children,
   workspaceId,
@@ -57,6 +58,7 @@ export function AppShell({
   const selectedWorkspace = workspaces.find((workspace) => workspace.id === workspaceId)
   const currentWorkspaceName = workspaceName ?? selectedWorkspace?.name ?? '워크스페이스'
 
+  // 모바일 드로어가 열린 동안 포커스 시작점과 Esc 닫기, 배경 스크롤을 함께 제어한다.
   useEffect(() => {
     if (!isChannelDrawerOpen) {
       return undefined
@@ -81,6 +83,7 @@ export function AppShell({
     }
   }, [isChannelDrawerOpen])
 
+  // Tab 이동이 드로어 바깥으로 빠져나가지 않도록 키보드 포커스를 순환시킨다.
   function handleChannelDrawerKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
     if (event.key !== 'Tab') {
       return
@@ -116,6 +119,7 @@ export function AppShell({
     setIsWorkspaceInviteOpen(true)
   }
 
+  // 새 다이얼로그를 열기 전 겹칠 수 있는 모바일 탐색 표면을 모두 닫는다.
   function closeNavigationSurfaces() {
     setIsChannelDrawerOpen(false)
     setIsWorkspaceActionMenuOpen(false)

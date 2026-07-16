@@ -3,6 +3,7 @@ import { AppLoadingScreen } from '../components/layout/AppLoadingScreen'
 import { useAuth } from '../features/auth/useAuth'
 import styles from './OAuthCallbackPage.module.css'
 
+// OAuth 완료 후 세션을 다시 확인하고 원래 앱 화면으로 복귀시킨다.
 export function OAuthCallbackPage() {
   const { status, retryAuthentication } = useAuth()
 

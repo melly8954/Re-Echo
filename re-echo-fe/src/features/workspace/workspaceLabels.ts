@@ -4,6 +4,7 @@ import type {
   WorkspaceStatus,
 } from './workspaceApi'
 
+// 서버 상태값을 화면에 노출할 일관된 한국어 레이블로 변환한다.
 export function getWorkspaceRoleLabel(role: WorkspaceMembershipRole) {
   if (role === 'OWNER') {
     return '소유자'

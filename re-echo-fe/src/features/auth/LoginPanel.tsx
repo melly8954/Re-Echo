@@ -17,6 +17,7 @@ interface LoginPanelProps {
   onRetry: () => Promise<void>
 }
 
+// 인증 실패와 OAuth 공급자 선택을 로그인 화면의 한 패널로 제공한다.
 export function LoginPanel({
   hasAuthenticationError,
   hasConnectionError,

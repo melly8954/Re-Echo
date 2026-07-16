@@ -128,6 +128,7 @@ export interface JoinedWorkspace {
   defaultChannelId: string
 }
 
+// 워크스페이스·채널·멤버·초대 링크의 REST 계약을 기능 계층에 제공한다.
 export function createWorkspace(request: CreateWorkspaceRequest) {
   return apiRequest<CreatedWorkspace>('/api/v1/workspaces', {
     method: 'POST',
