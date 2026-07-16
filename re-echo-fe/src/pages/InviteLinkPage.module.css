@@ -1,0 +1,84 @@
+.page {
+  min-height: calc(100svh - 64px);
+  padding: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.panel {
+  width: min(100%, 460px);
+  padding: 28px;
+  display: grid;
+  gap: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.panel h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.28;
+}
+
+.description {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.workspaceSummary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.workspaceSummary img,
+.workspaceSummary span {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.workspaceSummary span {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.panel button {
+  min-height: 42px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.panel button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.panel button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: 12px;
+}

@@ -1,0 +1,277 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.dialog {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(720px, calc(100svh - 48px));
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-panel);
+}
+
+.embeddedDialog {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.header,
+.footer {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header p,
+.header h2 {
+  margin: 0;
+}
+
+.header p {
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.header h2 {
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+.header > button,
+.footer button,
+.imageActions label,
+.imageActions button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.header > button,
+.footer button:first-child,
+.imageActions label,
+.imageActions button {
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+}
+
+.form {
+  padding: 20px;
+  display: grid;
+  gap: 20px;
+}
+
+.imageSection {
+  padding-bottom: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.imageSection img,
+.imageFallback {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.imageFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.imageControls {
+  display: grid;
+  gap: 6px;
+}
+
+.imageControls strong,
+.field > span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.imageControls p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.imageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.imageActions input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input {
+  min-height: 42px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input[readonly] {
+  color: var(--color-muted);
+  background: var(--color-surface-subtle);
+  cursor: not-allowed;
+}
+
+.help {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.success {
+  margin: 0;
+  padding: 10px 12px;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.archiveSection {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  background: #fff7f6;
+  border: 1px solid #e7b2ad;
+  border-radius: 6px;
+}
+
+.archiveSection div {
+  display: grid;
+  gap: 5px;
+}
+
+.archiveSection strong {
+  color: #8e241e;
+  font-size: 14px;
+}
+
+.archiveSection p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.archiveSection button {
+  min-height: 34px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  color: #b3261e;
+  background: #fff;
+  border: 1px solid #e7b2ad;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.footer {
+  padding: 0;
+  justify-content: flex-end;
+}
+
+.footer button:last-child {
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.footer button:disabled,
+.header > button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .layer {
+    padding: 12px;
+  }
+
+  .form,
+  .header {
+    padding: 16px;
+  }
+
+  .imageSection {
+    align-items: flex-start;
+  }
+
+  .archiveSection {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

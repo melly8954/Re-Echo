@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -41,6 +42,17 @@ public class SecurityConfig {
     // OAuth 경로 외 요청은 세션 없이 Access Token으로만 인증한다.
     @Bean
     @Order(2)
+    public SecurityFilterChain webSocketSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/ws", "/ws/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .build();
+    }
+
+    // 일반 API 요청은 세션 없이 Access Token으로만 인증한다.
+    @Bean
+    @Order(3)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -51,6 +63,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/invite-links/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

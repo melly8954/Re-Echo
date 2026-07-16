@@ -1,6 +1,10 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useAuth } from '../features/auth/useAuth'
+import { WorkspaceProfileDialog } from '../features/workspace/WorkspaceProfileDialog'
+import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
+import { useWorkspaceList } from '../features/workspace/useWorkspaceList'
 import {
   createProfileImageUploadUrl,
   uploadProfileImageToStorage,
@@ -37,6 +41,19 @@ function getDisplayNameError(error: unknown) {
 
 export function ProfileSettingsPage() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const workspaceId = searchParams.get('workspaceId') ?? ''
+  const workspaceQuery = useWorkspaceDetail(workspaceId)
+  const workspaceListQuery = useWorkspaceList()
+  const profileWorkspaces = (workspaceListQuery.data?.contents ?? []).filter(
+    (workspace) => workspace.status === 'ACTIVE',
+  )
+  const isWorkspaceProfileScope = searchParams.get('scope') === 'workspace' && Boolean(workspaceId)
+  const profileDescription = isWorkspaceProfileScope
+    ? workspaceQuery.data
+      ? `${workspaceQuery.data.name}에서만 사용할 프로필을 관리합니다.`
+      : '워크스페이스별 프로필을 불러오는 중입니다.'
+    : '새 워크스페이스에 참여할 때 사용할 기본 정보를 관리합니다.'
   const updateProfile = useUpdateUserProfile()
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [clientError, setClientError] = useState<string | null>(null)
@@ -152,18 +169,97 @@ export function ProfileSettingsPage() {
 
   const fieldError = clientError ?? getDisplayNameError(updateProfile.error)
 
+  function selectProfileScope(scope: 'global' | 'workspace') {
+    const nextSearchParams = new URLSearchParams(searchParams)
+    if (scope === 'workspace' && !workspaceId) {
+      const firstWorkspaceId = profileWorkspaces[0]?.id
+      if (!firstWorkspaceId) {
+        return
+      }
+      nextSearchParams.set('workspaceId', firstWorkspaceId)
+    }
+    nextSearchParams.set('scope', scope)
+    setSearchParams(nextSearchParams)
+  }
+
+  function selectWorkspaceProfile(workspaceId: string) {
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.set('workspaceId', workspaceId)
+    nextSearchParams.set('scope', 'workspace')
+    setSearchParams(nextSearchParams)
+  }
+
   return (
     <AppShell>
       <section className={styles.page} aria-labelledby="profile-title">
         <div className={styles.heading}>
           <p>계정 설정</p>
-          <h1 id="profile-title">기본 프로필</h1>
+          <h1 id="profile-title">프로필</h1>
           <span>
-            새 워크스페이스에 참여할 때 사용할 기본 정보를 관리합니다.
+            {profileDescription}
           </span>
         </div>
 
-        <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
+        <div className={styles.scopeTabs} role="tablist" aria-label="프로필 범위">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!isWorkspaceProfileScope}
+            className={!isWorkspaceProfileScope ? styles.scopeTabActive : styles.scopeTab}
+            onClick={() => selectProfileScope('global')}
+          >
+            기본 프로필
+          </button>
+          {(workspaceId || workspaceListQuery.isLoading || profileWorkspaces.length > 0) && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isWorkspaceProfileScope}
+              className={isWorkspaceProfileScope ? styles.scopeTabActive : styles.scopeTab}
+              onClick={() => selectProfileScope('workspace')}
+            >
+              워크스페이스 프로필
+            </button>
+          )}
+        </div>
+
+        {isWorkspaceProfileScope ? (
+          <section className={styles.workspaceScopePanel} aria-label="워크스페이스 프로필 설정">
+            {workspaceListQuery.isLoading && (
+              <p>선택 가능한 워크스페이스를 불러오는 중입니다.</p>
+            )}
+            {profileWorkspaces.length > 0 && (
+              <label className={styles.workspaceSelector}>
+                <span>워크스페이스</span>
+                <select
+                  value={workspaceId}
+                  onChange={(event) => selectWorkspaceProfile(event.target.value)}
+                >
+                  {profileWorkspaces.map((workspace) => (
+                    <option key={workspace.id} value={workspace.id}>
+                      {workspace.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {workspaceQuery.isLoading && <p>워크스페이스 프로필을 불러오는 중입니다.</p>}
+            {workspaceQuery.isError && (
+              <p className={styles.formError} role="alert">
+                워크스페이스 프로필을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+              </p>
+            )}
+            {workspaceQuery.data && (
+              <WorkspaceProfileDialog
+                workspace={workspaceQuery.data}
+                isOpen
+                embedded
+                onClose={() => undefined}
+              />
+            )}
+          </section>
+        ) : (
+          <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
           <div className={styles.profileImageSection}>
             {currentProfileImageUrl ? (
               <img src={currentProfileImageUrl} alt="현재 프로필" />
@@ -250,7 +346,8 @@ export function ProfileSettingsPage() {
               {isSaving ? '저장 중...' : '변경 사항 저장'}
             </button>
           </div>
-        </form>
+          </form>
+        )}
       </section>
     </AppShell>
   )

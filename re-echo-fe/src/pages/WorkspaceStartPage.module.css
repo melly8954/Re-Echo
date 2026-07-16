@@ -43,6 +43,160 @@
   gap: 18px;
 }
 
+.statusPanel {
+  width: min(100%, 480px);
+  margin: 0;
+  padding: 28px;
+  display: grid;
+  gap: 14px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.statusPanel h1,
+.statusPanel p {
+  margin: 0;
+}
+
+.statusPanel h1 {
+  color: var(--color-text);
+  font-size: 20px;
+}
+
+.statusPanel p {
+  line-height: 1.6;
+}
+
+.statusPanel button {
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.workspaceSections {
+  width: min(100%, 760px);
+  display: grid;
+  gap: 18px;
+}
+
+.workspaceSection {
+  width: min(100%, 760px);
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.workspaceSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.workspaceSectionHeader p,
+.workspaceError {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.workspaceSectionHeader span {
+  min-width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.workspaceGrid,
+.workspaceSkeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workspaceCard {
+  min-height: 118px;
+  padding: 18px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  text-decoration: none;
+}
+
+.workspaceCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 20px rgb(31 45 42 / 8%);
+}
+
+.workspaceCard strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceCard span,
+.workspaceCard small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.workspaceCard small {
+  font-weight: 700;
+}
+
+.workspaceSkeletonGrid span {
+  height: 118px;
+  background: var(--color-surface-subtle);
+  border-radius: 7px;
+  animation: workspace-skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.workspaceError {
+  color: var(--color-danger);
+}
+
+.workspaceRetryButton {
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@keyframes workspace-skeleton-pulse {
+  from {
+    opacity: 0.48;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .card {
   padding: 28px;
   display: grid;
@@ -76,20 +230,75 @@
 }
 
 .card p {
-  min-height: 44px;
   color: var(--color-muted);
   font-size: 14px;
+}
+
+.createForm {
+  margin-top: 2px;
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input {
+  min-height: 40px;
+  padding: 0 11px;
+}
+
+.field textarea {
+  min-height: 76px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.field input:hover,
+.field textarea:hover {
+  border-color: #9db7b1;
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--color-danger);
 }
 
 .card button {
   min-height: 42px;
   margin-top: 10px;
-  color: #6c7a76;
-  background: #edf1f0;
-  border: 1px solid #d9e0de;
+  color: #fff;
+  background: var(--color-primary);
+  border: 0;
   border-radius: 6px;
-  cursor: not-allowed;
+  cursor: pointer;
   font-weight: 700;
+}
+
+.card button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.card button:disabled {
+  color: #76837f;
+  background: #e4e9e7;
+  cursor: not-allowed;
 }
 
 .card small {
@@ -98,8 +307,29 @@
   text-align: center;
 }
 
+.fieldError,
+.formError,
+.success {
+  margin: 0;
+  text-align: left;
+}
+
+.fieldError,
+.formError {
+  color: var(--color-danger);
+}
+
+.success {
+  color: #08665f;
+}
+
 @media (max-width: 767px) {
   .options {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceGrid,
+  .workspaceSkeletonGrid {
     grid-template-columns: 1fr;
   }
 
@@ -110,4 +340,5 @@
   .card p {
     min-height: auto;
   }
+
 }

@@ -53,6 +53,7 @@ class FileCleanupServiceTest {
         fileObject.markOrphaned();
         when(fileObjectRepository.findProfileImageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
         when(fileObjectRepository.existsProfileImageReference(fileId)).thenReturn(false);
 
         int deletedCount = service.cleanupOrphanedProfileImages();
@@ -76,11 +77,37 @@ class FileCleanupServiceTest {
         );
         when(fileObjectRepository.findProfileImageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
         when(fileObjectRepository.existsProfileImageReference(fileId)).thenReturn(true);
 
         int deletedCount = service.cleanupOrphanedProfileImages();
 
         assertThat(deletedCount).isZero();
         verify(storageClient, never()).delete(any());
+    }
+
+    @Test
+    void 메시지에_연결되지_않은_첨부_파일을_R2와_DB에서_삭제한다() {
+        UUID fileId = UUID.randomUUID();
+        FileObject fileObject = FileObject.createMessageAttachment(
+                fileId,
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "workspaces/workspace/attachments/file/meeting.pdf",
+                "meeting.pdf",
+                "application/pdf",
+                1200L
+        );
+        when(fileObjectRepository.findUnattachedMessageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
+        when(fileObjectRepository.existsMessageAttachmentReference(fileId)).thenReturn(false);
+
+        int deletedCount = service.cleanupUnattachedMessageAttachments();
+
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(fileObject.getStatus()).isEqualTo(FileStatus.DELETED);
+        verify(storageClient).delete(fileObject.getStorageKey());
     }
 }

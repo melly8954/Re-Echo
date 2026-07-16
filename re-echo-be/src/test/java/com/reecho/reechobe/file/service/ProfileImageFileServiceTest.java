@@ -69,6 +69,29 @@ class ProfileImageFileServiceTest {
     }
 
     @Test
+    void 워크스페이스_프로필_이미지_업로드_URL을_발급한다() {
+        UUID workspaceId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID membershipId = UUID.randomUUID();
+        Instant expiresAt = Instant.parse("2026-07-10T12:10:00Z");
+        when(storageClient.presignPut(any(String.class), eq("image/png"), eq(Duration.ofMinutes(10))))
+                .thenReturn(new StorageClient.PresignedUpload("https://r2-presigned-url", expiresAt));
+        when(fileObjectRepository.save(any(FileObject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PresignedUploadResponse response = service.createWorkspaceProfileImageUpload(
+                workspaceId,
+                userId,
+                membershipId,
+                new ProfileImagePresignRequest("profile.png", "image/png", 1200L)
+        );
+
+        assertThat(response.fileId()).isNotNull();
+        assertThat(response.uploadUrl()).isEqualTo("https://r2-presigned-url");
+        assertThat(response.expiresAt()).isEqualTo(expiresAt);
+    }
+
+    @Test
     void 업로드가_완료된_본인_프로필_이미지_URL을_반환한다() {
         UUID userId = UUID.randomUUID();
         UUID fileId = UUID.randomUUID();
@@ -80,8 +103,9 @@ class ProfileImageFileServiceTest {
                 "image/png",
                 1200L
         );
-        when(fileObjectRepository.findById(fileId)).thenReturn(Optional.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(Optional.of(fileObject));
         when(storageClient.exists(fileObject.getStorageKey())).thenReturn(true);
+        when(storageClient.findObjectSize(fileObject.getStorageKey())).thenReturn(Optional.of(1200L));
         when(storageClient.publicUrl(fileObject.getStorageKey()))
                 .thenReturn("https://cdn.example.com/profiles/user/file/profile.png");
 
@@ -89,6 +113,27 @@ class ProfileImageFileServiceTest {
 
         assertThat(profileImageUrl)
                 .isEqualTo("https://cdn.example.com/profiles/user/file/profile.png");
+    }
+
+    @Test
+    void 실제_객체_크기가_메타데이터와_다르면_프로필_이미지를_연결할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        UUID fileId = UUID.randomUUID();
+        FileObject fileObject = FileObject.createProfileImage(
+                fileId,
+                userId,
+                "profiles/user/file/profile.png",
+                "profile.png",
+                "image/png",
+                1200L
+        );
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(Optional.of(fileObject));
+        when(storageClient.exists(fileObject.getStorageKey())).thenReturn(true);
+        when(storageClient.findObjectSize(fileObject.getStorageKey())).thenReturn(Optional.of(1300L));
+
+        assertThatThrownBy(() -> service.requireUploadedAccountProfileImageUrl(userId, fileId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(FileErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
     }
 
     @Test

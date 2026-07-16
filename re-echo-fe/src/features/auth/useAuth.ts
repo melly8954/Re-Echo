@@ -1,6 +1,7 @@
 import { useContext } from 'react'
 import { AuthContext } from './authContext'
 
+// Provider가 관리하는 인증 상태를 화면과 기능 컴포넌트에 안전하게 제공한다.
 export function useAuth() {
   const context = useContext(AuthContext)
 
