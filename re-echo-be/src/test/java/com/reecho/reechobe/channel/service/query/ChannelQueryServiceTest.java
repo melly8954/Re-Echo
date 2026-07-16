@@ -213,7 +213,7 @@ class ChannelQueryServiceTest {
         assertThatThrownBy(() -> service.getChannelDetail(userId, workspace.getId(), channel.getId()))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
-                .isEqualTo(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+                .isEqualTo(ChannelErrorCode.CHANNEL_NOT_FOUND);
     }
 
     @Test
@@ -333,7 +333,7 @@ class ChannelQueryServiceTest {
         assertThatThrownBy(() -> service.getChannelMembers(userId, workspace.getId(), channel.getId()))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
-                .isEqualTo(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+                .isEqualTo(ChannelErrorCode.CHANNEL_NOT_FOUND);
     }
 
     @Test

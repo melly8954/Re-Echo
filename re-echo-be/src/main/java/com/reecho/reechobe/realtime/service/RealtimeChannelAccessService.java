@@ -31,6 +31,7 @@ public class RealtimeChannelAccessService {
 
     @Transactional(readOnly = true)
     public void validateReadable(UUID userId, UUID workspaceId, UUID channelId) {
+        requireReadableWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveMembership(userId, workspaceId);
         Channel channel = getChannel(workspaceId, channelId);
         if (channel.getStatus() == ChannelStatus.DELETED) {
@@ -41,9 +42,7 @@ public class RealtimeChannelAccessService {
 
     @Transactional(readOnly = true)
     public void validateWritable(UUID userId, UUID workspaceId, UUID channelId) {
-        Workspace workspace = workspaceRepository.findById(workspaceId)
-                .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
-                .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
+        Workspace workspace = requireReadableWorkspace(workspaceId);
         if (workspace.getStatus() == WorkspaceStatus.ARCHIVED) {
             throw new BusinessException(WorkspaceErrorCode.WORKSPACE_ARCHIVED);
         }
@@ -62,6 +61,13 @@ public class RealtimeChannelAccessService {
         return workspaceMembershipRepository
                 .findByWorkspaceIdAndUserIdAndStatus(workspaceId, userId, WorkspaceMembershipStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED));
+    }
+
+    // 삭제된 워크스페이스는 기존 멤버십이 남아 있어도 실시간 접근을 허용하지 않는다.
+    private Workspace requireReadableWorkspace(UUID workspaceId) {
+        return workspaceRepository.findById(workspaceId)
+                .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
+                .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
     }
 
     private Channel getChannel(UUID workspaceId, UUID channelId) {

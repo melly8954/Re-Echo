@@ -1,5 +1,7 @@
 package com.reecho.reechobe.channel.domain;
 
+import com.reecho.reechobe.channel.exception.ChannelErrorCode;
+import com.reecho.reechobe.common.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -62,6 +64,9 @@ public class ChannelMembership {
     }
 
     public void rejoin() {
+        if (this.status == ChannelMembershipStatus.REMOVED) {
+            throw new BusinessException(ChannelErrorCode.CHANNEL_MEMBER_REMOVED);
+        }
         this.status = ChannelMembershipStatus.ACTIVE;
         this.joinedAt = LocalDateTime.now();
         this.leftAt = null;

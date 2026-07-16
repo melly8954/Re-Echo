@@ -70,12 +70,12 @@ class WorkspaceUpdateCommandServiceTest {
                 "새 설명",
                 imageFileId
         );
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));
         when(workspaceImageFileService.requireUploadedWorkspaceImageUrl(
-                workspace.getId(), userId, imageFileId
+                workspace.getId(), membership.getId(), imageFileId
         )).thenReturn("https://example.com/workspace.png");
         when(channelRepository.findByWorkspaceIdAndGeneralTrue(workspace.getId()))
                 .thenReturn(Optional.of(generalChannel));
@@ -96,7 +96,7 @@ class WorkspaceUpdateCommandServiceTest {
         ReflectionTestUtils.setField(user, "id", userId);
         Workspace workspace = Workspace.create("워크스페이스", null, null, userId);
         WorkspaceMembership membership = WorkspaceMembership.createMember(workspace.getId(), user);
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));
@@ -121,7 +121,7 @@ class WorkspaceUpdateCommandServiceTest {
         Workspace workspace = Workspace.create("기존 이름", "기존 설명", null, userId);
         WorkspaceMembership membership = WorkspaceMembership.createMember(workspace.getId(), user);
         ReflectionTestUtils.setField(membership, "role", WorkspaceMembershipRole.ADMIN);
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));
@@ -149,12 +149,12 @@ class WorkspaceUpdateCommandServiceTest {
         WorkspaceMembership membership = WorkspaceMembership.createMember(workspace.getId(), user);
         ReflectionTestUtils.setField(membership, "role", WorkspaceMembershipRole.ADMIN);
         Channel generalChannel = Channel.createGeneral(workspace.getId(), membership.getId());
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));
         when(workspaceImageFileService.requireUploadedWorkspaceImageUrl(
-                workspace.getId(), userId, imageFileId
+                workspace.getId(), membership.getId(), imageFileId
         )).thenReturn("https://example.com/workspace.png");
         when(channelRepository.findByWorkspaceIdAndGeneralTrue(workspace.getId()))
                 .thenReturn(Optional.of(generalChannel));
@@ -181,12 +181,12 @@ class WorkspaceUpdateCommandServiceTest {
         ReflectionTestUtils.setField(workspace, "imageFileId", previousImageFileId);
         WorkspaceMembership membership = WorkspaceMembership.createOwner(workspace.getId(), user);
         Channel generalChannel = Channel.createGeneral(workspace.getId(), membership.getId());
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));
         when(workspaceImageFileService.requireUploadedWorkspaceImageUrl(
-                workspace.getId(), userId, nextImageFileId
+                workspace.getId(), membership.getId(), nextImageFileId
         )).thenReturn("https://example.com/next.png");
         when(channelRepository.findByWorkspaceIdAndGeneralTrue(workspace.getId()))
                 .thenReturn(Optional.of(generalChannel));

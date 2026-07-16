@@ -89,6 +89,7 @@ class WorkspaceMemberCommandServiceTest {
     void 일반_멤버가_탈퇴하면_워크스페이스와_채널_멤버십이_함께_종료된다() {
         UUID workspaceId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, userId);
         WorkspaceMembership membership = createMembership(
                 workspaceId,
                 userId,
@@ -122,6 +123,7 @@ class WorkspaceMemberCommandServiceTest {
     void 소유자는_워크스페이스에서_나갈_수_없다() {
         UUID workspaceId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, userId);
         WorkspaceMembership membership = createMembership(
                 workspaceId,
                 userId,
@@ -146,6 +148,7 @@ class WorkspaceMemberCommandServiceTest {
     void 본인이_아닌_멤버십으로는_탈퇴할_수_없다() {
         UUID workspaceId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, userId);
         WorkspaceMembership membership = createMembership(
                 workspaceId,
                 userId,
@@ -169,6 +172,7 @@ class WorkspaceMemberCommandServiceTest {
     void 활성_멤버가_아니면_탈퇴할_수_없다() {
         UUID workspaceId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, userId);
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspaceId,
                 userId,
@@ -186,6 +190,7 @@ class WorkspaceMemberCommandServiceTest {
     @Test
     void 소유자가_일반_멤버를_관리자로_변경할_수_있다() {
         UUID workspaceId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, UUID.randomUUID());
         WorkspaceMembership owner = createMembership(
                 workspaceId,
                 UUID.randomUUID(),
@@ -220,6 +225,7 @@ class WorkspaceMemberCommandServiceTest {
     @Test
     void 소유자가_아닌_멤버는_역할을_변경할_수_없다() {
         UUID workspaceId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, UUID.randomUUID());
         WorkspaceMembership admin = createMembership(
                 workspaceId,
                 UUID.randomUUID(),
@@ -245,6 +251,7 @@ class WorkspaceMemberCommandServiceTest {
     @Test
     void 관리자도_일반_멤버를_강제_제거하면_채널_멤버십이_함께_종료된다() {
         UUID workspaceId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, UUID.randomUUID());
         WorkspaceMembership admin = createMembership(
                 workspaceId,
                 UUID.randomUUID(),
@@ -284,6 +291,7 @@ class WorkspaceMemberCommandServiceTest {
     @Test
     void 소유자는_강제_제거할_수_없다() {
         UUID workspaceId = UUID.randomUUID();
+        stubActiveWorkspace(workspaceId, UUID.randomUUID());
         WorkspaceMembership admin = createMembership(
                 workspaceId,
                 UUID.randomUUID(),
@@ -327,5 +335,11 @@ class WorkspaceMemberCommandServiceTest {
                 : WorkspaceMembership.createMember(workspaceId, user);
         ReflectionTestUtils.setField(membership, "role", role);
         return membership;
+    }
+
+    private void stubActiveWorkspace(UUID workspaceId, UUID ownerUserId) {
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(
+                Workspace.create("워크스페이스", null, null, ownerUserId)
+        ));
     }
 }

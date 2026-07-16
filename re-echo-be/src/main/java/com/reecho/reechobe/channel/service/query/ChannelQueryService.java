@@ -100,7 +100,7 @@ public class ChannelQueryService {
                 .filter(channelMembership -> channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
                 .isPresent();
         if (channel.getVisibility() == ChannelVisibility.PRIVATE && !joined) {
-            throw new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED);
+            throw new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND);
         }
         return ChannelDetailResponse.from(channel, joined, membership.getId());
     }
@@ -114,7 +114,7 @@ public class ChannelQueryService {
         if (channel.getVisibility() == ChannelVisibility.PRIVATE) {
             channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channelId, membership.getId())
                     .filter(channelMembership -> channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
-                    .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED));
+                    .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
         }
 
         List<WorkspaceMemberResponse> members = workspaceMembershipRepository.findActiveChannelMembers(

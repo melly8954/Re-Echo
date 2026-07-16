@@ -35,7 +35,7 @@ public class WorkspaceUpdateCommandService {
             UUID workspaceId,
             UpdateWorkspaceRequest request
     ) {
-        Workspace workspace = workspaceRepository.findById(workspaceId)
+        Workspace workspace = workspaceRepository.findByIdForUpdate(workspaceId)
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
         if (workspace.getStatus() == WorkspaceStatus.DELETED) {
             throw new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND);
@@ -63,7 +63,7 @@ public class WorkspaceUpdateCommandService {
                 ? null
                 : workspaceImageFileService.requireUploadedWorkspaceImageUrl(
                         workspaceId,
-                        userId,
+                        membership.getId(),
                         request.imageFileId()
                 );
         workspace.update(request.name(), request.description(), request.imageFileId(), imageUrl);

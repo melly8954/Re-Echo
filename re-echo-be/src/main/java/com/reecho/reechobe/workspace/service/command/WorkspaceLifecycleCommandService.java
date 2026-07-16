@@ -66,7 +66,7 @@ public class WorkspaceLifecycleCommandService {
     }
 
     private Workspace requireWorkspace(UUID workspaceId) {
-        return workspaceRepository.findById(workspaceId)
+        return workspaceRepository.findByIdForUpdate(workspaceId)
                 .filter(workspace -> workspace.getStatus() != WorkspaceStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
     }

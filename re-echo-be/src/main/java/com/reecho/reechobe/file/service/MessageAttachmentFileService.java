@@ -103,6 +103,14 @@ public class MessageAttachmentFileService {
         if (incompleteUpload) {
             throw new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED);
         }
+        boolean invalidSize = files.values().stream().anyMatch(fileObject -> storageClient
+                .findObjectSize(fileObject.getStorageKey())
+                .map(actualSize -> actualSize != fileObject.getFileSizeBytes()
+                        || actualSize > MESSAGE_ATTACHMENT_MAX_SIZE_BYTES)
+                .orElse(true));
+        if (invalidSize) {
+            throw new BusinessException(FileErrorCode.FILE_SIZE_EXCEEDED);
+        }
     }
 
     // 현재 멤버가 볼 수 있는 메시지에 연결된 첨부 파일에만 다운로드 URL을 발급한다.

@@ -179,6 +179,10 @@ public class FileObject {
         return uploadedByUserId.equals(userId);
     }
 
+    public boolean isOwnedByMembership(UUID membershipId) {
+        return membershipId.equals(uploadedByMembershipId);
+    }
+
     public boolean isProfileImage() {
         return purpose == FilePurpose.PROFILE_IMAGE;
     }

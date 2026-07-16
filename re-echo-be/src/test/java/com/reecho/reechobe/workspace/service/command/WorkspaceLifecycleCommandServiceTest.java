@@ -81,7 +81,7 @@ class WorkspaceLifecycleCommandServiceTest {
         UUID userId = UUID.randomUUID();
         Workspace workspace = createWorkspace(UUID.randomUUID());
         WorkspaceMembership memberMembership = createMemberMembership(workspace.getId(), userId);
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(memberMembership));
@@ -134,7 +134,7 @@ class WorkspaceLifecycleCommandServiceTest {
     }
 
     private void prepareOwner(Workspace workspace, WorkspaceMembership membership, UUID userId) {
-        when(workspaceRepository.findById(workspace.getId())).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.findByIdForUpdate(workspace.getId())).thenReturn(Optional.of(workspace));
         when(workspaceMembershipRepository.findByWorkspaceIdAndUserIdAndStatus(
                 workspace.getId(), userId, WorkspaceMembershipStatus.ACTIVE
         )).thenReturn(Optional.of(membership));

@@ -66,10 +66,10 @@ public class WorkspaceImageFileService {
     }
 
     // 외부 스토리지 확인 중 DB 커넥션 점유를 피하기 위해 트랜잭션을 열지 않는다.
-    public String requireUploadedWorkspaceImageUrl(UUID workspaceId, UUID userId, UUID fileId) {
-        FileObject fileObject = fileObjectRepository.findById(fileId)
+    public String requireUploadedWorkspaceImageUrl(UUID workspaceId, UUID membershipId, UUID fileId) {
+        FileObject fileObject = fileObjectRepository.findByIdForUpdate(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
-        if (!fileObject.isOwnedBy(userId)
+        if (!fileObject.isOwnedByMembership(membershipId)
                 || !fileObject.isWorkspaceImage()
                 || !workspaceId.equals(fileObject.getWorkspaceId())
                 || fileObject.isDeleted()) {
@@ -78,6 +78,7 @@ public class WorkspaceImageFileService {
         if (!storageClient.exists(fileObject.getStorageKey())) {
             throw new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED);
         }
+        requireMatchingWorkspaceImageSize(fileObject);
         return storageClient.publicUrl(fileObject.getStorageKey());
     }
 
@@ -98,6 +99,15 @@ public class WorkspaceImageFileService {
             throw new BusinessException(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);
         }
         if (request.size() > WORKSPACE_IMAGE_MAX_SIZE_BYTES) {
+            throw new BusinessException(FileErrorCode.FILE_SIZE_EXCEEDED);
+        }
+    }
+
+    // 선언된 파일 크기보다 큰 객체가 연결돼 저장소 제한을 우회하지 않도록 막는다.
+    private void requireMatchingWorkspaceImageSize(FileObject fileObject) {
+        long actualSize = storageClient.findObjectSize(fileObject.getStorageKey())
+                .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED));
+        if (actualSize != fileObject.getFileSizeBytes() || actualSize > WORKSPACE_IMAGE_MAX_SIZE_BYTES) {
             throw new BusinessException(FileErrorCode.FILE_SIZE_EXCEEDED);
         }
     }

@@ -53,6 +53,7 @@ class FileCleanupServiceTest {
         fileObject.markOrphaned();
         when(fileObjectRepository.findProfileImageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
         when(fileObjectRepository.existsProfileImageReference(fileId)).thenReturn(false);
 
         int deletedCount = service.cleanupOrphanedProfileImages();
@@ -76,6 +77,7 @@ class FileCleanupServiceTest {
         );
         when(fileObjectRepository.findProfileImageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
         when(fileObjectRepository.existsProfileImageReference(fileId)).thenReturn(true);
 
         int deletedCount = service.cleanupOrphanedProfileImages();
@@ -99,6 +101,7 @@ class FileCleanupServiceTest {
         );
         when(fileObjectRepository.findUnattachedMessageCleanupCandidates(any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(List.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(java.util.Optional.of(fileObject));
         when(fileObjectRepository.existsMessageAttachmentReference(fileId)).thenReturn(false);
 
         int deletedCount = service.cleanupUnattachedMessageAttachments();

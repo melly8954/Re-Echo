@@ -68,7 +68,7 @@ public class WorkspaceMemberCommandService {
     @Transactional
     // 본인만 워크스페이스를 탈퇴하고 연결된 채널 참여 상태도 함께 해제한다.
     public void leaveWorkspace(UUID userId, UUID workspaceId, UUID memberId) {
-        WorkspaceMembership membership = getActiveMembership(userId, workspaceId);
+        WorkspaceMembership membership = getActiveEditableMembership(userId, workspaceId);
         if (!membership.getId().equals(memberId)) {
             throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
         }
@@ -88,7 +88,7 @@ public class WorkspaceMemberCommandService {
             UUID memberId,
             WorkspaceMembershipRole role
     ) {
-        WorkspaceMembership actorMembership = getActiveMembership(userId, workspaceId);
+        WorkspaceMembership actorMembership = getActiveEditableMembership(userId, workspaceId);
         if (actorMembership.getRole() != WorkspaceMembershipRole.OWNER) {
             throw new BusinessException(WorkspaceErrorCode.WORKSPACE_ACCESS_DENIED);
         }
@@ -107,7 +107,7 @@ public class WorkspaceMemberCommandService {
     @Transactional
     // 소유자 또는 관리자가 대상 멤버와 해당 채널 접근 권한을 제거한다.
     public void removeMember(UUID userId, UUID workspaceId, UUID memberId) {
-        WorkspaceMembership actorMembership = getActiveMembership(userId, workspaceId);
+        WorkspaceMembership actorMembership = getActiveEditableMembership(userId, workspaceId);
         if (actorMembership.getRole() == WorkspaceMembershipRole.MEMBER) {
             throw new BusinessException(MemberErrorCode.MEMBER_REMOVE_FORBIDDEN);
         }

@@ -1,16 +1,27 @@
 package com.reecho.reechobe.file.repository;
 
 import com.reecho.reechobe.file.domain.FileObject;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 // 파일 참조 여부를 함께 확인해 연결되지 않은 외부 객체만 정리 대상으로 찾는다.
 public interface FileObjectRepository extends JpaRepository<FileObject, UUID> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT fileObject FROM FileObject fileObject WHERE fileObject.id = :fileId")
+    Optional<FileObject> findByIdForUpdate(@Param("fileId") UUID fileId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT fileObject FROM FileObject fileObject WHERE fileObject.id IN :fileIds")
+    List<FileObject> findAllByIdForUpdate(@Param("fileIds") List<UUID> fileIds);
 
     @Query(
             value = """

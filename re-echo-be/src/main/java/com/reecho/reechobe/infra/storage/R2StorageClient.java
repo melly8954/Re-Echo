@@ -3,6 +3,7 @@ package com.reecho.reechobe.infra.storage;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -87,6 +88,26 @@ public class R2StorageClient implements StorageClient {
         } catch (S3Exception exception) {
             if (exception.statusCode() == 404) {
                 return false;
+            }
+            throw exception;
+        }
+    }
+
+    @Override
+    // 파일 연결 전에 R2가 보고한 실제 객체 크기를 확인한다.
+    public Optional<Long> findObjectSize(String storageKey) {
+        requireConfigured();
+        try (S3Client s3Client = createS3Client()) {
+            HeadObjectRequest request = HeadObjectRequest.builder()
+                    .bucket(properties.bucket())
+                    .key(storageKey)
+                    .build();
+            return Optional.ofNullable(s3Client.headObject(request).contentLength());
+        } catch (NoSuchKeyException exception) {
+            return Optional.empty();
+        } catch (S3Exception exception) {
+            if (exception.statusCode() == 404) {
+                return Optional.empty();
             }
             throw exception;
         }

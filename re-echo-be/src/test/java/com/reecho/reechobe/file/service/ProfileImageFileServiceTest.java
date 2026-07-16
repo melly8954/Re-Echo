@@ -103,8 +103,9 @@ class ProfileImageFileServiceTest {
                 "image/png",
                 1200L
         );
-        when(fileObjectRepository.findById(fileId)).thenReturn(Optional.of(fileObject));
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(Optional.of(fileObject));
         when(storageClient.exists(fileObject.getStorageKey())).thenReturn(true);
+        when(storageClient.findObjectSize(fileObject.getStorageKey())).thenReturn(Optional.of(1200L));
         when(storageClient.publicUrl(fileObject.getStorageKey()))
                 .thenReturn("https://cdn.example.com/profiles/user/file/profile.png");
 
@@ -112,6 +113,27 @@ class ProfileImageFileServiceTest {
 
         assertThat(profileImageUrl)
                 .isEqualTo("https://cdn.example.com/profiles/user/file/profile.png");
+    }
+
+    @Test
+    void 실제_객체_크기가_메타데이터와_다르면_프로필_이미지를_연결할_수_없다() {
+        UUID userId = UUID.randomUUID();
+        UUID fileId = UUID.randomUUID();
+        FileObject fileObject = FileObject.createProfileImage(
+                fileId,
+                userId,
+                "profiles/user/file/profile.png",
+                "profile.png",
+                "image/png",
+                1200L
+        );
+        when(fileObjectRepository.findByIdForUpdate(fileId)).thenReturn(Optional.of(fileObject));
+        when(storageClient.exists(fileObject.getStorageKey())).thenReturn(true);
+        when(storageClient.findObjectSize(fileObject.getStorageKey())).thenReturn(Optional.of(1300L));
+
+        assertThatThrownBy(() -> service.requireUploadedAccountProfileImageUrl(userId, fileId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(FileErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
     }
 
     @Test

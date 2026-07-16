@@ -12,6 +12,7 @@ import com.reecho.reechobe.file.domain.FilePurpose;
 import com.reecho.reechobe.file.domain.FileStatus;
 import com.reecho.reechobe.file.exception.FileErrorCode;
 import com.reecho.reechobe.file.repository.FileObjectRepository;
+import com.reecho.reechobe.infra.storage.StorageClient;
 import com.reecho.reechobe.member.domain.WorkspaceMembership;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipRole;
 import com.reecho.reechobe.member.domain.WorkspaceMembershipStatus;
@@ -55,6 +56,7 @@ public class MessageCommandService {
     private final MessageRepository messageRepository;
     private final MessageAttachmentRepository messageAttachmentRepository;
     private final FileObjectRepository fileObjectRepository;
+    private final StorageClient storageClient;
     private final MessageResponseAssembler messageResponseAssembler;
     private final RealtimeEventPublisher realtimeEventPublisher;
 
@@ -179,7 +181,7 @@ public class MessageCommandService {
         if (fileIds.isEmpty()) {
             return;
         }
-        Map<UUID, FileObject> files = fileObjectRepository.findAllById(fileIds).stream()
+        Map<UUID, FileObject> files = fileObjectRepository.findAllByIdForUpdate(fileIds).stream()
                 .collect(Collectors.toMap(FileObject::getId, Function.identity()));
         if (files.size() != fileIds.size()) {
             throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
@@ -192,6 +194,11 @@ public class MessageCommandService {
         );
         if (invalidFile) {
             throw new BusinessException(FileErrorCode.FILE_ACCESS_DENIED);
+        }
+        boolean incompleteUpload = files.values().stream()
+                .anyMatch(fileObject -> !storageClient.exists(fileObject.getStorageKey()));
+        if (incompleteUpload) {
+            throw new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED);
         }
     }
 

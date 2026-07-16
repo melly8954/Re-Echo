@@ -103,7 +103,7 @@ public class ProfileImageFileService {
 
     // 외부 스토리지 확인 중 DB 커넥션 점유를 피하기 위해 트랜잭션을 열지 않는다.
     public String requireUploadedAccountProfileImageUrl(UUID userId, UUID fileId) {
-        FileObject fileObject = fileObjectRepository.findById(fileId)
+        FileObject fileObject = fileObjectRepository.findByIdForUpdate(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
         if (!fileObject.isOwnedBy(userId) || !fileObject.isProfileImage() || fileObject.isDeleted()) {
             throw new BusinessException(FileErrorCode.FILE_ACCESS_DENIED);
@@ -111,6 +111,7 @@ public class ProfileImageFileService {
         if (!storageClient.exists(fileObject.getStorageKey())) {
             throw new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED);
         }
+        requireMatchingImageSize(fileObject);
         return storageClient.publicUrl(fileObject.getStorageKey());
     }
 
@@ -121,7 +122,7 @@ public class ProfileImageFileService {
             UUID membershipId,
             UUID fileId
     ) {
-        FileObject fileObject = fileObjectRepository.findById(fileId)
+        FileObject fileObject = fileObjectRepository.findByIdForUpdate(fileId)
                 .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_NOT_FOUND));
         if (!fileObject.isOwnedBy(userId)
                 || !fileObject.isProfileImage()
@@ -133,6 +134,7 @@ public class ProfileImageFileService {
         if (!storageClient.exists(fileObject.getStorageKey())) {
             throw new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED);
         }
+        requireMatchingImageSize(fileObject);
         return storageClient.publicUrl(fileObject.getStorageKey());
     }
 
@@ -167,6 +169,15 @@ public class ProfileImageFileService {
             throw new BusinessException(FileErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);
         }
         if (request.size() > PROFILE_IMAGE_MAX_SIZE_BYTES) {
+            throw new BusinessException(FileErrorCode.FILE_SIZE_EXCEEDED);
+        }
+    }
+
+    // 클라이언트가 선언한 메타데이터와 실제 업로드 객체 크기가 같아야 연결한다.
+    private void requireMatchingImageSize(FileObject fileObject) {
+        long actualSize = storageClient.findObjectSize(fileObject.getStorageKey())
+                .orElseThrow(() -> new BusinessException(FileErrorCode.FILE_UPLOAD_NOT_COMPLETED));
+        if (actualSize != fileObject.getFileSizeBytes() || actualSize > PROFILE_IMAGE_MAX_SIZE_BYTES) {
             throw new BusinessException(FileErrorCode.FILE_SIZE_EXCEEDED);
         }
     }
