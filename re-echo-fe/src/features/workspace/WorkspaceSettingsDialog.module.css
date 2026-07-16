@@ -26,6 +26,13 @@
   box-shadow: var(--shadow-panel);
 }
 
+.embeddedDialog {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+}
+
 .header,
 .footer {
   padding: 18px 20px;
@@ -179,6 +186,15 @@
 .error {
   margin: 0;
   color: var(--color-danger);
+  font-size: 13px;
+}
+
+.success {
+  margin: 0;
+  padding: 10px 12px;
+  color: #08665f;
+  background: var(--color-primary-soft);
+  border-radius: 6px;
   font-size: 13px;
 }
 

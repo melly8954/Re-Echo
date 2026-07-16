@@ -32,6 +32,60 @@
   font-size: 14px;
 }
 
+.scopeTabs {
+  width: fit-content;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.scopeTab,
+.scopeTabActive {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.scopeTab {
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.scopeTab:hover {
+  color: var(--color-text);
+}
+
+.scopeTabActive {
+  color: #08665f;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(31 45 42 / 12%);
+}
+
+.scopeTab:focus-visible,
+.scopeTabActive:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.workspaceScopePanel {
+  display: grid;
+  gap: 14px;
+}
+
+.workspaceScopePanel > p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
 .form {
   padding: 28px;
   display: grid;

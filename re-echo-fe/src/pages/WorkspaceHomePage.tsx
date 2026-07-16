@@ -8,7 +8,7 @@ import { useArchiveWorkspace } from '../features/workspace/useArchiveWorkspace'
 import { useRestoreWorkspace } from '../features/workspace/useRestoreWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
-import { WorkspaceProfileDialog } from '../features/workspace/WorkspaceProfileDialog'
+import { WorkspaceProfileEditContextMenu } from '../features/workspace/WorkspaceProfileEditContextMenu'
 import { WorkspaceSettingsDialog } from '../features/workspace/WorkspaceSettingsDialog'
 import {
   useWorkspaceChannels,
@@ -51,7 +51,10 @@ export function WorkspaceHomePage() {
   const [isWorkspaceRestoreOpen, setIsWorkspaceRestoreOpen] = useState(false)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isMemberManagementOpen, setIsMemberManagementOpen] = useState(false)
-  const [isWorkspaceProfileOpen, setIsWorkspaceProfileOpen] = useState(false)
+  const [workspaceProfileMenuPosition, setWorkspaceProfileMenuPosition] = useState<{
+    x: number
+    y: number
+  } | null>(null)
   const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false)
   const workspace = workspaceQuery.data
   const isArchivedWorkspace = workspace?.status === 'ARCHIVED'
@@ -454,7 +457,10 @@ export function WorkspaceHomePage() {
                         title={canOpenWorkspaceProfile ? '우클릭하여 워크스페이스 프로필 편집' : undefined}
                         onContextMenu={canOpenWorkspaceProfile ? (event) => {
                           event.preventDefault()
-                          setIsWorkspaceProfileOpen(true)
+                          setWorkspaceProfileMenuPosition({
+                            x: event.clientX,
+                            y: event.clientY,
+                          })
                         } : undefined}
                         onKeyDown={canOpenWorkspaceProfile ? (event) => {
                           if (
@@ -464,7 +470,11 @@ export function WorkspaceHomePage() {
                             (event.key === 'F10' && event.shiftKey)
                           ) {
                             event.preventDefault()
-                            setIsWorkspaceProfileOpen(true)
+                            const bounds = event.currentTarget.getBoundingClientRect()
+                            setWorkspaceProfileMenuPosition({
+                              x: bounds.right,
+                              y: bounds.bottom,
+                            })
                           }
                         } : undefined}
                       >
@@ -509,9 +519,6 @@ export function WorkspaceHomePage() {
           : undefined
       }
       isChannelsLoading={channelsQuery.isLoading}
-      onOpenWorkspaceProfile={
-        canUpdateWorkspaceProfile ? () => setIsWorkspaceProfileOpen(true) : undefined
-      }
       rightSidebar={workspace ? workspaceMemberPanel : undefined}
       rightSidebarLabel="워크스페이스 참여자"
     >
@@ -705,13 +712,13 @@ export function WorkspaceHomePage() {
       {workspaceLeaveDialog}
       {workspaceArchiveDialog}
       {workspaceRestoreDialog}
-      {workspace && canUpdateWorkspaceProfile && (
-        <WorkspaceProfileDialog
-          workspace={workspace}
-          isOpen={isWorkspaceProfileOpen}
-          onClose={() => setIsWorkspaceProfileOpen(false)}
-        />
-      )}
+      <WorkspaceProfileEditContextMenu
+        position={workspaceProfileMenuPosition}
+        onClose={() => setWorkspaceProfileMenuPosition(null)}
+        onSelect={() => {
+          void navigate(`/settings/profile?workspaceId=${workspaceId}&scope=workspace`)
+        }}
+      />
       {workspace && canManageWorkspaceSettings && (
         <WorkspaceSettingsDialog
           workspace={workspace}

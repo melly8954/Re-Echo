@@ -5,7 +5,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { ChannelMessagePanel } from '../features/message/ChannelMessagePanel'
 import { WorkspaceChannelSettingsDialog } from '../features/workspace/WorkspaceChannelSettingsDialog'
-import { WorkspaceProfileDialog } from '../features/workspace/WorkspaceProfileDialog'
+import { WorkspaceProfileEditContextMenu } from '../features/workspace/WorkspaceProfileEditContextMenu'
 import { useAddWorkspacePrivateChannelMembers } from '../features/workspace/useAddWorkspacePrivateChannelMembers'
 import { useCreateWorkspaceChannel } from '../features/workspace/useCreateWorkspaceChannel'
 import { useJoinWorkspaceChannel } from '../features/workspace/useJoinWorkspaceChannel'
@@ -66,7 +66,10 @@ export function WorkspacePage() {
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isChannelMemberAddOpen, setIsChannelMemberAddOpen] = useState(false)
   const [isChannelSettingsOpen, setIsChannelSettingsOpen] = useState(false)
-  const [isWorkspaceProfileOpen, setIsWorkspaceProfileOpen] = useState(false)
+  const [workspaceProfileMenuPosition, setWorkspaceProfileMenuPosition] = useState<{
+    x: number
+    y: number
+  } | null>(null)
   const [isChannelLeaveConfirmOpen, setIsChannelLeaveConfirmOpen] = useState(false)
   const [channelSettingsTargetId, setChannelSettingsTargetId] = useState<string | null>(null)
   const [channelLeaveTargetId, setChannelLeaveTargetId] = useState<string | null>(null)
@@ -701,7 +704,10 @@ export function WorkspacePage() {
                         title={isCurrentMember ? '우클릭하여 워크스페이스 프로필 편집' : undefined}
                         onContextMenu={isCurrentMember ? (event) => {
                           event.preventDefault()
-                          setIsWorkspaceProfileOpen(true)
+                          setWorkspaceProfileMenuPosition({
+                            x: event.clientX,
+                            y: event.clientY,
+                          })
                         } : undefined}
                         onKeyDown={isCurrentMember ? (event) => {
                           if (
@@ -711,7 +717,11 @@ export function WorkspacePage() {
                             (event.key === 'F10' && event.shiftKey)
                           ) {
                             event.preventDefault()
-                            setIsWorkspaceProfileOpen(true)
+                            const bounds = event.currentTarget.getBoundingClientRect()
+                            setWorkspaceProfileMenuPosition({
+                              x: bounds.right,
+                              y: bounds.bottom,
+                            })
                           }
                         } : undefined}
                       >
@@ -756,7 +766,6 @@ export function WorkspacePage() {
       onOpenChannelSettings={openChannelSettings}
       onRequestLeaveChannel={requestLeaveChannel}
       isChannelLeavePending={leaveChannel.isPending}
-      onOpenWorkspaceProfile={workspace ? () => setIsWorkspaceProfileOpen(true) : undefined}
       rightSidebar={workspace ? memberPanel : undefined}
       rightSidebarLabel="채널 참여자"
     >
@@ -917,13 +926,13 @@ export function WorkspacePage() {
           }}
         />
       )}
-      {workspace && (
-        <WorkspaceProfileDialog
-          workspace={workspace}
-          isOpen={isWorkspaceProfileOpen}
-          onClose={() => setIsWorkspaceProfileOpen(false)}
-        />
-      )}
+      <WorkspaceProfileEditContextMenu
+        position={workspaceProfileMenuPosition}
+        onClose={() => setWorkspaceProfileMenuPosition(null)}
+        onSelect={() => {
+          void navigate(`/settings/profile?workspaceId=${workspaceId}&scope=workspace`)
+        }}
+      />
     </AppShell>
   )
 }

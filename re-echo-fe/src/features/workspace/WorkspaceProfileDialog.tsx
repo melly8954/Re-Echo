@@ -23,6 +23,7 @@ interface WorkspaceProfileDialogProps {
   workspace: WorkspaceDetail
   isOpen: boolean
   onClose: () => void
+  embedded?: boolean
 }
 
 // 계정 기본 프로필과 분리된 워크스페이스별 프로필 수정 흐름을 제공한다.
@@ -30,6 +31,7 @@ export function WorkspaceProfileDialog({
   workspace,
   isOpen,
   onClose,
+  embedded = false,
 }: WorkspaceProfileDialogProps) {
   const queryClient = useQueryClient()
   const updateProfileMutation = useMutation({
@@ -79,7 +81,7 @@ export function WorkspaceProfileDialog({
   }, [selectedImage])
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || embedded) {
       return undefined
     }
 
@@ -91,7 +93,7 @@ export function WorkspaceProfileDialog({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, isSaving, onClose])
+  }, [embedded, isOpen, isSaving, onClose])
 
   if (!isOpen) {
     return null
@@ -166,7 +168,9 @@ export function WorkspaceProfileDialog({
           )),
         }),
       )
-      onClose()
+      if (!embedded) {
+        onClose()
+      }
     } catch (error) {
       setSubmitError(
         error instanceof ApiError
@@ -188,19 +192,11 @@ export function WorkspaceProfileDialog({
     return presignedUpload.fileId
   }
 
-  return (
-    <div className={styles.layer}>
-      <button
-        className={styles.overlay}
-        type="button"
-        aria-label="내 프로필 닫기"
-        onClick={onClose}
-        disabled={isSaving}
-      />
+  const dialogContent = (
       <section
-        className={styles.dialog}
-        role="dialog"
-        aria-modal="true"
+        className={embedded ? `${styles.dialog} ${styles.embeddedDialog}` : styles.dialog}
+        role={embedded ? undefined : 'dialog'}
+        aria-modal={embedded ? undefined : true}
         aria-labelledby="workspace-profile-title"
       >
         <header className={styles.header}>
@@ -208,9 +204,11 @@ export function WorkspaceProfileDialog({
             <p>내 프로필</p>
             <h2 id="workspace-profile-title">워크스페이스 프로필</h2>
           </div>
-          <button type="button" onClick={onClose} disabled={isSaving}>
-            닫기
-          </button>
+          {!embedded && (
+            <button type="button" onClick={onClose} disabled={isSaving}>
+              닫기
+            </button>
+          )}
         </header>
         <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
           <div className={styles.imageSection}>
@@ -258,16 +256,39 @@ export function WorkspaceProfileDialog({
             </small>
           </label>
           {submitError && <p className={styles.error} role="alert">{submitError}</p>}
+          {embedded && updateProfileMutation.isSuccess && (
+            <p className={styles.success} role="status">
+              워크스페이스 프로필을 수정했습니다.
+            </p>
+          )}
           <footer className={styles.footer}>
-            <button type="button" onClick={onClose} disabled={isSaving}>
-              취소
-            </button>
+            {!embedded && (
+              <button type="button" onClick={onClose} disabled={isSaving}>
+                취소
+              </button>
+            )}
             <button type="submit" disabled={isSaving || isUnchanged}>
               {isSaving ? '저장 중...' : '변경 사항 저장'}
             </button>
           </footer>
         </form>
       </section>
+  )
+
+  if (embedded) {
+    return dialogContent
+  }
+
+  return (
+    <div className={styles.layer}>
+      <button
+        className={styles.overlay}
+        type="button"
+        aria-label="내 프로필 닫기"
+        onClick={onClose}
+        disabled={isSaving}
+      />
+      {dialogContent}
     </div>
   )
 }

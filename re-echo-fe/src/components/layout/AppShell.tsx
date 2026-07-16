@@ -28,7 +28,6 @@ interface AppShellProps {
   channelHeaderAction?: ReactNode
   onOpenChannelSettings?: (channelId: string) => void
   onRequestLeaveChannel?: (channelId: string) => void
-  onOpenWorkspaceProfile?: () => void
   isChannelLeavePending?: boolean
   channelEmptyMessage?: string
   rightSidebar?: ReactNode
@@ -47,7 +46,6 @@ export function AppShell({
   channelHeaderAction,
   onOpenChannelSettings,
   onRequestLeaveChannel,
-  onOpenWorkspaceProfile,
   isChannelLeavePending = false,
   channelEmptyMessage = '워크스페이스에 참여하면 채널이 표시됩니다.',
   rightSidebar,
@@ -58,11 +56,9 @@ export function AppShell({
   const workspaceListQuery = useWorkspaceList(status === 'authenticated')
   const [isChannelDrawerOpen, setIsChannelDrawerOpen] = useState(false)
   const [isWorkspaceActionMenuOpen, setIsWorkspaceActionMenuOpen] = useState(false)
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
   const [isWorkspaceCreateOpen, setIsWorkspaceCreateOpen] = useState(false)
   const [isWorkspaceInviteOpen, setIsWorkspaceInviteOpen] = useState(false)
   const channelMenuButtonRef = useRef<HTMLButtonElement>(null)
-  const accountMenuRef = useRef<HTMLDivElement>(null)
   const channelDrawerRef = useRef<HTMLElement>(null)
   const channelDrawerCloseButtonRef = useRef<HTMLButtonElement>(null)
   const channelDrawerId = 'mobile-channel-drawer'
@@ -94,32 +90,6 @@ export function AppShell({
       channelMenuButton?.focus()
     }
   }, [isChannelDrawerOpen])
-
-  // 계정 메뉴는 바깥 클릭과 Esc로 닫아 다른 탐색 표면과 겹치지 않게 한다.
-  useEffect(() => {
-    if (!isAccountMenuOpen) {
-      return undefined
-    }
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!accountMenuRef.current?.contains(event.target as Node)) {
-        setIsAccountMenuOpen(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsAccountMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isAccountMenuOpen])
 
   // Tab 이동이 드로어 바깥으로 빠져나가지 않도록 키보드 포커스를 순환시킨다.
   function handleChannelDrawerKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
@@ -397,50 +367,20 @@ export function AppShell({
           >
             메뉴
           </button>
-          <div className={styles.accountProfileMenu} ref={accountMenuRef}>
-            <button
-              className={styles.accountProfileButton}
-              type="button"
-              aria-expanded={isAccountMenuOpen}
-              aria-haspopup="menu"
-              onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
-            >
-              {user?.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt="" />
-              ) : (
-                <span className={styles.avatarFallback} aria-hidden="true">
-                  {user?.displayName.slice(0, 1) ?? 'R'}
-                </span>
-              )}
-              <span className={styles.userName}>{user?.displayName}</span>
-              <span className={styles.accountProfileLabel}>프로필</span>
-            </button>
-            {isAccountMenuOpen && (
-              <div className={styles.accountProfileMenuPanel} role="menu">
-                <Link
-                  to="/settings/profile"
-                  role="menuitem"
-                  onClick={() => setIsAccountMenuOpen(false)}
-                >
-                  <strong>전체 프로필</strong>
-                  <small>모든 워크스페이스의 기본 프로필</small>
-                </Link>
-                {onOpenWorkspaceProfile && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false)
-                      onOpenWorkspaceProfile()
-                    }}
-                  >
-                    <strong>이 워크스페이스 프로필</strong>
-                    <small>{currentWorkspaceName}에서만 사용하는 프로필</small>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          {user?.profileImageUrl ? (
+            <img src={user.profileImageUrl} alt="" />
+          ) : (
+            <span className={styles.avatarFallback} aria-hidden="true">
+              {user?.displayName.slice(0, 1) ?? 'R'}
+            </span>
+          )}
+          <span className={styles.userName}>{user?.displayName}</span>
+          <Link
+            className={styles.accountLink}
+            to={workspaceId ? `/settings/profile?workspaceId=${workspaceId}` : '/settings/profile'}
+          >
+            프로필
+          </Link>
           <button
             className={styles.accountButton}
             type="button"
