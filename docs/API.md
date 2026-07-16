@@ -1218,6 +1218,7 @@
   - `400 FILE_UPLOAD_NOT_COMPLETED`
   - `403 FILE_ACCESS_DENIED`
   - `404 FILE_NOT_FOUND`
+- Response Body: `11.16 워크스페이스 멤버 목록 조회`의 멤버 항목과 동일
 
 ## 12. Pagination / Sorting / Filtering
 
