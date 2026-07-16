@@ -161,6 +161,20 @@ export function updateWorkspace(
   })
 }
 
+export function archiveWorkspace(workspaceId: string) {
+  return apiRequest<null>(`/api/v1/workspaces/${workspaceId}/archive`, {
+    method: 'PATCH',
+    authenticated: true,
+  })
+}
+
+export function restoreWorkspace(workspaceId: string) {
+  return apiRequest<null>(`/api/v1/workspaces/${workspaceId}/restore`, {
+    method: 'PATCH',
+    authenticated: true,
+  })
+}
+
 export function createWorkspaceImageUploadUrl(
   workspaceId: string,
   request: WorkspaceImagePresignRequest,

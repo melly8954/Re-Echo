@@ -4,11 +4,16 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { useIssueWorkspaceInviteLink } from '../features/workspace/useIssueWorkspaceInviteLink'
 import { useLeaveWorkspace } from '../features/workspace/useLeaveWorkspace'
+import { useArchiveWorkspace } from '../features/workspace/useArchiveWorkspace'
+import { useRestoreWorkspace } from '../features/workspace/useRestoreWorkspace'
 import { WorkspaceChannelCreateDialog } from '../features/workspace/WorkspaceChannelCreateDialog'
 import { WorkspaceMemberManagementDialog } from '../features/workspace/WorkspaceMemberManagementDialog'
 import { WorkspaceSettingsDialog } from '../features/workspace/WorkspaceSettingsDialog'
 import { useWorkspaceChannels } from '../features/workspace/useWorkspaceChannels'
-import { useWorkspaceDetail } from '../features/workspace/useWorkspaceDetail'
+import {
+  useWorkspaceDetail,
+  workspaceDetailQueryKey,
+} from '../features/workspace/useWorkspaceDetail'
 import {
   useWorkspaceInviteLink,
   workspaceInviteLinkQueryKey,
@@ -38,15 +43,28 @@ export function WorkspaceHomePage() {
   const workspaceMembersQuery = useWorkspaceMembers(routeWorkspaceId)
   const issueInviteLink = useIssueWorkspaceInviteLink()
   const leaveWorkspace = useLeaveWorkspace()
+  const archiveWorkspace = useArchiveWorkspace()
+  const restoreWorkspace = useRestoreWorkspace()
   const [inviteMessage, setInviteMessage] = useState<string | null>(null)
   const [isWorkspaceLeaveOpen, setIsWorkspaceLeaveOpen] = useState(false)
+  const [isWorkspaceArchiveOpen, setIsWorkspaceArchiveOpen] = useState(false)
+  const [isWorkspaceRestoreOpen, setIsWorkspaceRestoreOpen] = useState(false)
   const [isChannelCreateOpen, setIsChannelCreateOpen] = useState(false)
   const [isMemberManagementOpen, setIsMemberManagementOpen] = useState(false)
   const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false)
   const workspace = workspaceQuery.data
-  const canIssueInvite =
+  const isArchivedWorkspace = workspace?.status === 'ARCHIVED'
+  const canIssueInvite = !isArchivedWorkspace && (
     workspace?.myMembership.role === 'OWNER' ||
     workspace?.myMembership.role === 'ADMIN'
+  )
+  const canManageWorkspaceSettings = canIssueInvite
+  const canArchiveWorkspace = Boolean(
+    workspace && !isArchivedWorkspace && workspace.myMembership.role === 'OWNER',
+  )
+  const canRestoreWorkspace = Boolean(
+    workspace && isArchivedWorkspace && workspace.canRestore && workspace.myMembership.role === 'OWNER',
+  )
   const canLeaveWorkspace = Boolean(
     workspace && workspace.myMembership.role !== 'OWNER',
   )
@@ -81,7 +99,7 @@ export function WorkspaceHomePage() {
       inviteLinkQuery.error.errorCode === 'INVITE_EXPIRED')
 
   useEffect(() => {
-    if (!isWorkspaceLeaveOpen) {
+    if (!isWorkspaceLeaveOpen && !isWorkspaceArchiveOpen && !isWorkspaceRestoreOpen) {
       return undefined
     }
 
@@ -89,8 +107,10 @@ export function WorkspaceHomePage() {
     document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !leaveWorkspace.isPending) {
+      if (event.key === 'Escape' && !leaveWorkspace.isPending && !archiveWorkspace.isPending && !restoreWorkspace.isPending) {
         setIsWorkspaceLeaveOpen(false)
+        setIsWorkspaceArchiveOpen(false)
+        setIsWorkspaceRestoreOpen(false)
       }
     }
 
@@ -99,7 +119,14 @@ export function WorkspaceHomePage() {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = previousBodyOverflow
     }
-  }, [isWorkspaceLeaveOpen, leaveWorkspace.isPending])
+  }, [
+    archiveWorkspace.isPending,
+    isWorkspaceArchiveOpen,
+    isWorkspaceLeaveOpen,
+    isWorkspaceRestoreOpen,
+    leaveWorkspace.isPending,
+    restoreWorkspace.isPending,
+  ])
 
   if (!workspaceId) {
     return <Navigate to="/" replace />
@@ -166,6 +193,55 @@ export function WorkspaceHomePage() {
     setIsWorkspaceLeaveOpen(false)
   }
 
+  async function handleArchiveWorkspace() {
+    if (!workspace || !canArchiveWorkspace) {
+      return
+    }
+
+    try {
+      await archiveWorkspace.mutateAsync(routeWorkspaceId)
+      await queryClient.invalidateQueries({ queryKey: workspaceListQueryKey })
+      setIsWorkspaceArchiveOpen(false)
+      setIsWorkspaceSettingsOpen(false)
+      void navigate('/', { replace: true })
+    } catch {
+      // mutation 상태를 통해 확인 모달에 오류 메시지를 표시한다.
+    }
+  }
+
+  async function handleRestoreWorkspace() {
+    if (!workspace || !canRestoreWorkspace) {
+      return
+    }
+
+    try {
+      await restoreWorkspace.mutateAsync(routeWorkspaceId)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: workspaceListQueryKey }),
+        queryClient.invalidateQueries({ queryKey: workspaceDetailQueryKey(routeWorkspaceId) }),
+      ])
+      setIsWorkspaceRestoreOpen(false)
+    } catch {
+      // mutation 상태를 통해 확인 모달에 오류 메시지를 표시한다.
+    }
+  }
+
+  function closeWorkspaceArchiveDialog() {
+    if (archiveWorkspace.isPending) {
+      return
+    }
+    archiveWorkspace.reset()
+    setIsWorkspaceArchiveOpen(false)
+  }
+
+  function closeWorkspaceRestoreDialog() {
+    if (restoreWorkspace.isPending) {
+      return
+    }
+    restoreWorkspace.reset()
+    setIsWorkspaceRestoreOpen(false)
+  }
+
   const workspaceLeaveDialog = canLeaveWorkspace && isWorkspaceLeaveOpen && (
     <div className={styles.workspaceLeaveLayer}>
       <button
@@ -209,6 +285,94 @@ export function WorkspaceHomePage() {
             disabled={leaveWorkspace.isPending}
           >
             {leaveWorkspace.isPending ? '나가는 중' : '나가기'}
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+
+  const workspaceArchiveDialog = canArchiveWorkspace && isWorkspaceArchiveOpen && (
+    <div className={styles.workspaceLifecycleLayer}>
+      <button
+        className={styles.workspaceLifecycleOverlay}
+        type="button"
+        aria-label="워크스페이스 보관 닫기"
+        onClick={closeWorkspaceArchiveDialog}
+      />
+      <section
+        className={styles.workspaceLifecycleDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-archive-title"
+        aria-describedby="workspace-archive-description"
+      >
+        <p className={styles.eyebrow}>워크스페이스 보관</p>
+        <h2 id="workspace-archive-title">워크스페이스를 보관하시겠습니까?</h2>
+        <p id="workspace-archive-description">
+          모든 활성 채널이 읽기 전용으로 전환됩니다. 보관 후 15일 안에만 복원할 수 있습니다.
+        </p>
+        {archiveWorkspace.isError && (
+          <p className={styles.workspaceLifecycleError} role="alert">
+            {archiveWorkspace.error instanceof ApiError
+              ? archiveWorkspace.error.message
+              : '워크스페이스를 보관하지 못했습니다.'}
+          </p>
+        )}
+        <div className={styles.workspaceLifecycleFooter}>
+          <button type="button" onClick={closeWorkspaceArchiveDialog}>
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.workspaceArchiveConfirmButton}
+            onClick={() => void handleArchiveWorkspace()}
+            disabled={archiveWorkspace.isPending}
+          >
+            {archiveWorkspace.isPending ? '보관 중' : '보관하기'}
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+
+  const workspaceRestoreDialog = canRestoreWorkspace && isWorkspaceRestoreOpen && (
+    <div className={styles.workspaceLifecycleLayer}>
+      <button
+        className={styles.workspaceLifecycleOverlay}
+        type="button"
+        aria-label="워크스페이스 복원 닫기"
+        onClick={closeWorkspaceRestoreDialog}
+      />
+      <section
+        className={styles.workspaceLifecycleDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-restore-title"
+        aria-describedby="workspace-restore-description"
+      >
+        <p className={styles.eyebrow}>워크스페이스 복원</p>
+        <h2 id="workspace-restore-title">워크스페이스를 복원하시겠습니까?</h2>
+        <p id="workspace-restore-description">
+          워크스페이스와 보관으로 전환된 채널을 다시 활성화합니다.
+        </p>
+        {restoreWorkspace.isError && (
+          <p className={styles.workspaceLifecycleError} role="alert">
+            {restoreWorkspace.error instanceof ApiError
+              ? restoreWorkspace.error.message
+              : '워크스페이스를 복원하지 못했습니다.'}
+          </p>
+        )}
+        <div className={styles.workspaceLifecycleFooter}>
+          <button type="button" onClick={closeWorkspaceRestoreDialog}>
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.workspaceRestoreConfirmButton}
+            onClick={() => void handleRestoreWorkspace()}
+            disabled={restoreWorkspace.isPending}
+          >
+            {restoreWorkspace.isPending ? '복원 중' : '복원하기'}
           </button>
         </div>
       </section>
@@ -342,13 +506,25 @@ export function WorkspaceHomePage() {
               <div className={styles.actions}>
                 <span>{getWorkspaceRoleLabel(workspace.myMembership.role)}</span>
                 <span>{getWorkspaceStatusLabel(workspace.status)}</span>
-                {canIssueInvite && (
+                {canManageWorkspaceSettings && (
                   <button
                     type="button"
                     className={styles.memberManageButton}
                     onClick={() => setIsWorkspaceSettingsOpen(true)}
                   >
                     워크스페이스 설정
+                  </button>
+                )}
+                {canRestoreWorkspace && (
+                  <button
+                    type="button"
+                    className={styles.workspaceRestoreButton}
+                    onClick={() => {
+                      restoreWorkspace.reset()
+                      setIsWorkspaceRestoreOpen(true)
+                    }}
+                  >
+                    워크스페이스 복원
                   </button>
                 )}
                 {canIssueInvite && (
@@ -464,14 +640,21 @@ export function WorkspaceHomePage() {
         )}
       </section>
       {workspaceLeaveDialog}
-      {workspace && canIssueInvite && (
+      {workspaceArchiveDialog}
+      {workspaceRestoreDialog}
+      {workspace && canManageWorkspaceSettings && (
         <WorkspaceSettingsDialog
           workspace={workspace}
           isOpen={isWorkspaceSettingsOpen}
           onClose={() => setIsWorkspaceSettingsOpen(false)}
+          onRequestArchive={canArchiveWorkspace ? () => {
+            setIsWorkspaceSettingsOpen(false)
+            archiveWorkspace.reset()
+            setIsWorkspaceArchiveOpen(true)
+          } : undefined}
         />
       )}
-      {workspace && canIssueInvite && (
+      {workspace && canManageWorkspaceSettings && (
         <WorkspaceMemberManagementDialog
           workspaceId={workspaceId}
           workspaceName={workspace.name}

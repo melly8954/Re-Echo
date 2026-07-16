@@ -142,6 +142,17 @@
   border-color: var(--color-primary);
 }
 
+.workspaceRestoreButton {
+  min-height: 32px;
+  padding: 0 11px;
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .channelCreateActionButton {
   width: 28px;
   height: 28px;
@@ -333,6 +344,85 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.workspaceLifecycleLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.workspaceLifecycleOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(31 45 42 / 42%);
+  border: 0;
+  cursor: pointer;
+}
+
+.workspaceLifecycleDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(31 45 42 / 22%);
+}
+
+.workspaceLifecycleDialog h2,
+.workspaceLifecycleDialog p {
+  margin: 0;
+}
+
+.workspaceLifecycleDialog > p:not(.eyebrow):not(.workspaceLifecycleError) {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.workspaceLifecycleError {
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workspaceLifecycleFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workspaceLifecycleFooter button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspaceLifecycleFooter button:first-child {
+  color: var(--color-muted);
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+.workspaceArchiveConfirmButton {
+  color: #fff;
+  background: #b3261e;
+  border: 1px solid #b3261e;
+}
+
+.workspaceRestoreConfirmButton {
+  color: #fff;
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .workspaceLeaveCancelButton,

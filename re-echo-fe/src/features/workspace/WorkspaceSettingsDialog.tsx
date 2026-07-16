@@ -22,6 +22,7 @@ interface WorkspaceSettingsDialogProps {
   workspace: WorkspaceDetail
   isOpen: boolean
   onClose: () => void
+  onRequestArchive?: () => void
 }
 
 // 대표 이미지와 기본 정보를 한 번에 바꿔 변경 흐름을 분산하지 않는다.
@@ -29,6 +30,7 @@ export function WorkspaceSettingsDialog({
   workspace,
   isOpen,
   onClose,
+  onRequestArchive,
 }: WorkspaceSettingsDialogProps) {
   const queryClient = useQueryClient()
   const updateWorkspaceMutation = useMutation({
@@ -257,6 +259,17 @@ export function WorkspaceSettingsDialog({
             />
           </label>
           {submitError && <p className={styles.error} role="alert">{submitError}</p>}
+          {onRequestArchive && (
+            <section className={styles.archiveSection} aria-labelledby="workspace-archive-title">
+              <div>
+                <strong id="workspace-archive-title">워크스페이스 보관</strong>
+                <p>활성 채널이 읽기 전용으로 전환되며, 15일 안에만 복원할 수 있습니다.</p>
+              </div>
+              <button type="button" onClick={onRequestArchive} disabled={isSaving}>
+                워크스페이스 보관
+              </button>
+            </section>
+          )}
           <footer className={styles.footer}>
             <button type="button" onClick={onClose} disabled={isSaving}>
               취소
