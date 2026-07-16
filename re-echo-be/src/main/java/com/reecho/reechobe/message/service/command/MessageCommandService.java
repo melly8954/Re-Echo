@@ -59,6 +59,7 @@ public class MessageCommandService {
     private final RealtimeEventPublisher realtimeEventPublisher;
 
     @Transactional
+    // 채널 쓰기 권한과 첨부 파일 소유권을 검증한 뒤 메시지를 작성하고 전파한다.
     public ChannelMessageResponse createMessage(
             UUID userId,
             UUID workspaceId,
@@ -78,6 +79,7 @@ public class MessageCommandService {
     }
 
     @Transactional
+    // 작성자만 본문과 첨부 목록을 교체하고 최신 메시지 snapshot을 전파한다.
     public ChannelMessageResponse updateMessage(
             UUID userId,
             UUID workspaceId,
@@ -105,6 +107,7 @@ public class MessageCommandService {
     }
 
     @Transactional
+    // 작성자 또는 관리 권한자가 메시지를 삭제 흔적 상태로 전환한다.
     public void deleteMessage(UUID userId, UUID workspaceId, UUID channelId, UUID messageId) {
         WorkspaceMembership membership = validateWritableChannel(userId, workspaceId, channelId);
         Message message = getActiveMessage(channelId, messageId);
@@ -157,6 +160,7 @@ public class MessageCommandService {
         return content == null || content.isBlank() ? "" : content.trim();
     }
 
+    // 중복 첨부 식별자를 제거해 표시 순서와 파일 연결을 예측 가능하게 유지한다.
     private List<UUID> normalizeFileIds(List<UUID> fileIds) {
         return fileIds == null ? List.of() : List.copyOf(fileIds);
     }
@@ -170,6 +174,7 @@ public class MessageCommandService {
         }
     }
 
+    // 메시지에 연결하기 전 활성 파일과 현재 멤버의 업로드 소유권을 함께 확인한다.
     private void validateAttachableFiles(UUID workspaceId, UUID membershipId, List<UUID> fileIds) {
         if (fileIds.isEmpty()) {
             return;
@@ -197,6 +202,7 @@ public class MessageCommandService {
     }
 
     // 수신자가 커밋 전 데이터를 다시 읽지 않도록 완료 후에만 event를 전파한다.
+    // 트랜잭션 확정 뒤에만 실시간 수신자에게 변경된 메시지를 전파한다.
     private void publishMessageAfterCommit(
             UUID workspaceId,
             RealtimeEventType type,

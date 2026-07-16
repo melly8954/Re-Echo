@@ -48,6 +48,7 @@ public class WorkspaceInviteLinkCommandService {
     private final WorkspaceInviteLinkRepository workspaceInviteLinkRepository;
 
     @Transactional
+    // 초대 권한이 있는 멤버의 명시적 요청에만 기존 링크를 폐기하고 새 토큰을 발급한다.
     public WorkspaceInviteLinkResponse issueInviteLink(UUID userId, UUID workspaceId) {
         WorkspaceMembership issuerMembership = validateInviteIssuer(userId, workspaceId);
         LocalDateTime now = LocalDateTime.now();
@@ -67,6 +68,7 @@ public class WorkspaceInviteLinkCommandService {
     }
 
     @Transactional
+    // 유효한 초대 토큰으로 참여하거나 기존 탈퇴 멤버십을 다시 활성화한다.
     public JoinedWorkspaceResponse joinWorkspace(UUID userId, String token) {
         User user = userRepository.findById(userId)
                 .filter(User::isActive)
@@ -111,6 +113,7 @@ public class WorkspaceInviteLinkCommandService {
         return membership;
     }
 
+    // 탈퇴 멤버는 기존 워크스페이스 프로필을 복원하고, 신규 사용자만 새 멤버십을 만든다.
     private WorkspaceMembership joinOrReactivateMembership(UUID workspaceId, User user) {
         return workspaceMembershipRepository.findByWorkspaceIdAndUserId(workspaceId, user.getId())
                 .map(existingMembership -> {
@@ -127,6 +130,7 @@ public class WorkspaceInviteLinkCommandService {
                 ));
     }
 
+    // 초대 참여자는 기본 공개 채널에도 자동으로 접근할 수 있게 참여 상태를 맞춘다.
     private void joinGeneralChannel(UUID channelId, UUID membershipId) {
         channelMembershipRepository
                 .findByChannelIdAndWorkspaceMembershipId(channelId, membershipId)
@@ -147,6 +151,7 @@ public class WorkspaceInviteLinkCommandService {
         }
     }
 
+    // 토큰 충돌 시 재시도해 공개 URL이 기존 초대 링크를 가리키지 않게 한다.
     private String generateUniqueToken() {
         String token;
         do {

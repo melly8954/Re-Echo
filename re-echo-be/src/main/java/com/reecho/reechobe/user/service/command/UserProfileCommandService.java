@@ -21,6 +21,7 @@ public class UserProfileCommandService {
     private final ProfileImageFileService profileImageFileService;
 
     @Transactional
+    // 계정 기본 프로필을 갱신하고 교체된 이미지 파일은 정리 대상으로 표시한다.
     public UserResponse updateProfile(UUID userId, UpdateUserProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_UNAUTHORIZED));
@@ -32,6 +33,7 @@ public class UserProfileCommandService {
         return UserResponse.from(user);
     }
 
+    // PATCH에서 이미지 필드가 전달된 경우에만 업로드 완료 검증과 교체 처리를 수행한다.
     private void updateProfileImage(
             UUID userId,
             User user,
@@ -51,6 +53,7 @@ public class UserProfileCommandService {
         user.updateProfileImage(profileImageUrl, request.profileImageFileId());
     }
 
+    // 새 이미지 반영 후에만 이전 파일을 고아 상태로 바꿔 롤백 실패 시 참조를 보존한다.
     private void markPreviousProfileImageOrphaned(
             UUID userId,
             UUID previousProfileImageFileId,

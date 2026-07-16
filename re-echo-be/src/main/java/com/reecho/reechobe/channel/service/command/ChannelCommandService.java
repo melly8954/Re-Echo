@@ -49,6 +49,7 @@ public class ChannelCommandService {
     private final MessageRepository messageRepository;
 
     @Transactional
+    // 생성자의 워크스페이스 권한을 확인한 뒤 채널과 초기 참여 상태를 함께 만든다.
     public CreatedChannelResponse createChannel(UUID userId, UUID workspaceId, CreateChannelRequest request) {
         validateActiveWorkspace(workspaceId);
         WorkspaceMembership creatorMembership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -78,6 +79,7 @@ public class ChannelCommandService {
     }
 
     @Transactional
+    // 공개 채널에 이미 참여한 경우도 같은 활성 참여 상태로 수렴시킨다.
     public void joinPublicChannel(UUID userId, UUID workspaceId, UUID channelId) {
         validateActiveWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -101,6 +103,7 @@ public class ChannelCommandService {
     }
 
     @Transactional
+    // 비공개 채널 생성자만 워크스페이스 멤버를 추가하거나 재참여시킨다.
     public void addPrivateChannelMembers(
             UUID userId,
             UUID workspaceId,
@@ -127,6 +130,7 @@ public class ChannelCommandService {
     }
 
     @Transactional
+    // 현재 사용자의 채널 참여 상태만 탈퇴로 전환한다.
     public void leaveChannel(UUID userId, UUID workspaceId, UUID channelId) {
         validateActiveWorkspace(workspaceId);
         WorkspaceMembership membership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -146,6 +150,7 @@ public class ChannelCommandService {
     }
 
     @Transactional
+    // 비공개 채널 생성자가 대상 멤버의 접근 권한을 제거한다.
     public void removeChannelMember(UUID userId, UUID workspaceId, UUID channelId, UUID memberId) {
         validateActiveWorkspace(workspaceId);
         WorkspaceMembership requesterMembership = getActiveWorkspaceMembership(userId, workspaceId);
@@ -170,6 +175,7 @@ public class ChannelCommandService {
     }
 
     @Transactional
+    // 이전 읽음 위치로 되돌아가지 않도록 더 최신 메시지일 때만 상태를 갱신한다.
     public void updateChannelReadState(
             UUID userId,
             UUID workspaceId,
@@ -237,6 +243,7 @@ public class ChannelCommandService {
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_NOT_FOUND));
     }
 
+    // 요청한 메시지가 저장된 읽음 위치보다 뒤에 있을 때만 커서를 전진시킨다.
     private void advanceReadState(ChannelReadState readState, Message requestedMessage) {
         UUID currentMessageId = readState.getLastReadMessageId();
         if (currentMessageId == null || currentMessageId.equals(requestedMessage.getId())) {
@@ -257,6 +264,7 @@ public class ChannelCommandService {
                 || (createdAtComparison == 0 && source.getId().compareTo(target.getId()) > 0);
     }
 
+    // 생성자는 요청 누락과 무관하게 비공개 채널의 초기 멤버에 항상 포함한다.
     private Set<UUID> initialMemberIds(Set<UUID> requestedMemberIds, UUID creatorMembershipId) {
         Set<UUID> memberIds = new LinkedHashSet<>();
         memberIds.add(creatorMembershipId);
@@ -286,6 +294,7 @@ public class ChannelCommandService {
         }
     }
 
+    // 과거 탈퇴 이력이 있으면 새 행을 만들지 않고 기존 참여 상태를 다시 활성화한다.
     private void addOrReactivatePrivateChannelMember(UUID channelId, UUID workspaceMembershipId) {
         channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channelId, workspaceMembershipId)
                 .ifPresentOrElse(channelMembership -> {

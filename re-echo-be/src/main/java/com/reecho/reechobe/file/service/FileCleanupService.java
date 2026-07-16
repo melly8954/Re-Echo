@@ -25,6 +25,7 @@ public class FileCleanupService {
     private final FileCleanupProperties fileCleanupProperties;
 
     @Transactional
+    // 프로필과 워크스페이스에서 더 이상 참조하지 않는 오래된 이미지 파일을 정리한다.
     public int cleanupOrphanedProfileImages() {
         LocalDateTime cutoff = LocalDateTime.now().minus(fileCleanupProperties.orphanRetention());
         List<FileObject> candidates = fileObjectRepository.findProfileImageCleanupCandidates(
@@ -41,6 +42,7 @@ public class FileCleanupService {
     }
 
     @Transactional
+    // 메시지에 연결되지 않은 오래된 첨부 파일을 정리한다.
     public int cleanupUnattachedMessageAttachments() {
         LocalDateTime cutoff = LocalDateTime.now().minus(fileCleanupProperties.orphanRetention());
         List<FileObject> candidates = fileObjectRepository.findUnattachedMessageCleanupCandidates(
@@ -56,6 +58,7 @@ public class FileCleanupService {
         return deletedCount;
     }
 
+    // 조회 이후 다시 연결된 파일을 삭제하지 않도록 외부 객체 삭제 직전에 참조를 재확인한다.
     private boolean deleteIfStillUnreferenced(FileObject fileObject) {
         if (fileObjectRepository.existsProfileImageReference(fileObject.getId())) {
             return false;
@@ -75,6 +78,7 @@ public class FileCleanupService {
         }
     }
 
+    // 비동기 메시지 작성과 경합해도 연결된 첨부 파일을 지우지 않도록 다시 확인한다.
     private boolean deleteMessageAttachmentIfStillUnreferenced(FileObject fileObject) {
         if (fileObjectRepository.existsMessageAttachmentReference(fileObject.getId())) {
             return false;
