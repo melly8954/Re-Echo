@@ -31,6 +31,8 @@ export function WorkspaceChannelCreateDialog({
   const [memberIds, setMemberIds] = useState<string[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const members = workspaceMembersQuery.data?.contents ?? []
+  const privateMemberSelectionUnavailable = visibility === 'PRIVATE'
+    && (workspaceMembersQuery.isLoading || workspaceMembersQuery.isError)
 
   useEffect(() => {
     if (!isOpen) {
@@ -60,6 +62,14 @@ export function WorkspaceChannelCreateDialog({
     const trimmedName = name.trim()
     if (!trimmedName) {
       setErrorMessage('채널 이름을 입력해 주세요.')
+      return
+    }
+    if (visibility === 'PRIVATE' && workspaceMembersQuery.isLoading) {
+      setErrorMessage('멤버 목록을 불러온 뒤 비공개 채널을 만들 수 있습니다.')
+      return
+    }
+    if (visibility === 'PRIVATE' && workspaceMembersQuery.isError) {
+      setErrorMessage('멤버 목록을 불러오지 못해 비공개 채널을 만들 수 없습니다.')
       return
     }
 
@@ -127,6 +137,7 @@ export function WorkspaceChannelCreateDialog({
             <fieldset>
               <legend>초기 멤버</legend>
               {workspaceMembersQuery.isLoading && <p>멤버 목록을 불러오는 중입니다.</p>}
+              {workspaceMembersQuery.isError && <p className={styles.error} role="alert">멤버 목록을 불러오지 못했습니다.</p>}
               {!workspaceMembersQuery.isLoading && members.map((member) => (
                 <label key={member.id} className={styles.member}>
                   <input type="checkbox" checked={memberIds.includes(member.id)} onChange={() => toggleMember(member.id)} />
@@ -139,7 +150,7 @@ export function WorkspaceChannelCreateDialog({
           {errorMessage && <p className={styles.error} role="alert">{errorMessage}</p>}
           <footer>
             <button type="button" onClick={onClose} disabled={createChannel.isPending}>취소</button>
-            <button type="submit" disabled={createChannel.isPending}>{createChannel.isPending ? '생성 중' : '채널 만들기'}</button>
+            <button type="submit" disabled={createChannel.isPending || privateMemberSelectionUnavailable}>{createChannel.isPending ? '생성 중' : '채널 만들기'}</button>
           </footer>
         </form>
       </section>
