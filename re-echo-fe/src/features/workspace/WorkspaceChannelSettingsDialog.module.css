@@ -113,6 +113,10 @@
   gap: 5px;
 }
 
+.archiveSection > div {
+  min-width: 0;
+}
+
 .archiveSection p,
 .archivedPanel p,
 .confirmDialog p {
@@ -156,6 +160,11 @@
   color: #b3261e;
   background: #fff;
   border: 1px solid #e7b2ad;
+}
+
+.archiveSection button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .error {
