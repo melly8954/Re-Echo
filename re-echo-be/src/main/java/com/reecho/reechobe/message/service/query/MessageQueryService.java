@@ -1,7 +1,6 @@
 package com.reecho.reechobe.message.service.query;
 
 import com.reecho.reechobe.channel.domain.Channel;
-import com.reecho.reechobe.channel.domain.ChannelMembership;
 import com.reecho.reechobe.channel.domain.ChannelMembershipStatus;
 import com.reecho.reechobe.channel.domain.ChannelStatus;
 import com.reecho.reechobe.channel.exception.ChannelErrorCode;
@@ -53,7 +52,7 @@ public class MessageQueryService {
             UUID cursorMessageId
     ) {
         validateCursor(cursorCreatedAt, cursorMessageId);
-        WorkspaceMembership membership = validateReadableChannel(userId, workspaceId, channelId);
+        validateReadableChannel(userId, workspaceId, channelId);
         List<Message> queriedMessages = cursorCreatedAt == null
                 ? messageRepository.findByChannelIdOrderByCreatedAtDescIdDesc(channelId, PageRequest.of(0, size + 1))
                 : messageRepository
@@ -77,7 +76,7 @@ public class MessageQueryService {
     }
 
     // 비공개 채널은 활성 채널 멤버만 메시지 이력을 조회할 수 있도록 검증한다.
-    private WorkspaceMembership validateReadableChannel(UUID userId, UUID workspaceId, UUID channelId) {
+    private void validateReadableChannel(UUID userId, UUID workspaceId, UUID channelId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .filter(foundWorkspace -> foundWorkspace.getStatus() != WorkspaceStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(WorkspaceErrorCode.WORKSPACE_NOT_FOUND));
@@ -91,7 +90,6 @@ public class MessageQueryService {
         channelMembershipRepository.findByChannelIdAndWorkspaceMembershipId(channel.getId(), membership.getId())
                 .filter(channelMembership -> channelMembership.getStatus() == ChannelMembershipStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ChannelErrorCode.CHANNEL_ACCESS_DENIED));
-        return membership;
     }
 
     // cursor 두 값 중 하나만 전달된 불완전한 과거 조회 요청을 거부한다.

@@ -24,7 +24,6 @@ import com.reecho.reechobe.member.repository.WorkspaceMembershipRepository;
 import com.reecho.reechobe.user.domain.User;
 import com.reecho.reechobe.user.repository.UserRepository;
 import com.reecho.reechobe.workspace.domain.Workspace;
-import com.reecho.reechobe.workspace.dto.CreatedWorkspaceResponse;
 import com.reecho.reechobe.workspace.exception.WorkspaceErrorCode;
 import com.reecho.reechobe.workspace.repository.WorkspaceRepository;
 import java.time.LocalDateTime;
